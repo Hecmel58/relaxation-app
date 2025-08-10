@@ -1,0 +1,38 @@
+.sleep-page {
+    line-height: 1.6;
+}
+
+.sleep-page h1 {
+    margin-bottom: 20px;
+}
+
+.sleep-page form {
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.sleep-page input,
+.sleep-page textarea {
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+}
+
+.sleep-page textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.sleep-page button {
+    width: 100%;
+}
+
+/* Mobil uyum */
+@media (max-width: 768px) {
+    .sleep-page form {
+        padding: 15px;
+    }
+}

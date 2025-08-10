@@ -1,0 +1,103 @@
+.admin-page {
+    line-height: 1.6;
+}
+
+.admin-page h1 {
+    margin-bottom: 5px;
+}
+
+.admin-desc {
+    margin-bottom: 20px;
+    color: #555;
+}
+
+/* Sekmeler */
+.admin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.admin-tabs button {
+    background-color: #f0f0f0;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.admin-tabs button.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.admin-tabs button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Tablo */
+.admin-table-container {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.admin-table th {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Silme Butonu */
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+    background-color: #b02a37;
+}
+
+/* Yüklenme ve Hata */
+.admin-loading,
+.admin-error {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.admin-error {
+    background: #ffe5e5;
+    color: #d9534f;
+}
+
+/* Mobil uyum */
+@media (max-width: 768px) {
+    .admin-tabs {
+        flex-direction: column;
+    }
+    .admin-table th,
+    .admin-table td {
+        font-size: 14px;
+        padding: 8px;
+    }
+}

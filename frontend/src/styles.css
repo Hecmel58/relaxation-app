@@ -1,21 +1,56 @@
-:root{
-  --bg:#0b2545;
-  --card:#0f325b;
-  --accent:#1e66d6;
-  --muted:#cfe3ff;
+/* === Genel Stil Ayarları === */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #333;
 }
-body{ margin:0; font-family:Inter, Arial, sans-serif; background: linear-gradient(180deg,#07122b 0%, #08182f 100%); color:#fff; }
-.header{ padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.04); }
-.logo-row{ display:flex; align-items:center; gap:12px; }
-.logo-small{ width:48px; height:48px; object-fit:contain; }
-.site-title{ font-size:18px; margin:0; color:var(--muted); }
-.center{ display:flex; flex-direction:column; align-items:center; padding:40px 20px; }
-.main-title{ font-size:28px; margin:10px 0 6px; }
-.logo-large{ width:160px; height:160px; object-fit:contain; border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
-.login-box{ width:340px; background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); padding:20px; border-radius:12px; box-shadow:0 8px 30px rgba(2,6,23,0.7); margin-top:18px; }
-.login-box input{ width:100%; padding:10px; margin:8px 0; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color:#fff; }
-.login-box button{ width:100%; padding:10px; margin-top:8px; border-radius:8px; background:var(--accent); color:#fff; border:none; font-weight:600; box-shadow:0 6px 14px rgba(30,102,214,0.28); cursor:pointer; }
-.agree{ font-size:13px; color:#e6f0ff; display:flex; gap:8px; align-items:center; margin-top:6px; }
-.admin-area{ margin-top:12px; font-size:13px; color:#cbdaf6; text-align:center; }
-.msg{ margin-top:8px; color:#ffdddd; }
-.footer{ text-align:center; padding:18px 8px; opacity:0.7; font-size:13px; margin-top:30px; }
+
+h1, h2, h3 {
+    margin-bottom: 1rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.main-content {
+    padding: 20px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+button {
+    cursor: pointer;
+    background-color: #007bff;
+    border: none;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+input, textarea, select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+}
+
+form {
+    display: grid;
+    gap: 10px;
+}

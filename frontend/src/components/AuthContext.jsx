@@ -1,37 +1,47 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect } from 'react';
+import jwtDecode from 'jwt-decode';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-  // Uygulama açıldığında localStorage'dan kullanıcıyı çek
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const userData = localStorage.getItem('user');
 
-  // Giriş yapma fonksiyonu
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-  };
+        if (token && userData) {
+            try {
+                const decoded = jwtDecode(token);
+                if (decoded.exp * 1000 > Date.now()) {
+                    setUser(JSON.parse(userData));
+                } else {
+                    handleLogout();
+                }
+            } catch (err) {
+                console.error('AuthContext token parse hatası:', err);
+                handleLogout();
+            }
+        }
+        setLoading(false);
+    }, []);
 
-  // Çıkış yapma fonksiyonu
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-  };
+    const handleLogin = (userData, token) => {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+    };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+    const handleLogout = () => {
+        localStorage.clear();
+        setUser(null);
+        window.location.href = '/';
+    };
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+    return (
+        <AuthContext.Provider value={{ user, loading, handleLogin, handleLogout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};

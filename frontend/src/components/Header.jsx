@@ -1,35 +1,37 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import logo from "../assets/logo.png"; // logo yolu doğru mu kontrol et
-import "./header.css"; // CSS dosyasını ekledik
+import { Link } from 'react-router-dom';
+import './header.css';
 
-const Header = () => {
-    const location = useLocation();
-
-    // Eğer kullanıcı giriş ekranındaysa ("/") header hiç görünmesin
-    if (location.pathname === "/") {
-        return null;
-    }
-
+export default function Header({ user, onLogout }) {
     return (
-        <header className="app-header">
-            {/* Logo + Site İsmi */}
-            <div className="header-inner">
-                <img src={logo} alt="Site Logo" className="header-logo" />
-                <span className="header-title">Stres ve Uyku Yönetimi</span>
+        <header className="site-header">
+            <div className="header-left">
+                {/* Logo */}
+                <Link to="/home" className="logo-link">
+                    <img
+                        src="/assets/logo.png" // Senin public/assets klasöründeki logo dosyan
+                        alt="Logo"
+                        className="site-logo"
+                    />
+                </Link>
             </div>
 
-            {/* Menü */}
-            <nav className="ml-auto flex space-x-6">
-                <Link to="/home" className="hover:text-blue-300">Ana Sayfa</Link>
-                <Link to="/relax" className="hover:text-blue-300">Gevşeme Teknikleri</Link>
-                <Link to="/binaural" className="hover:text-blue-300">Binaural Vuruşlar</Link>
-                <Link to="/sleep" className="hover:text-blue-300">Uyku ve Fizyolojik Kayıt</Link>
-                <Link to="/support" className="hover:text-blue-300">Destek</Link>
-                <Link to="/form" className="hover:text-blue-300">Form</Link>
+            <nav className="header-nav">
+                <Link to="/home">Ana Sayfa</Link>
+                <Link to="/relaxation">Rahatlama</Link>
+                <Link to="/binaural">Binaural</Link>
+                <Link to="/sleep">Uyku</Link>
+                <Link to="/support">Destek</Link>
+                {user?.role === 'admin' && <Link to="/admin">Admin Paneli</Link>}
             </nav>
+
+            <div className="header-right">
+        <span className="welcome-msg">
+          Hoşgeldiniz, {user?.name || 'Misafir'}
+        </span>
+                <button onClick={onLogout} className="logout-btn">
+                    Çıkış
+                </button>
+            </div>
         </header>
     );
-};
-
-export default Header;
+}

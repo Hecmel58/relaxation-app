@@ -1,0 +1,14 @@
+.home-page {
+    text-align: center;
+}
+
+.home-page .card {
+    display: inline-block;
+    width: 280px;
+    margin: 10px;
+    vertical-align: top;
+}
+
+.home-page .card h3 {
+    color: #007bff;
+}

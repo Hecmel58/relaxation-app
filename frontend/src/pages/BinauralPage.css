@@ -1,0 +1,54 @@
+.binaural-page {
+    line-height: 1.6;
+}
+
+.binaural-page p {
+    margin-bottom: 20px;
+    font-size: 15px;
+    color: #555;
+}
+
+.track {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s ease;
+    flex-wrap: wrap;
+}
+
+.track:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.track-title {
+    font-weight: bold;
+    color: #007bff;
+    flex: 1;
+}
+
+.track span {
+    margin-right: 10px;
+}
+
+.track audio {
+    flex: 1 1 100%;
+    margin-top: 10px;
+}
+
+/* Mobil uyum */
+@media (max-width: 768px) {
+    .track {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .track audio {
+        width: 100%;
+    }
+}

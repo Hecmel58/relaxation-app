@@ -1,32 +1,45 @@
-/* frontend/src/components/header.css */
-.app-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  padding: 8px 18px;
-  z-index: 1000;
-  background: rgba(6, 18, 34, 0.45); /* yarı saydam arka plan */
-  backdrop-filter: blur(6px);
-  box-shadow: 0 4px 12px rgba(2,6,23,0.6);
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #0077ff;
+    padding: 10px 20px;
+    color: white;
 }
-.header-inner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
+
+.header-left .site-logo {
+    height: 40px;
 }
-.header-logo {
-  height: 40px;
-  width: auto;
-  display: block;
+
+.header-nav a {
+    color: white;
+    margin: 0 10px;
+    text-decoration: none;
+    font-weight: 500;
 }
-.header-title {
-  font-weight: 700;
-  font-size: 18px;
-  color: #e6f0ff;
-  letter-spacing: 0.2px;
+
+.header-nav a:hover {
+    text-decoration: underline;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.welcome-msg {
+    margin-right: 10px;
+}
+
+.logout-btn {
+    background: #ff4d4d;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    background: #e60000;
 }

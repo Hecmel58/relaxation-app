@@ -1,0 +1,109 @@
+.support-page {
+    line-height: 1.6;
+}
+
+.support-page h1 {
+    margin-bottom: 8px;
+}
+
+.support-page p {
+    color: #555;
+    margin-bottom: 16px;
+}
+
+/* Uyarılar */
+.sp-alert {
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.sp-alert.success {
+    background: #e8f7ef;
+    color: #0f7a3a;
+    border: 1px solid #bfead0;
+}
+
+.sp-alert.error {
+    background: #ffe5e5;
+    color: #b42318;
+    border: 1px solid #ffc9c9;
+}
+
+/* Kart/Form */
+.sp-card {
+    max-width: 560px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.sp-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.sp-row label {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.sp-row input,
+.sp-row textarea {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s ease;
+    background: #fff;
+}
+
+.sp-row input:focus,
+.sp-row textarea:focus {
+    border-color: #007bff;
+}
+
+.sp-row textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.sp-submit {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: #007bff;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color .15s ease, transform .03s ease;
+}
+
+.sp-submit:hover {
+    background: #0062cc;
+}
+
+.sp-submit:active {
+    transform: translateY(1px);
+}
+
+.sp-footnote {
+    margin-top: 10px;
+    color: #666;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* Mobil uyum */
+@media (max-width: 768px) {
+    .sp-card {
+        padding: 16px;
+    }
+}

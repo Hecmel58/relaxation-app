@@ -1,57 +1,91 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const auth = require('../middleware/auth');
+const User = require('../models/user'); // 📌 Küçük harf uyumu
+const authMiddleware = require('../middleware/authMiddleware'); // 📌 Ortak token doğrulama
 
 const router = express.Router();
 
-// Register
+// 📌 Kullanıcı Kaydı
 router.post('/register', async (req, res) => {
     try {
-        const { email, password, name = '' } = req.body;
-        if (!email || !password) return res.status(400).json({ error: 'Email ve şifre gerekli' });
+        const { phone, password, name, role } = req.body;
 
-        const exists = await User.findOne({ email });
-        if (exists) return res.status(409).json({ error: 'Bu email zaten kayıtlı' });
+        if (!phone || !password) {
+            return res.status(400).json({ message: 'Telefon ve şifre zorunludur' });
+        }
 
-        const hash = await bcrypt.hash(password, 10);
-        const user = await User.create({ email, password: hash, name });
+        const existingUser = await User.findOne({ phone });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Bu telefon numarası zaten kayıtlı' });
+        }
 
-        const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: user._id, email, name: user.name } });
-    } catch (e) {
-        res.status(500).json({ error: 'Kayıt başarısız', detail: e?.message });
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = new User({
+            phone,
+            password: hashedPassword,
+            name: name || '',
+            role: role || 'user'
+        });
+
+        await newUser.save();
+
+        res.status(201).json({ message: 'Kullanıcı başarıyla oluşturuldu' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 
-// Login
+// 📌 Kullanıcı Girişi
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) return res.status(400).json({ error: 'Email ve şifre gerekli' });
+        const { phone, password } = req.body;
 
-        const user = await User.findOne({ email });
-        if (!user) return res.status(401).json({ error: 'Geçersiz bilgiler' });
+        if (!phone || !password) {
+            return res.status(400).json({ message: 'Telefon ve şifre zorunludur' });
+        }
 
-        const ok = await bcrypt.compare(password, user.password);
-        if (!ok) return res.status(401).json({ error: 'Geçersiz bilgiler' });
+        const user = await User.findOne({ phone });
+        if (!user) {
+            return res.status(400).json({ message: 'Kullanıcı bulunamadı' });
+        }
 
-        const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: user._id, email, name: user.name } });
-    } catch (e) {
-        res.status(500).json({ error: 'Giriş başarısız', detail: e?.message });
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: 'Geçersiz şifre' });
+        }
+
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+        );
+
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                phone: user.phone,
+                name: user.name,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 
-// Me
-router.get('/me', auth, async (req, res) => {
+// 📌 Kullanıcı Bilgisi - Token ile
+router.get('/me', authMiddleware, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).lean();
-        if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
-        res.json({ id: user._id, email: user.email, name: user.name });
-    } catch (e) {
-        res.status(500).json({ error: 'Hata', detail: e?.message });
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+        }
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 
