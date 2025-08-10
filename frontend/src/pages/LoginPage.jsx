@@ -17,14 +17,12 @@ export default function LoginPage({ onLogin }) {
             setError('Kullanıcı sözleşmesini onaylayın')
             return
         }
-
         if (!phone || !password) {
             setError('Telefon numarası ve şifre gerekli')
             return
         }
 
         setLoading(true)
-
         try {
             const response = await apiService.login(phone, password)
             onLogin(response.user)
@@ -39,7 +37,13 @@ export default function LoginPage({ onLogin }) {
         <div className="page">
             <main className="center">
                 {/* Logo ve site adı */}
-                <img src="/assets/logo.png" alt="logo" className="logo-large" />
+                <img
+                    src="/assets/logo.png"
+                    alt="logo"
+                    className="logo-large"
+                    width="200"
+                    height="200"
+                />
                 <h1 className="site-title">Stres ve Uyku Yönetimi</h1>
 
                 {/* Giriş paneli */}
@@ -78,10 +82,7 @@ export default function LoginPage({ onLogin }) {
                 </form>
             </main>
 
-            {/* Telif hakkı yazısı */}
-            <footer className="footer">
-                © Telif Hakkı 2025, Tüm Hakları Saklıdır
-            </footer>
+            <footer className="footer">© Telif Hakkı 2025, Tüm Hakları Saklıdır</footer>
         </div>
     )
 }

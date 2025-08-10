@@ -1,93 +1,75 @@
-.page {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: #f7f9fc;
-    font-family: 'Poppins', sans-serif;
+/* Sayfa iskeleti */
+.page{
+    display:flex; flex-direction:column; min-height:100vh;
+    background:#f7f9fc; font-family:'Poppins',sans-serif;
+}
+.center{
+    flex:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:24px;
 }
 
-.center {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+/* LOGO: 200x200 ve ortalı */
+.logo-large{
+    width:200px; height:200px; object-fit:contain; margin-bottom:16px;
 }
 
-.logo-large {
-    width: 200px;
-    height: 200px;
-    object-fit: contain;
-    margin-bottom: 15px;
+/* Site adı: daha büyük ve logo renklerine uyumlu (mavi ton) */
+.site-title{
+    /* 3 kademe büyütülmüş */
+    font-size:3rem;            /* mobilde biraz küçülsün diye aşağıda clamp var */
+    font-weight:800; text-align:center; margin:0 0 28px 0;
+    color:#2d61c3;             /* logo mavi tonuna uyumlu */
+    line-height:1.1;
+}
+@media (max-width:480px){
+    .site-title{ font-size:clamp(2rem, 7vw, 2.6rem); }
 }
 
-.site-title {
-    font-size: 2.2rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 30px;
-    color: #4b3f72; /* logodaki mavi-mor uyumlu ton */
+/* Giriş paneli: logo renklerine uyumlu yumuşak degrade + gölge */
+.login-box{
+    background:
+            linear-gradient(135deg, rgba(45,97,195,.08), rgba(107,33,168,.08)),
+            #ffffff;
+    padding:26px; border-radius:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.12);
+    display:flex; flex-direction:column; align-items:center; gap:14px;
 }
 
-.login-box {
-    background: linear-gradient(135deg, #4b3f72, #6a4caf); /* logoya uyumlu degrade */
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-}
-
+/* Inputlar: sabit genişlik, merkez, gölgeli */
 .login-box input[type="tel"],
-.login-box input[type="password"] {
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 14px;
-    width: 220px;
-    text-align: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+.login-box input[type="password"]{
+    width:220px;
+    padding:12px 14px; border:1px solid #d8dbe2; border-radius:10px;
+    font-size:15px; text-align:center; background:#fff;
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
 }
 
-.agree {
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
-    color: #fff;
+/* Sözleşme: tek satır ve tik ile hizalı, görünür renk */
+.agree{
+    display:inline-flex; align-items:center; gap:10px;
+    white-space:nowrap; color:#333; font-size:14px;
+}
+.agree input[type="checkbox"]{ transform:scale(1.1); }
+
+/* Buton: normal genişlik, ortalı, gölgeli */
+.login-box button{
+    min-width:160px; padding:12px 22px; border:0; border-radius:10px;
+    background:#1f6fd6; color:#fff; font-weight:700; font-size:16px;
+    cursor:pointer; box-shadow:0 6px 16px rgba(31,111,214,.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+}
+.login-box button:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(31,111,214,.4); }
+
+/* Hata mesajı */
+.msg.error{ color:#c62828; font-size:14px; text-align:center; }
+
+/* Footer ortalı */
+.footer{
+    text-align:center; padding:16px; font-size:12px; color:#666;
 }
 
-.login-box button {
-    padding: 10px 25px;
-    background-color: #ffcc00;
-    color: #000;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    cursor: pointer;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
-    transition: transform 0.2s ease, background-color 0.3s ease;
-}
-
-.login-box button:hover {
-    background-color: #ffb400;
-    transform: translateY(-2px);
-}
-
-.msg.error {
-    color: #ffcccc;
-    font-size: 14px;
-    text-align: center;
-}
-
-.footer {
-    text-align: center;
-    padding: 15px;
-    font-size: 12px;
-    color: #666;
+/* Küçük ekran ince ayarları */
+@media (max-width:500px){
+    .login-box{ padding:22px; }
+    .login-box input[type="tel"], .login-box input[type="password"]{ width:210px; }
 }
