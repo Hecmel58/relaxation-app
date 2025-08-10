@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiService } from '../services/api'
+import './LoginPage.css' // CSS dosyasını buradan çağırıyoruz
 
 export default function LoginPage({ onLogin }) {
     const [phone, setPhone] = useState('')
@@ -48,6 +49,7 @@ export default function LoginPage({ onLogin }) {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="Telefon Numarası"
+                        maxLength={11} // Maksimum 11 hane
                         disabled={loading}
                     />
                     <input
