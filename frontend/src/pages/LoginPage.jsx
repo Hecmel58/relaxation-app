@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { apiService } from '../services/api'
-import './LoginPage.css' // CSS dosyasını buradan çağırıyoruz
+import './LoginPage.css'
 
 export default function LoginPage({ onLogin }) {
     const [phone, setPhone] = useState('')
@@ -49,7 +49,7 @@ export default function LoginPage({ onLogin }) {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="Telefon Numarası"
-                        maxLength={11} // Maksimum 11 hane
+                        maxLength={11}
                         disabled={loading}
                     />
                     <input
@@ -67,7 +67,7 @@ export default function LoginPage({ onLogin }) {
                             onChange={(e) => setAgree(e.target.checked)}
                             disabled={loading}
                         />
-                        Kullanıcı sözleşmesini okudum onaylıyorum
+                        <span>Kullanıcı sözleşmesini okudum onaylıyorum</span>
                     </label>
 
                     <button type="submit" disabled={loading}>
