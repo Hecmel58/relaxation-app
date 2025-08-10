@@ -1,0 +1,109 @@
+/* Sayfa genel ayarları */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f7f9fc;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Orta kısım */
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Logo */
+.logo-large {
+  width: 150px;
+  max-width: 60%;
+  margin-bottom: 20px;
+}
+
+/* Site başlığı */
+.site-title {
+  font-size: 2rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #222;
+}
+
+/* Form kutusu */
+.login-box {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Input alanları */
+.login-box input[type="tel"],
+.login-box input[type="password"] {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Checkbox */
+.agree {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Buton */
+.login-box button {
+  padding: 12px;
+  background-color: #0077cc;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-box button:hover {
+  background-color: #005fa3;
+}
+
+/* Hata mesajı */
+.msg.error {
+  color: red;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 15px;
+  font-size: 12px;
+  color: #666;
+  background-color: transparent;
+}
+
+/* Mobil uyum */
+@media (max-width: 500px) {
+  .site-title {
+    font-size: 1.5rem;
+  }
+  
+  .login-box {
+    padding: 20px;
+  }
+}

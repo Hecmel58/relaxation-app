@@ -2,92 +2,84 @@ import { useState } from 'react'
 import { apiService } from '../services/api'
 
 export default function LoginPage({ onLogin }) {
-  const [phone, setPhone] = useState('')
-  const [password, setPassword] = useState('')
-  const [agree, setAgree] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+    const [phone, setPhone] = useState('')
+    const [password, setPassword] = useState('')
+    const [agree, setAgree] = useState(false)
+    const [error, setError] = useState('')
+    const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setError('')
 
-    if (!agree) {
-      setError('Kullanıcı sözleşmesini onaylayın')
-      return
+        if (!agree) {
+            setError('Kullanıcı sözleşmesini onaylayın')
+            return
+        }
+
+        if (!phone || !password) {
+            setError('Telefon numarası ve şifre gerekli')
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const response = await apiService.login(phone, password)
+            onLogin(response.user)
+        } catch (err) {
+            setError(err.message || 'Giriş başarısız')
+        } finally {
+            setLoading(false)
+        }
     }
 
-    if (!phone || !password) {
-      setError('Telefon numarası ve şifre gerekli')
-      return
-    }
+    return (
+        <div className="page">
+            <main className="center">
+                {/* Logo ve site adı */}
+                <img src="/assets/logo.png" alt="logo" className="logo-large" />
+                <h1 className="site-title">Stres ve Uyku Yönetimi</h1>
 
-    setLoading(true)
+                {/* Giriş paneli */}
+                <form className="login-box" onSubmit={handleSubmit}>
+                    <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Telefon Numarası"
+                        disabled={loading}
+                    />
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Şifre"
+                        disabled={loading}
+                    />
 
-    try {
-      const response = await apiService.login(phone, password)
-      onLogin(response.user)
-    } catch (err) {
-      setError(err.message || 'Giriş başarısız')
-    } finally {
-      setLoading(false)
-    }
-  }
+                    <label className="agree">
+                        <input
+                            type="checkbox"
+                            checked={agree}
+                            onChange={(e) => setAgree(e.target.checked)}
+                            disabled={loading}
+                        />
+                        Kullanıcı sözleşmesini okudum onaylıyorum
+                    </label>
 
-  return (
-    <div className="page">
-      <header className="header">
-        <div className="logo-row">
-          <img src="/logo.png" alt="logo" className="logo-small"/>
-          <h1 className="site-title">Stres ve Uyku Yönetimi</h1>
+                    <button type="submit" disabled={loading}>
+                        {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+                    </button>
+
+                    {error && <p className="msg error">{error}</p>}
+                </form>
+            </main>
+
+            {/* Telif hakkı yazısı */}
+            <footer className="footer">
+                © Telif Hakkı 2025, Tüm Hakları Saklıdır
+            </footer>
         </div>
-      </header>
-      
-      <main className="center">
-        <h2 className="main-title">Stres ve Uyku Yönetimi</h2>
-        <img src="/logo.png" alt="logo" className="logo-large" />
-        
-        <form className="login-box" onSubmit={handleSubmit}>
-          <input 
-            type="tel"
-            value={phone} 
-            onChange={(e) => setPhone(e.target.value)} 
-            placeholder="Telefon Numarası" 
-            disabled={loading}
-          />
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            placeholder="Şifre" 
-            disabled={loading}
-          />
-          
-          <label className="agree">
-            <input 
-              type="checkbox" 
-              checked={agree} 
-              onChange={(e) => setAgree(e.target.checked)}
-              disabled={loading} 
-            /> 
-            Kullanıcı sözleşmesini okudum onaylıyorum
-          </label>
-          
-          <button type="submit" disabled={loading}>
-            {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
-          </button>
-          
-          <div className="admin-area">
-            <p>Yönetici girişi için aynı paneli kullanın.</p>
-          </div>
-          
-          {error && <p className="msg error">{error}</p>}
-        </form>
-      </main>
-      
-      <footer className="footer">
-        © Telif Hakkı 2025, Tüm Hakları Saklıdır
-      </footer>
-    </div>
-  )
+    )
 }
