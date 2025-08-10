@@ -28,14 +28,6 @@ connectMongoDB();
 
 // 📌 Supabase bağlantısı
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-(async () => {
-    const { data, error } = await supabase.from("test").select("*").limit(1);
-    if (error) {
-        console.error("❌ Supabase bağlantı hatası:", error);
-    } else {
-        console.log("✅ Supabase bağlantısı başarılı");
-    }
-})();
 
 const app = express();
 
@@ -57,11 +49,6 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json());
-
-// 📌 Test endpointi
-app.get("/api/test", (req, res) => {
-    res.json({ message: "Backend çalışıyor 🚀" });
-});
 
 // 📌 Rotalar
 app.use("/api/auth", authRoutes);
