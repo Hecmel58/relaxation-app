@@ -8,13 +8,13 @@
     align-items:center; justify-content:center; padding:24px;
 }
 
-/* LOGO: 400x400 ve ortalı, mobil/tablet uyumlu */
+/* LOGO: 200x200 ve ortalı, mobil/tablet uyumlu */
 .logo-large{
-    width:400px !important;
-    height:400px !important;
+    width:200px !important;
+    height:200px !important;
     object-fit:contain;
     margin-bottom:16px;
-    max-width:90vw;  /* küçük ekranlarda taşmayı önler */
+    max-width:90vw;
     max-height:60vh;
 }
 
@@ -22,7 +22,7 @@
 .site-title{
     font-size:3rem;
     font-weight:800; text-align:center; margin:0 0 28px 0;
-    color:#2d61c3; /* logo mavi tonuna uyumlu */
+    color:#2d61c3;
     line-height:1.1;
 }
 @media (max-width:480px){

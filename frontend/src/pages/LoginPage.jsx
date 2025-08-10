@@ -43,8 +43,8 @@ export default function LoginPage({ onLogin }) {
                     src="/assets/logo.png"
                     alt="logo"
                     className="logo-large"
-                    width="400"
-                    height="400"
+                    width="200"
+                    height="200"
                 />
                 <h1 className="site-title">Stres ve Uyku Yönetimi</h1>
 
