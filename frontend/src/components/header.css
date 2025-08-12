@@ -1,0 +1,32 @@
+/* frontend/src/components/header.css */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 8px 18px;
+  z-index: 1000;
+  background: rgba(6, 18, 34, 0.45); /* yarı saydam arka plan */
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 12px rgba(2,6,23,0.6);
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.header-logo {
+  height: 40px;
+  width: auto;
+  display: block;
+}
+.header-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: #e6f0ff;
+  letter-spacing: 0.2px;
+}
