@@ -7,7 +7,28 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// 🌍 CORS ayarları — Cloudflare domain’ini buraya ekle
+const allowedOrigins = [
+    "https://relaxation-frontend.pages.dev", // Cloudflare production domain
+    "http://localhost:5173" // local development
+];
+
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("CORS policy: Origin not allowed"));
+            }
+        },
+        methods: ["GET", "POST", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true
+    })
+);
+
 app.use(bodyParser.json());
 
 // Supabase bağlantısı
@@ -27,25 +48,22 @@ app.post("/login", async (req, res) => {
             return res.status(400).json({ error: "Telefon numarası ve şifre gereklidir" });
         }
 
-        // Kullanıcıyı veritabanında kontrol et
         const { data: user, error } = await supabase
             .from("users")
             .select("*")
             .eq("phone", phone)
-            .eq("password", password) // Burada hash kontrolü eklenebilir
+            .eq("password", password)
             .single();
 
         if (error || !user) {
             return res.status(401).json({ error: "Telefon numarası veya şifre hatalı" });
         }
 
-        // Admin kontrolü
-        if (user.role === "admin") {
-            return res.json({ message: "Admin girişi başarılı", role: "admin", user });
-        }
-
-        return res.json({ message: "Kullanıcı girişi başarılı", role: "user", user });
-
+        return res.json({
+            message: user.role === "admin" ? "Admin girişi başarılı" : "Kullanıcı girişi başarılı",
+            role: user.role,
+            user
+        });
     } catch (err) {
         console.error("Giriş hatası:", err);
         res.status(500).json({ error: "Sunucu hatası" });
