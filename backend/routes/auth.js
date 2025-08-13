@@ -1,86 +1,58 @@
-import express from "express";
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
-// Kullanıcı kaydı
-router.post("/register", async (req, res) => {
+// Register
+router.post('/register', async (req, res) => {
     try {
-        const { username, email, password, role } = req.body;
+        const { email, password, name = '' } = req.body;
+        if (!email || !password) return res.status(400).json({ error: 'Email ve şifre gerekli' });
 
-        // Eksik alan kontrolü
-        if (!username || !email || !password) {
-            return res.status(400).json({ message: "Tüm alanlar zorunludur." });
-        }
+        const exists = await User.findOne({ email });
+        if (exists) return res.status(409).json({ error: 'Bu email zaten kayıtlı' });
 
-        // Kullanıcı var mı kontrolü
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
-        }
+        const hash = await bcrypt.hash(password, 10);
+        const user = await User.create({ email, password: hash, name });
 
-        // Yeni kullanıcı oluştur
-        const newUser = new User({
-            username,
-            email,
-            password,
-            role: role || "user",
-        });
-
-        await newUser.save();
-
-        res.status(201).json({ message: "Kayıt başarılı!" });
-    } catch (err) {
-        console.error("Kayıt hatası:", err);
-        res.status(500).json({ message: "Sunucu hatası." });
+        const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, user: { id: user._id, email, name: user.name } });
+    } catch (e) {
+        res.status(500).json({ error: 'Kayıt başarısız', detail: e?.message });
     }
 });
 
-// Giriş yapma
-router.post("/login", async (req, res) => {
+// Login
+router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ error: 'Email ve şifre gerekli' });
 
-        // Alan kontrolü
-        if (!email || !password) {
-            return res.status(400).json({ message: "Tüm alanlar zorunludur." });
-        }
-
-        // Kullanıcı var mı kontrolü
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "Geçersiz e-posta veya şifre." });
-        }
+        if (!user) return res.status(401).json({ error: 'Geçersiz bilgiler' });
 
-        // Şifre kontrolü
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Geçersiz e-posta veya şifre." });
-        }
+        const ok = await bcrypt.compare(password, user.password);
+        if (!ok) return res.status(401).json({ error: 'Geçersiz bilgiler' });
 
-        // JWT oluşturma
-        const token = jwt.sign(
-            { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
-        );
-
-        res.json({
-            message: "Giriş başarılı!",
-            token,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                profileImage: user.profileImage,
-            },
-        });
-    } catch (err) {
-        console.error("Giriş hatası:", err);
-        res.status(500).json({ message: "Sunucu hatası." });
+        const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, user: { id: user._id, email, name: user.name } });
+    } catch (e) {
+        res.status(500).json({ error: 'Giriş başarısız', detail: e?.message });
     }
 });
 
-export default router;
+// Me
+router.get('/me', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).lean();
+        if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+        res.json({ id: user._id, email: user.email, name: user.name });
+    } catch (e) {
+        res.status(500).json({ error: 'Hata', detail: e?.message });
+    }
+});
+
+module.exports = router;

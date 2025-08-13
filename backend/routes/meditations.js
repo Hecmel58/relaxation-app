@@ -1,11 +1,14 @@
-import express from 'express';
+const express = require('express');
+const auth = require('../middleware/auth');
+
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  res.json([
-    { id: 1, title: 'Meditation 1', description: 'Relax and breathe' },
-    { id: 2, title: 'Meditation 2', description: 'Focus and calm' }
-  ]);
+// Örnek korumalı endpoint
+router.get('/', auth, async (req, res) => {
+    res.json([
+        { id: 1, title: 'Deep Relax', duration: 10 },
+        { id: 2, title: 'Calm Focus', duration: 15 }
+    ]);
 });
 
-export default router;
+module.exports = router;
