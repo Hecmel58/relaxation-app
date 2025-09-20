@@ -6,7 +6,7 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// 📌 Kullanıcı Kaydı
+// Kullanıcı Kaydı
 router.post('/register', async (req, res) => {
     try {
         const { phone, password, name, role } = req.body;
@@ -38,7 +38,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// 📌 Kullanıcı Girişi - TUTARLI TOKEN YAPISI
+// Kullanıcı Girişi
 router.post('/login', async (req, res) => {
     try {
         const { phone, password } = req.body;
@@ -57,19 +57,19 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Geçersiz şifre' });
         }
 
-        // 🔥 DOĞRU TOKEN PAYLOAD - Rol bilgisi eklendi
+        // Token oluştur
         const token = jwt.sign(
             { 
                 id: user._id,
                 phone: user.phone,
-                role: user.role,  // 👈 Bu çok önemli!
+                role: user.role,
                 name: user.name
             },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
 
-        console.log('🚀 Login başarılı:', { phone: user.phone, role: user.role }); // Debug log
+        console.log('Login başarılı:', { phone: user.phone, role: user.role });
 
         res.json({
             token,
@@ -77,7 +77,7 @@ router.post('/login', async (req, res) => {
                 id: user._id,
                 phone: user.phone,
                 name: user.name,
-                role: user.role // 👈 Bu da önemli!
+                role: user.role
             }
         });
     } catch (error) {
@@ -86,10 +86,10 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// 📌 Kullanıcı Profili
+// Kullanıcı Profili
 router.get('/me', authenticate, async (req, res) => {
     try {
-        console.log('👤 User from token:', req.user); // Debug log
+        console.log('User from token:', req.user);
         res.json(req.user);
     } catch (error) {
         console.error('Get me error:', error);

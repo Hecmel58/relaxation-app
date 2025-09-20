@@ -4,7 +4,7 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// 📌 Kullanıcının kendi destek talepleri
+// Kullanıcının kendi destek talepleri
 router.get('/', authenticate, async (req, res) => {
     try {
         const supports = await Support.find({ user: req.user.id })
@@ -16,12 +16,12 @@ router.get('/', authenticate, async (req, res) => {
     }
 });
 
-// 📌 Yeni destek talebi oluşturma
+// Yeni destek talebi oluşturma
 router.post('/', authenticate, async (req, res) => {
     try {
         const supportData = {
             ...req.body,
-            user: req.user.id, // Kullanıcı ID'sini otomatik ekle
+            user: req.user.id,
             name: req.body.name || req.user.name || 'Anonim',
             phone: req.body.phone || req.user.phone || ''
         };
@@ -29,7 +29,6 @@ router.post('/', authenticate, async (req, res) => {
         const support = new Support(supportData);
         const savedSupport = await support.save();
         
-        // Response'ta user bilgilerini de göster
         await savedSupport.populate('user', 'phone name');
         
         res.status(201).json(savedSupport);
@@ -39,7 +38,7 @@ router.post('/', authenticate, async (req, res) => {
     }
 });
 
-// 📌 Destek talebini güncelleme
+// Destek talebini güncelleme
 router.put('/:id', authenticate, async (req, res) => {
     try {
         const support = await Support.findOne({ 
@@ -61,7 +60,7 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 });
 
-// 📌 Destek talebini silme
+// Destek talebini silme
 router.delete('/:id', authenticate, async (req, res) => {
     try {
         const support = await Support.findOneAndDelete({ 

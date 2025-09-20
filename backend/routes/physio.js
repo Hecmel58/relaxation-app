@@ -4,7 +4,7 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// 📌 Kullanıcının kendi physio kayıtları
+// Kullanıcının kendi physio kayıtları
 router.get('/', authenticate, async (req, res) => {
     try {
         const physios = await Physio.find({ user: req.user.id })
@@ -16,19 +16,18 @@ router.get('/', authenticate, async (req, res) => {
     }
 });
 
-// 📌 Yeni physio kaydı ekleme (Kullanıcı kendi kaydını ekler)
+// Yeni physio kaydı ekleme
 router.post('/', authenticate, async (req, res) => {
     try {
         const physioData = {
             ...req.body,
-            user: req.user.id, // Kullanıcı ID'sini otomatik ekle
-            date: req.body.date || new Date() // Eğer tarih gönderilmezse bugünü kullan
+            user: req.user.id,
+            date: req.body.date || new Date()
         };
 
         const physio = new Physio(physioData);
         const savedPhysio = await physio.save();
         
-        // Response'ta user bilgilerini de göster
         await savedPhysio.populate('user', 'phone name');
         
         res.status(201).json(savedPhysio);
@@ -38,7 +37,7 @@ router.post('/', authenticate, async (req, res) => {
     }
 });
 
-// 📌 Physio kaydını güncelleme
+// Physio kaydını güncelleme
 router.put('/:id', authenticate, async (req, res) => {
     try {
         const physio = await Physio.findOne({ 
@@ -60,7 +59,7 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 });
 
-// 📌 Physio kaydını silme
+// Physio kaydını silme
 router.delete('/:id', authenticate, async (req, res) => {
     try {
         const physio = await Physio.findOneAndDelete({ 
