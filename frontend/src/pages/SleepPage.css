@@ -1,38 +1,427 @@
+/* Sleep Page Styles */
 .sleep-page {
-    line-height: 1.6;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
-.sleep-page h1 {
+/* Page Header */
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.page-header h1 {
+    color: white;
+    margin-bottom: 15px;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.page-description {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    max-width: 700px;
+    margin: 0 auto;
+    opacity: 0.95;
+}
+
+/* Sleep Content Layout */
+.sleep-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+/* Form Card */
+.sleep-form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+
+.card-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-header h2 {
+    color: #2d3436;
+    margin-bottom: 8px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.card-header p {
+    color: #636e72;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Form Styles */
+.sleep-form {
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 35px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 25px;
+}
+
+.form-section h3 {
+    color: #2d3436;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Form Layout */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
     margin-bottom: 20px;
 }
 
-.sleep-page form {
-    max-width: 500px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2d3436;
+    font-size: 0.95rem;
 }
 
-.sleep-page input,
-.sleep-page textarea {
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
+.label-icon {
+    font-size: 1.1rem;
 }
 
-.sleep-page textarea {
-    min-height: 100px;
-    resize: vertical;
-}
-
-.sleep-page button {
+/* Form Inputs - FIXED SIZE */
+.form-input,
+.form-select,
+.form-textarea {
     width: 100%;
+    max-width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: #fff;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
-/* Mobil uyum */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: #fafbfc;
+}
+
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Input with Unit */
+.input-with-unit {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-unit .form-input {
+    padding-right: 60px;
+}
+
+.input-unit {
+    position: absolute;
+    right: 16px;
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+/* Form Help Text */
+.form-help {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Textarea Specific */
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.5;
+}
+
+/* Form Actions */
+.form-actions {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #f1f3f4;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-family: inherit;
+    min-width: 120px;
+}
+
+.btn-large {
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    min-width: 200px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a6fd8, #6a4190);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2) !important;
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+/* Spinner Animation */
+.btn-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Sleep Tips Card */
+.sleep-tips-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.tips-list {
+    padding: 25px;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.tip-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.tip-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tip-content h4 {
+    color: #2d3436;
+    margin: 0 0 4px 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.tip-content p {
+    color: #636e72;
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* Alert Messages */
+.alert {
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    font-weight: 500;
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert.success {
+    background-color: #e8f7ef;
+    color: #0f7a3a;
+    border-left-color: #28a745;
+}
+
+.alert.error {
+    background-color: #ffe5e5;
+    color: #b42318;
+    border-left-color: #dc3545;
+}
+
+.alert.success::before {
+    content: "✅";
+    font-size: 1.2rem;
+}
+
+.alert.error::before {
+    content: "❌";
+    font-size: 1.2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+    .sleep-content {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
+    
+    .sleep-tips-card {
+        position: static;
+    }
+}
+
 @media (max-width: 768px) {
-    .sleep-page form {
+    .sleep-page {
         padding: 15px;
+    }
+    
+    .page-header {
+        padding: 25px 20px;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .page-description {
+        font-size: 1rem;
+    }
+    
+    .sleep-form {
+        padding: 25px 20px;
+    }
+    
+    .card-header {
+        padding: 20px 20px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .form-section {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+    }
+    
+    .tips-list {
+        padding: 20px;
+    }
+    
+    .tip-item {
+        gap: 12px;
+        padding: 12px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .sleep-form {
+        padding: 20px 15px;
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 10px 14px;
+        font-size: 16px; /* iOS zoom önleme */
+    }
+    
+    .btn-large {
+        padding: 14px 24px;
+        font-size: 1rem;
+        min-width: 100%;
+    }
+    
+    .tip-item {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
     }
 }

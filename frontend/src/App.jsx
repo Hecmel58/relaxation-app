@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; // ✅ Değiştirildi
+import { jwtDecode } from 'jwt-decode';
 
 // Bileşenler
 import Header from './components/Header';
@@ -26,14 +26,18 @@ export default function App() {
         if (token && userData) {
             try {
                 const decoded = jwtDecode(token);
+                
+                // Token süresi kontrolü
                 if (decoded.exp * 1000 > Date.now()) {
-                    setUser(JSON.parse(userData));
+                    const parsedUser = JSON.parse(userData);
+                    console.log('🔍 App.jsx - Kullanıcı yüklendi:', parsedUser);
+                    setUser(parsedUser);
                 } else {
-                    console.warn('Token süresi dolmuş, otomatik çıkış yapılıyor');
+                    console.warn('⚠️ Token süresi dolmuş, otomatik çıkış yapılıyor');
                     handleLogout();
                 }
             } catch (error) {
-                console.error('Token parse hatası:', error);
+                console.error('❌ Token parse hatası:', error);
                 handleLogout();
             }
         }
@@ -41,25 +45,42 @@ export default function App() {
     }, []);
 
     const handleLogin = (userData) => {
+        console.log('🔐 App.jsx - Giriş yapıldı:', userData);
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
     };
 
     const handleLogout = () => {
+        console.log('👋 Çıkış yapılıyor...');
         setUser(null);
         localStorage.clear();
         window.location.href = '/';
     };
 
     if (loading) {
-        return <div className="loading">Yükleniyor...</div>;
+        return (
+            <div className="loading-container" style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                fontSize: '18px',
+                flexDirection: 'column',
+                gap: '20px'
+            }}>
+                <div className="spinner"></div>
+                Yükleniyor...
+            </div>
+        );
     }
 
     return (
         <BrowserRouter>
+            {/* Header sadece giriş yapılmışsa gösterilir */}
             {user && <Header user={user} onLogout={handleLogout} />}
 
-            <div className={user ? 'main-content' : ''}>
+            {/* Ana İçerik */}
+            <div className={user ? 'app-content' : 'app-login'}>
                 <Routes>
                     {/* Login */}
                     <Route
@@ -74,9 +95,26 @@ export default function App() {
                     />
 
                     {/* Admin Panel - sadece admin */}
-                    {user && user.role === 'admin' && (
-                        <Route path="/admin" element={<AdminPage user={user} />} />
-                    )}
+                    <Route
+                        path="/admin"
+                        element={
+                            user ? (
+                                user.role === 'admin' ? (
+                                    <AdminPage user={user} />
+                                ) : (
+                                    <div className="main-content">
+                                        <div className="alert error">
+                                            <h2>❌ Yetkisiz Erişim</h2>
+                                            <p>Bu sayfaya erişim yetkiniz bulunmamaktadır.</p>
+                                            <p><strong>Mevcut Rol:</strong> {user.role}</p>
+                                        </div>
+                                    </div>
+                                )
+                            ) : (
+                                <Navigate to="/" />
+                            )
+                        }
+                    />
 
                     {/* Relaxation */}
                     <Route
@@ -99,7 +137,7 @@ export default function App() {
                     {/* Support */}
                     <Route
                         path="/support"
-                        element={user ? <SupportPage /> : <Navigate to="/" />}
+                        element={user ? <SupportPage user={user} /> : <Navigate to="/" />}
                     />
 
                     {/* Not Found */}

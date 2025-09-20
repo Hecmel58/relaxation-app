@@ -1,54 +1,435 @@
+/* Binaural Page Styles */
 .binaural-page {
-    line-height: 1.6;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
-.binaural-page p {
-    margin-bottom: 20px;
-    font-size: 15px;
-    color: #555;
+/* Page Header */
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
 }
 
-.track {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: white;
-    border: 1px solid #ddd;
-    padding: 10px;
-    border-radius: 6px;
+.page-header h1 {
+    color: white;
     margin-bottom: 15px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    transition: box-shadow 0.2s ease;
-    flex-wrap: wrap;
+    font-size: 2.5rem;
+    font-weight: 700;
 }
 
-.track:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+.page-description {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    max-width: 800px;
+    margin: 0 auto;
+    opacity: 0.95;
+}
+
+/* Category Filters */
+.category-filters {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 40px;
+    padding: 20px;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    border: 2px solid #e9ecef;
+    background: white;
+    color: #495057;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.filter-btn:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: #667eea;
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8, #6a4190);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #d62c1a, #a93226);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.btn-secondary {
+    background: #e9ecef;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+.btn-secondary:hover {
+    background: #dee2e6;
+    border-color: #adb5bd;
+}
+
+/* Tracks Grid */
+.tracks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 50px;
+}
+
+.track-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.track-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+/* Track Header */
+.track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px 0;
+}
+
+.frequency-badge {
+    background: #667eea;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.category-tag {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Track Info */
+.track-info {
+    padding: 20px 25px;
 }
 
 .track-title {
-    font-weight: bold;
-    color: #007bff;
+    color: #2d3436;
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.track-description {
+    color: #636e72;
+    margin-bottom: 15px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.track-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.duration,
+.frequency {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Audio Container - Fixed Size */
+.audio-container {
+    padding: 0 25px;
+    margin-bottom: 20px;
+}
+
+.custom-audio-player {
+    width: 100%;
+    max-width: 100%;
+    height: 40px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    outline: none;
+}
+
+.custom-audio-player::-webkit-media-controls-panel {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.custom-audio-player::-webkit-media-controls-play-button {
+    background-color: #667eea;
+    border-radius: 50%;
+}
+
+.custom-audio-player::-webkit-media-controls-timeline {
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin: 0 10px;
+}
+
+.custom-audio-player::-webkit-media-controls-current-time-display,
+.custom-audio-player::-webkit-media-controls-time-remaining-display {
+    color: #495057;
+    font-size: 12px;
+}
+
+/* Track Actions */
+.track-actions {
+    padding: 20px 25px;
+    display: flex;
+    gap: 15px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.track-actions .btn {
     flex: 1;
+    padding: 12px 20px;
+    font-weight: 500;
 }
 
-.track span {
-    margin-right: 10px;
+/* Info Section */
+.info-section {
+    margin-top: 50px;
+    padding: 40px 30px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    text-align: center;
 }
 
-.track audio {
-    flex: 1 1 100%;
-    margin-top: 10px;
+.info-section h2 {
+    color: #2d3436;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
 }
 
-/* Mobil uyum */
+.brainwave-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+}
+
+.brainwave-item {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+.brainwave-item:hover {
+    transform: translateY(-3px);
+}
+
+.wave-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.brainwave-item h4 {
+    color: #2d3436;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.brainwave-item p {
+    color: #636e72;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Usage Tips */
+.usage-tips {
+    margin-top: 40px;
+    padding: 40px 30px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 16px;
+}
+
+.usage-tips h2 {
+    text-align: center;
+    color: #2d3436;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+}
+
+.tips-list {
+    display: grid;
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.tip-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tip p {
+    margin: 0;
+    line-height: 1.6;
+    color: #495057;
+}
+
+.tip strong {
+    color: #2d3436;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-    .track {
+    .binaural-page {
+        padding: 15px;
+    }
+    
+    .page-header {
+        padding: 25px 20px;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .page-description {
+        font-size: 1rem;
+    }
+    
+    .category-filters {
+        padding: 15px;
+        gap: 8px;
+    }
+    
+    .filter-btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .tracks-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .track-info {
+        padding: 15px 20px;
+    }
+    
+    .track-title {
+        font-size: 1.2rem;
+    }
+    
+    .track-actions {
+        padding: 15px 20px;
         flex-direction: column;
+    }
+    
+    .brainwave-info {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .wave-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .tips-list {
+        gap: 15px;
+    }
+    
+    .tip {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .track-header {
+        flex-direction: column;
+        gap: 10px;
         align-items: flex-start;
     }
-
-    .track audio {
-        width: 100%;
+    
+    .track-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .brainwave-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .tip {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
     }
 }

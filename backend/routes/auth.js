@@ -1,8 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user'); // 📌 Küçük harf uyumu
-const authMiddleware = require('../middleware/authMiddleware'); // 📌 Ortak token doğrulama
+const User = require('../models/user');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'Bu telefon numarası zaten kayıtlı' });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 12);
 
         const newUser = new User({
             phone,
@@ -33,11 +33,12 @@ router.post('/register', async (req, res) => {
 
         res.status(201).json({ message: 'Kullanıcı başarıyla oluşturuldu' });
     } catch (error) {
+        console.error('Register error:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// 📌 Kullanıcı Girişi
+// 📌 Kullanıcı Girişi - TUTARLI TOKEN YAPISI
 router.post('/login', async (req, res) => {
     try {
         const { phone, password } = req.body;
@@ -56,11 +57,19 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Geçersiz şifre' });
         }
 
+        // 🔥 DOĞRU TOKEN PAYLOAD - Rol bilgisi eklendi
         const token = jwt.sign(
-            { id: user._id, role: user.role },
+            { 
+                id: user._id,
+                phone: user.phone,
+                role: user.role,  // 👈 Bu çok önemli!
+                name: user.name
+            },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
+
+        console.log('🚀 Login başarılı:', { phone: user.phone, role: user.role }); // Debug log
 
         res.json({
             token,
@@ -68,23 +77,22 @@ router.post('/login', async (req, res) => {
                 id: user._id,
                 phone: user.phone,
                 name: user.name,
-                role: user.role
+                role: user.role // 👈 Bu da önemli!
             }
         });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// 📌 Kullanıcı Bilgisi - Token ile
-router.get('/me', authMiddleware, async (req, res) => {
+// 📌 Kullanıcı Profili
+router.get('/me', authenticate, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('-password');
-        if (!user) {
-            return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
-        }
-        res.json(user);
+        console.log('👤 User from token:', req.user); // Debug log
+        res.json(req.user);
     } catch (error) {
+        console.error('Get me error:', error);
         res.status(500).json({ message: error.message });
     }
 });

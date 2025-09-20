@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'; // ✅ DOĞRU IMPORT
 
 export const AuthContext = createContext();
 
@@ -14,9 +14,12 @@ export const AuthProvider = ({ children }) => {
         if (token && userData) {
             try {
                 const decoded = jwtDecode(token);
+                
+                // Token süresi kontrolü
                 if (decoded.exp * 1000 > Date.now()) {
                     setUser(JSON.parse(userData));
                 } else {
+                    console.warn('Token expired, logging out');
                     handleLogout();
                 }
             } catch (err) {
@@ -39,8 +42,19 @@ export const AuthProvider = ({ children }) => {
         window.location.href = '/';
     };
 
+    const updateUser = (updatedUserData) => {
+        setUser(updatedUserData);
+        localStorage.setItem('user', JSON.stringify(updatedUserData));
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, handleLogin, handleLogout }}>
+        <AuthContext.Provider value={{ 
+            user, 
+            loading, 
+            handleLogin, 
+            handleLogout,
+            updateUser
+        }}>
             {children}
         </AuthContext.Provider>
     );
