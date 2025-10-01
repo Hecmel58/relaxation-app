@@ -18,11 +18,15 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">F</span>
-              </div>
-              <span className="text-xl font-bold text-slate-900">Fidbal</span>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/logo.png" 
+                alt="FidBal Logo" 
+                className="w-10 h-10 object-contain"
+              />
+              <span className="text-lg font-bold text-slate-900">
+                FidBal Uyku ve Stres Yönetimi
+              </span>
             </div>
           </div>
 
@@ -43,6 +47,9 @@ const Navbar = () => {
                 </div>
                 {user?.abGroup === 'experiment' && (
                   <span className="px-2 py-1 bg-warning-100 text-warning-800 rounded text-xs font-medium">BETA</span>
+                )}
+                {user?.isAdmin && (
+                  <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">ADMIN</span>
                 )}
               </button>
 
