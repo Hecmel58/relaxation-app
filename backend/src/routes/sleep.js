@@ -40,7 +40,25 @@ async function getSleepSessions(request, env) {
   const offset = parseInt(url.searchParams.get('offset') || '0');
 
   const sessions = await env.DB.prepare(`
-    SELECT * FROM sleep_sessions 
+    SELECT 
+      id,
+      user_id,
+      date,
+      bedtime,
+      sleep_time,
+      wake_time,
+      total_sleep_minutes,
+      rem_duration,
+      deep_sleep_duration,
+      light_sleep_duration,
+      awake_duration,
+      sleep_quality,
+      sleep_efficiency,
+      notes,
+      mood_before_sleep,
+      mood_after_sleep,
+      created_at
+    FROM sleep_sessions 
     WHERE user_id = ? 
     ORDER BY date DESC 
     LIMIT ? OFFSET ?
@@ -62,10 +80,22 @@ async function createSleepSession(request, env) {
     const sessionData = await request.json();
     const sessionId = crypto.randomUUID();
     
-    // Uyku süresini hesapla
-    const sleepTime = new Date(sessionData.sleep_time);
-    const wakeTime = new Date(sessionData.wake_time);
-    const totalSleepMinutes = Math.round((wakeTime - sleepTime) / (1000 * 60));
+    // Uyku süresi hesaplama - önce frontend'den gelen değeri kullan
+    let totalSleepMinutes = sessionData.total_sleep_minutes || 0;
+    
+    // Eğer gönderilmediyse sleep_time ve wake_time'dan hesapla
+    if (!totalSleepMinutes && sessionData.sleep_time && sessionData.wake_time) {
+      const sleepTime = new Date(sessionData.sleep_time);
+      const wakeTime = new Date(sessionData.wake_time);
+      totalSleepMinutes = Math.round((wakeTime - sleepTime) / (1000 * 60));
+    }
+    
+    // Eğer hala yoksa REM + Derin + Hafif uyku toplamını kullan
+    if (!totalSleepMinutes) {
+      totalSleepMinutes = (sessionData.rem_duration || 0) + 
+                         (sessionData.deep_sleep_duration || 0) + 
+                         (sessionData.light_sleep_duration || 0);
+    }
     
     // Uyku verimliliğini hesapla
     const sleepEfficiency = calculateSleepEfficiency(sessionData, totalSleepMinutes);
@@ -81,7 +111,7 @@ async function createSleepSession(request, env) {
       sessionData.sleep_time, sessionData.wake_time, totalSleepMinutes,
       sessionData.rem_duration || 0, sessionData.deep_sleep_duration || 0,
       sessionData.light_sleep_duration || 0, sessionData.awake_duration || 0,
-      sessionData.sleep_quality, sleepEfficiency, sessionData.notes,
+      sessionData.sleep_quality, sleepEfficiency, sessionData.notes || null,
       sessionData.mood_before_sleep, sessionData.mood_after_sleep
     ).run();
 
@@ -94,11 +124,13 @@ async function createSleepSession(request, env) {
     return new Response(JSON.stringify({
       success: true,
       sessionId,
+      totalSleepMinutes,
       message: 'Uyku kaydı başarıyla oluşturuldu'
     }), {
       headers: corsHeaders
     });
   } catch (error) {
+    console.error('Sleep session create error:', error);
     return new Response(JSON.stringify({ 
       error: 'Geçersiz veri',
       message: error.message
@@ -187,7 +219,7 @@ function calculateSleepEfficiency(sessionData, totalSleepMinutes) {
   
   if (timeInBed <= 0) return null;
   
-  return (totalSleepMinutes / timeInBed) * 100;
+  return Math.round((totalSleepMinutes / timeInBed) * 100);
 }
 
 function generateSleepInsights(analytics, trends) {

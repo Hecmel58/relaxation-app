@@ -16,6 +16,7 @@ function SleepPage() {
   const fetchSessions = async () => {
     try {
       const response = await api.get('/sleep/sessions');
+      console.log('Sleep sessions:', response.data.sessions);
       setSessions(response.data.sessions || []);
     } catch (err) {
       console.error('Kayıtlar yüklenemedi', err);
@@ -26,19 +27,34 @@ function SleepPage() {
 
   const handleFormSubmit = async (formData) => {
     try {
-      const totalSleep = formData.rem_duration + formData.deep_sleep_duration + formData.light_sleep_duration;
+      // Toplam uyku süresini hesapla (dakika cinsinden)
+      const totalSleep = (formData.rem_duration || 0) + 
+                        (formData.deep_sleep_duration || 0) + 
+                        (formData.light_sleep_duration || 0);
       
-      await api.post('/sleep/sessions', {
+      console.log('Submitting sleep data:', { ...formData, total_sleep_minutes: totalSleep });
+      
+      const response = await api.post('/sleep/sessions', {
         ...formData,
         total_sleep_minutes: totalSleep
       });
 
+      console.log('Sleep session created:', response.data);
+      
       setShowForm(false);
       fetchSessions();
       alert('Uyku kaydı başarıyla oluşturuldu!');
     } catch (err) {
+      console.error('Sleep form submit error:', err);
       alert(err.response?.data?.error || 'Kayıt eklenemedi');
     }
+  };
+
+  const formatSleepDuration = (minutes) => {
+    if (!minutes || minutes === 0) return '0sa 0dk';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}sa ${mins}dk`;
   };
 
   if (showForm) {
@@ -56,6 +72,21 @@ function SleepPage() {
       </div>
     );
   }
+
+  const totalSleepAvg = sessions.length > 0 
+    ? sessions.reduce((sum, s) => sum + (s.total_sleep_minutes || 0), 0) / sessions.length 
+    : 0;
+
+  const qualityAvg = sessions.length > 0 
+    ? (sessions.reduce((sum, s) => sum + (s.sleep_quality || 0), 0) / sessions.length).toFixed(1)
+    : 0;
+
+  const thisWeekCount = sessions.filter(s => {
+    const sessionDate = new Date(s.date);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return sessionDate >= weekAgo;
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -75,34 +106,19 @@ function SleepPage() {
         
         <Card className="text-center">
           <div className="text-sm text-slate-600">Ortalama Kalite</div>
-          <div className="text-3xl font-bold text-wellness-600">
-            {sessions.length > 0 
-              ? (sessions.reduce((sum, s) => sum + s.sleep_quality, 0) / sessions.length).toFixed(1)
-              : '0'
-            }/10
-          </div>
+          <div className="text-3xl font-bold text-wellness-600">{qualityAvg}/10</div>
         </Card>
 
         <Card className="text-center">
           <div className="text-sm text-slate-600">Ortalama Uyku</div>
           <div className="text-3xl font-bold text-primary-600">
-            {sessions.length > 0 
-              ? (sessions.reduce((sum, s) => sum + (s.total_sleep_minutes || 0), 0) / sessions.length / 60).toFixed(1)
-              : '0'
-            }sa
+            {formatSleepDuration(totalSleepAvg)}
           </div>
         </Card>
 
         <Card className="text-center">
           <div className="text-sm text-slate-600">Bu Hafta</div>
-          <div className="text-3xl font-bold text-slate-600">
-            {sessions.filter(s => {
-              const sessionDate = new Date(s.date);
-              const weekAgo = new Date();
-              weekAgo.setDate(weekAgo.getDate() - 7);
-              return sessionDate >= weekAgo;
-            }).length}
-          </div>
+          <div className="text-3xl font-bold text-slate-600">{thisWeekCount}</div>
         </Card>
       </div>
 
@@ -130,8 +146,8 @@ function SleepPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
                         <span className="text-slate-600">Uyku Süresi:</span>
-                        <span className="ml-1 font-medium">
-                          {Math.floor((session.total_sleep_minutes || 0) / 60)}sa {(session.total_sleep_minutes || 0) % 60}dk
+                        <span className="ml-1 font-medium text-primary-600">
+                          {formatSleepDuration(session.total_sleep_minutes)}
                         </span>
                       </div>
                       <div>
@@ -143,8 +159,8 @@ function SleepPage() {
                         <span className="ml-1 font-medium">{session.rem_duration || 0}dk</span>
                       </div>
                       <div>
-                        <span className="text-slate-600">Uyanma:</span>
-                        <span className="ml-1 font-medium">{session.night_awakenings || 0}x</span>
+                        <span className="text-slate-600">Hafif Uyku:</span>
+                        <span className="ml-1 font-medium">{session.light_sleep_duration || 0}dk</span>
                       </div>
                     </div>
                     {session.notes && (

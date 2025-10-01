@@ -27,29 +27,60 @@ export const useAuthStore = create(
 
       login: (userData, token) => {
         const decoded = parseJwt(token);
+        
+        // Kullanıcı adını öncelik sırasına göre belirle
+        const userName = userData?.name || decoded?.name || decoded?.phone || userData?.phone;
+        
         const user = {
           userId: decoded?.userId || userData?.userId,
           phone: decoded?.phone || userData?.phone,
-          name: userData?.name || decoded?.name || decoded?.phone,
+          name: userName, // İsim her zaman set edilecek
           isAdmin: Boolean(decoded?.isAdmin || userData?.isAdmin),
           abGroup: decoded?.abGroup || userData?.abGroup || 'control'
         };
         
-        console.log('Login - User data:', user); // Debug için
+        console.log('Login - User data:', user);
         
         localStorage.setItem('fidbal_token', token);
+        localStorage.setItem('fidbal_user_name', userName); // İsmi ayrı da sakla
         set({ user, token, isAuthenticated: true });
       },
 
       logout: () => {
         localStorage.removeItem('fidbal_token');
+        localStorage.removeItem('fidbal_user_name');
         set({ user: null, token: null, isAuthenticated: false });
       },
 
       updateUser: (userData) => {
-        set((state) => ({ 
-          user: { ...state.user, ...userData } 
-        }));
+        set((state) => {
+          const updatedUser = { ...state.user, ...userData };
+          // İsim güncellenirse localStorage'a da kaydet
+          if (userData.name) {
+            localStorage.setItem('fidbal_user_name', userData.name);
+          }
+          return { user: updatedUser };
+        });
+      },
+
+      // Sayfa yenilendiğinde kullanıcı bilgilerini geri yükle
+      restoreUser: () => {
+        const token = localStorage.getItem('fidbal_token');
+        const savedName = localStorage.getItem('fidbal_user_name');
+        
+        if (token && savedName) {
+          const decoded = parseJwt(token);
+          if (decoded) {
+            const user = {
+              userId: decoded.userId,
+              phone: decoded.phone,
+              name: savedName, // Kaydedilmiş ismi kullan
+              isAdmin: Boolean(decoded.isAdmin),
+              abGroup: decoded.abGroup || 'control'
+            };
+            set({ user, token, isAuthenticated: true });
+          }
+        }
       }
     }),
     {
