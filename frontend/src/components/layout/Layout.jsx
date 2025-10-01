@@ -25,15 +25,15 @@ function Layout() {
 
   // Deney grubu için ek sayfalar
   const experimentalItems = [
-    { path: '/relaxation', icon: '🧘', label: 'Rahatlama' },
+    { path: '/relaxation', icon: '🧘‍♀️', label: 'Rahatlama' },
     { path: '/binaural', icon: '🎵', label: 'Binaural Sesler' }
   ];
 
   // Menü öğelerini oluştur
   let menuItems = [...baseMenuItems];
 
-  // Deney grubundaysa ek sayfaları ekle (Uyku Takibi'nden sonra)
-  if (user?.abGroup === 'experimental') {
+  // Admin veya deney grubundaysa ek sayfaları ekle (Uyku Takibi'nden sonra)
+  if (user?.isAdmin || user?.abGroup === 'experiment') {
     menuItems.splice(2, 0, ...experimentalItems);
   }
 
@@ -49,10 +49,14 @@ function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/dashboard" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">F</span>
-              </div>
-              <span className="text-xl font-bold text-slate-900">Fidbal</span>
+              <img 
+                src="/logo.png" 
+                alt="FidBal Logo" 
+                className="w-10 h-10 object-contain"
+              />
+              <span className="text-lg font-bold text-slate-900">
+                FidBal Uyku ve Stres Yönetimi
+              </span>
             </Link>
 
             <div className="flex items-center space-x-4">
@@ -64,7 +68,7 @@ function Layout() {
                       ADMIN
                     </span>
                   )}
-                  {user?.abGroup === 'experimental' && (
+                  {user?.abGroup === 'experiment' && (
                     <span className="ml-2 px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded-full">
                       BETA
                     </span>
