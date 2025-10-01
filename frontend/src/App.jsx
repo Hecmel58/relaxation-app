@@ -19,9 +19,13 @@ import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 
 function App() {
-  const { isAuthenticated, login, logout } = useAuthStore();
+  const { isAuthenticated, login, logout, restoreUser } = useAuthStore();
 
   useEffect(() => {
+    // Önce localStorage'dan kullanıcı bilgilerini geri yükle
+    restoreUser();
+    
+    // Sonra token varsa doğrula
     const token = localStorage.getItem('fidbal_token');
     if (token) {
       verifyToken(token);
@@ -35,13 +39,24 @@ function App() {
       });
 
       if (response.data.success) {
-        login(response.data.user, token);
+        // API'den gelen user data ile login'i güncelle
+        // Ama mevcut localStorage'daki ismi koru
+        const savedName = localStorage.getItem('fidbal_user_name');
+        const userData = {
+          ...response.data.user,
+          name: savedName || response.data.user.name
+        };
+        login(userData, token);
       } else {
         logout();
       }
     } catch (error) {
       console.error('Token verification failed:', error);
-      logout();
+      // Token geçersiz ama localStorage'da bilgi varsa logout yapma
+      // Sadece yeni login gerektiğinde temizle
+      if (error.response?.status === 401) {
+        logout();
+      }
     }
   };
 
