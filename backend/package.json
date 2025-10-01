@@ -1,0 +1,15 @@
+{
+  "name": "fidbal-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "hono": "^3.11.7"
+  },
+  "devDependencies": {
+    "wrangler": "^3.22.1"
+  }
+}

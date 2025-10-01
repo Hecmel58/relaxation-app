@@ -1,0 +1,62 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  * {
+    @apply border-slate-200;
+  }
+  
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
+
+@layer components {
+  .input {
+    @apply w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all;
+  }
+
+  .input:disabled {
+    @apply bg-slate-100 cursor-not-allowed;
+  }
+
+  .textarea {
+    @apply w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-none;
+  }
+
+  .select {
+    @apply w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all bg-white cursor-pointer;
+  }
+
+  .checkbox {
+    @apply w-4 h-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500 focus:ring-2;
+  }
+
+  .radio {
+    @apply w-4 h-4 text-primary-600 border-slate-300 focus:ring-primary-500 focus:ring-2;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-slate-700 mb-2;
+  }
+
+  .error-text {
+    @apply text-sm text-red-600 mt-1;
+  }
+
+  .helper-text {
+    @apply text-sm text-slate-500 mt-1;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

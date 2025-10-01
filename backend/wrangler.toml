@@ -1,0 +1,20 @@
+name = "fidbal-api"
+main = "src/index.js"
+compatibility_date = "2023-12-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fidbal-db"
+database_id = "99be06be-8922-437f-9d9b-462b5c741ac5"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "fidbal-storage"
+preview_bucket_name = "fidbal-storage"
+
+[vars]
+DOMAIN = "fidbal.com"
+JWT_SECRET = "relaxation_app_super_secure_jwt_secret_key_2024_hecmel58_altingozlu"
+JWT_EXPIRES_IN = "7d"
+ADMIN_PHONE = "5394870058"
+ADMIN_PASSWORD = "HecMel58"
