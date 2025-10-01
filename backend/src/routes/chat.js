@@ -1,4 +1,4 @@
-// Chat Metadata Yönetimi (Firebase Firestore ile çalışır)
+// Chat Metadata Yönetimi
 import { requireAuth } from './auth.js';
 
 const corsHeaders = {
@@ -28,13 +28,16 @@ export async function handleChat(request, env) {
     return markMessagesAsRead(request, env);
   }
 
+  if (path === '/send-message' && request.method === 'POST') {
+    return sendMessage(request, env);
+  }
+
   return new Response('Endpoint bulunamadı', { 
     status: 404,
     headers: corsHeaders
   });
 }
 
-// Kullanıcının chat odaları (metadata)
 async function getUserChatRooms(request, env) {
   const user = await requireAuth(request, env);
   if (user instanceof Response) return user;
@@ -48,7 +51,6 @@ async function getUserChatRooms(request, env) {
   });
 }
 
-// Mevcut uzmanları listele
 async function getAvailableExperts(request, env) {
   const user = await requireAuth(request, env);
   if (user instanceof Response) return user;
@@ -67,30 +69,56 @@ async function getAvailableExperts(request, env) {
   });
 }
 
-// Okunmamış mesaj sayısını getir
 async function getUnreadMessageCount(request, env) {
   const user = await requireAuth(request, env);
   if (user instanceof Response) return user;
 
   try {
-    // Firestore'da okunmamış mesaj sayısı tutulacak
-    // Şimdilik mock data döndürüyoruz
-    // Gerçek implementasyon Firebase Admin SDK ile yapılacak
-    
-    // Basit bir D1 tablosu varsa buradan çekebiliriz
-    // Yoksa Firebase'den çekilecek
-    const unreadCount = 0; // Firebase'den gelecek
+    const result = await env.DB.prepare(`
+      SELECT COALESCE(SUM(message_count), 0) as total_unread
+      FROM unread_messages
+      WHERE user_id = ?
+    `).bind(user.userId).first();
 
     return new Response(JSON.stringify({
       success: true,
-      unreadCount
+      unreadCount: result?.total_unread || 0
+    }), {
+      headers: corsHeaders
+    });
+  } catch (error) {
+    console.error('Unread count error:', error);
+    return new Response(JSON.stringify({
+      success: true,
+      unreadCount: 0
+    }), {
+      headers: corsHeaders
+    });
+  }
+}
+
+async function markMessagesAsRead(request, env) {
+  const user = await requireAuth(request, env);
+  if (user instanceof Response) return user;
+
+  try {
+    const { senderId } = await request.json();
+    
+    await env.DB.prepare(`
+      UPDATE unread_messages 
+      SET message_count = 0
+      WHERE user_id = ? AND sender_id = ?
+    `).bind(user.userId, senderId).run();
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Mesajlar okundu olarak işaretlendi'
     }), {
       headers: corsHeaders
     });
   } catch (error) {
     return new Response(JSON.stringify({
       success: false,
-      unreadCount: 0,
       error: error.message
     }), {
       status: 500,
@@ -99,24 +127,35 @@ async function getUnreadMessageCount(request, env) {
   }
 }
 
-// Mesajları okundu olarak işaretle
-async function markMessagesAsRead(request, env) {
+async function sendMessage(request, env) {
   const user = await requireAuth(request, env);
   if (user instanceof Response) return user;
 
   try {
-    const { chatRoomId } = await request.json();
+    const { receiverId, message } = await request.json();
     
-    // Firebase Firestore'da mesajları okundu olarak işaretle
-    // Gerçek implementasyon Firebase Admin SDK ile yapılacak
-    
+    // Okunmamış mesaj sayacını artır
+    await env.DB.prepare(`
+      INSERT INTO unread_messages (id, user_id, sender_id, message_count, last_message_at)
+      VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+      ON CONFLICT(user_id, sender_id) 
+      DO UPDATE SET 
+        message_count = message_count + 1,
+        last_message_at = CURRENT_TIMESTAMP
+    `).bind(
+      crypto.randomUUID(),
+      receiverId,
+      user.userId
+    ).run();
+
     return new Response(JSON.stringify({
       success: true,
-      message: 'Mesajlar okundu olarak işaretlendi'
+      message: 'Mesaj gönderildi'
     }), {
       headers: corsHeaders
     });
   } catch (error) {
+    console.error('Send message error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message

@@ -10,7 +10,72 @@ function RelaxationPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('breathing');
   const [currentPlaying, setCurrentPlaying] = useState(null);
+  const [progress, setProgress] = useState(0);
   const audioRef = useRef(new Audio());
+
+  // Test sesleri - gerçek API yanıt vermezse bunlar kullanılacak
+  const testContent = {
+    breathing: [
+      { 
+        id: 'test-breath-1', 
+        title: '4-7-8 Nefes Tekniği',
+        description: 'Stres ve kaygıyı azaltan klasik nefes egzersizi',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        duration: 240,
+        type: 'audio',
+        view_count: 0
+      },
+      { 
+        id: 'test-breath-2', 
+        title: 'Derin Karın Nefesi',
+        description: 'Rahatlama için diyafram nefes egzersizi',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        duration: 300,
+        type: 'audio',
+        view_count: 0
+      }
+    ],
+    meditation: [
+      { 
+        id: 'test-med-1', 
+        title: 'Uyku Meditasyonu',
+        description: '10 dakikalık rehberli uyku meditasyonu',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        duration: 600,
+        type: 'audio',
+        view_count: 0
+      },
+      { 
+        id: 'test-med-2', 
+        title: 'Beden Taraması',
+        description: 'Kas gevşetme için beden taraması meditasyonu',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+        duration: 900,
+        type: 'audio',
+        view_count: 0
+      }
+    ],
+    nature_sound: [
+      { 
+        id: 'test-nature-1', 
+        title: 'Yağmur Sesi',
+        description: 'Sakinleştirici yağmur damlaları',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+        duration: 3600,
+        type: 'audio',
+        view_count: 0
+      },
+      { 
+        id: 'test-nature-2', 
+        title: 'Dalga Sesi',
+        description: 'Rahatlatıcı okyanus dalgaları',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+        duration: 3600,
+        type: 'audio',
+        view_count: 0
+      }
+    ]
+  };
 
   const categories = [
     { id: 'breathing', name: 'Nefes Egzersizleri', icon: '🌬️' },
@@ -23,10 +88,12 @@ function RelaxationPage() {
     
     const audio = audioRef.current;
     audio.addEventListener('ended', handleAudioEnded);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
     
     return () => {
       audio.pause();
       audio.removeEventListener('ended', handleAudioEnded);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
     };
   }, []);
 
@@ -38,16 +105,33 @@ function RelaxationPage() {
     setLoading(true);
     try {
       const response = await api.get(`/relaxation/content?category=${selectedCategory}`);
-      setContent(response.data.content || []);
+      const apiContent = response.data.content || [];
+      
+      // API'den içerik gelmezse test içeriğini kullan
+      if (apiContent.length === 0) {
+        setContent(testContent[selectedCategory] || []);
+      } else {
+        setContent(apiContent);
+      }
     } catch (error) {
-      console.error('İçerik yüklenemedi:', error);
+      console.error('İçerik yüklenemedi, test içeriği kullanılıyor:', error);
+      setContent(testContent[selectedCategory] || []);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (audio.duration) {
+      const currentProgress = (audio.currentTime / audio.duration) * 100;
+      setProgress(currentProgress);
+    }
+  };
+
   const handleAudioEnded = () => {
     setCurrentPlaying(null);
+    setProgress(0);
   };
 
   const handlePlay = (item) => {
@@ -56,11 +140,12 @@ function RelaxationPage() {
     if (currentPlaying === item.id) {
       audio.pause();
       setCurrentPlaying(null);
+      setProgress(0);
     } else {
       audio.src = item.url;
       audio.play().catch(err => {
         console.error('Oynatma hatası:', err);
-        alert('Ses dosyası oynatılamadı.');
+        alert('Ses dosyası oynatılamadı. Lütfen tarayıcı izinlerini kontrol edin.');
       });
       setCurrentPlaying(item.id);
       
@@ -80,7 +165,6 @@ function RelaxationPage() {
     }
   };
 
-  // Admin kullanıcılar veya experiment grubu erişebilir
   if (!user?.isAdmin && user?.abGroup !== 'experiment') {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
@@ -154,6 +238,17 @@ function RelaxationPage() {
                 {item.description}
               </p>
 
+              {currentPlaying === item.id && (
+                <div className="mb-3">
+                  <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div 
+                      className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
               <Button 
                 onClick={() => handlePlay(item)}
                 className="w-full"
@@ -183,6 +278,7 @@ function RelaxationPage() {
             <h4 className="font-semibold text-wellness-800 mb-2">İpucu</h4>
             <p className="text-wellness-700 text-sm">
               Her gün düzenli olarak rahatlama egzersizleri yapmak uyku kalitenizi artırabilir.
+              Kulaklık kullanmanız daha iyi bir deneyim sağlayacaktır.
             </p>
           </div>
         </div>

@@ -10,7 +10,90 @@ function BinauralPage() {
   const [loading, setLoading] = useState(true);
   const [currentPlaying, setCurrentPlaying] = useState(null);
   const [selectedType, setSelectedType] = useState('delta');
+  const [progress, setProgress] = useState(0);
   const audioRef = useRef(new Audio());
+
+  // Test sesleri
+  const testSounds = {
+    delta: [
+      {
+        id: 'test-delta-1',
+        name: 'Derin Uyku 1Hz',
+        description: 'Derin uyku için delta dalgası',
+        base_frequency: 100,
+        binaural_frequency: 1,
+        duration: 3600,
+        purpose: 'Derin uyku, fiziksel iyileşme',
+        brainwave_type: 'delta',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
+        play_count: 0
+      },
+      {
+        id: 'test-delta-2',
+        name: 'Tam Gevşeme 0.5Hz',
+        description: 'Uykuya geçiş için ultra düşük frekans',
+        base_frequency: 100,
+        binaural_frequency: 0.5,
+        duration: 3600,
+        purpose: 'Rahat uyku, stres azaltma',
+        brainwave_type: 'delta',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
+        play_count: 0
+      }
+    ],
+    theta: [
+      {
+        id: 'test-theta-1',
+        name: 'REM Uyku 6Hz',
+        description: 'REM uykusu için theta dalgası',
+        base_frequency: 200,
+        binaural_frequency: 6,
+        duration: 2400,
+        purpose: 'Derin rahatlama, meditasyon, REM uykusu',
+        brainwave_type: 'theta',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3',
+        play_count: 0
+      },
+      {
+        id: 'test-theta-2',
+        name: 'Meditasyon 7Hz',
+        description: 'Derin meditasyon için theta',
+        base_frequency: 200,
+        binaural_frequency: 7,
+        duration: 1800,
+        purpose: 'Meditasyon, yaratıcılık',
+        brainwave_type: 'theta',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3',
+        play_count: 0
+      }
+    ],
+    alpha: [
+      {
+        id: 'test-alpha-1',
+        name: 'Rahat Uyanıklık 10Hz',
+        description: 'Rahat ama uyanık durum için alpha',
+        base_frequency: 200,
+        binaural_frequency: 10,
+        duration: 1800,
+        purpose: 'Rahat uyanıklık, odaklanma',
+        brainwave_type: 'alpha',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3',
+        play_count: 0
+      },
+      {
+        id: 'test-alpha-2',
+        name: 'Odaklanma 12Hz',
+        description: 'Konsantrasyon için alpha dalgası',
+        base_frequency: 200,
+        binaural_frequency: 12,
+        duration: 1800,
+        purpose: 'Odaklanma, öğrenme',
+        brainwave_type: 'alpha',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3',
+        play_count: 0
+      }
+    ]
+  };
 
   const brainwaveTypes = [
     { id: 'delta', name: 'Delta Dalgalar', freq: '0.5-4 Hz', icon: '🌙', desc: 'Derin uyku' },
@@ -23,10 +106,12 @@ function BinauralPage() {
     
     const audio = audioRef.current;
     audio.addEventListener('ended', handleAudioEnded);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
     
     return () => {
       audio.pause();
       audio.removeEventListener('ended', handleAudioEnded);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
     };
   }, []);
 
@@ -38,16 +123,33 @@ function BinauralPage() {
     setLoading(true);
     try {
       const response = await api.get(`/binaural/sounds?category=${selectedType}`);
-      setSounds(response.data.sounds || []);
+      const apiSounds = response.data.sounds || [];
+      
+      // API'den ses gelmezse test seslerini kullan
+      if (apiSounds.length === 0) {
+        setSounds(testSounds[selectedType] || []);
+      } else {
+        setSounds(apiSounds);
+      }
     } catch (error) {
-      console.error('Sesler yüklenemedi:', error);
+      console.error('Sesler yüklenemedi, test sesleri kullanılıyor:', error);
+      setSounds(testSounds[selectedType] || []);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (audio.duration) {
+      const currentProgress = (audio.currentTime / audio.duration) * 100;
+      setProgress(currentProgress);
+    }
+  };
+
   const handleAudioEnded = () => {
     setCurrentPlaying(null);
+    setProgress(0);
   };
 
   const handlePlay = (sound) => {
@@ -56,17 +158,17 @@ function BinauralPage() {
     if (currentPlaying === sound.id) {
       audio.pause();
       setCurrentPlaying(null);
+      setProgress(0);
     } else {
       audio.src = sound.url;
       audio.play().catch(err => {
         console.error('Oynatma hatası:', err);
-        alert('Ses dosyası oynatılamadı.');
+        alert('Ses dosyası oynatılamadı. Lütfen kulaklık takın ve tarayıcı izinlerini kontrol edin.');
       });
       setCurrentPlaying(sound.id);
     }
   };
 
-  // Admin kullanıcılar veya experiment grubu erişebilir
   if (!user?.isAdmin && user?.abGroup !== 'experiment') {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
@@ -164,6 +266,17 @@ function BinauralPage() {
                   <div className="font-semibold">{sound.binaural_frequency} Hz</div>
                 </div>
               </div>
+
+              {currentPlaying === sound.id && (
+                <div className="mb-3">
+                  <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div 
+                      className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
 
               <Button 
                 onClick={() => handlePlay(sound)}
