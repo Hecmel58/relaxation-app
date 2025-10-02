@@ -1,10 +1,18 @@
 import React, { useEffect, useRef } from 'react';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { db } from '../../config/firebase';
+import api from '../../api/axios';
 
-function JitsiMeetModal({ onClose, userName, userId }) {
+function JitsiMeetModal({ onClose, userName, userId, roomId }) {
   const jitsiContainerRef = useRef(null);
   const jitsiApiRef = useRef(null);
 
   useEffect(() => {
+    // Video call bildirimi gönder (sadece yeni call oluşturuluyorsa)
+    if (!roomId && userId) {
+      notifyAdmins();
+    }
+
     // Jitsi Meet API script'ini yükle
     const script = document.createElement('script');
     script.src = 'https://meet.jit.si/external_api.js';
@@ -17,15 +25,38 @@ function JitsiMeetModal({ onClose, userName, userId }) {
       if (jitsiApiRef.current) {
         jitsiApiRef.current.dispose();
       }
-      document.body.removeChild(script);
+      if (script.parentNode) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
+
+  const notifyAdmins = async () => {
+    try {
+      // Firestore'a video call kaydı ekle
+      await addDoc(collection(db, 'videoCalls'), {
+        userId,
+        userName,
+        roomId: `FidBal-Support-${userId}`,
+        status: 'waiting',
+        createdAt: Timestamp.now()
+      });
+
+      // Backend'e bildirim gönder (tüm adminlere)
+      await api.post('/chat/send-message', {
+        receiverId: 'admin',
+        message: `🎥 ${userName} görüntülü görüşme talebi gönderiyor`
+      });
+    } catch (error) {
+      console.error('Video call notification error:', error);
+    }
+  };
 
   const initializeJitsi = () => {
     if (!jitsiContainerRef.current) return;
 
-    // Benzersiz oda ID'si oluştur (user ID kullanarak)
-    const roomName = `FidBal-Support-${userId}`;
+    // Oda ID'si - roomId varsa onu kullan, yoksa userId ile oluştur
+    const roomName = roomId || `FidBal-Support-${userId}`;
 
     const options = {
       roomName: roomName,
@@ -53,16 +84,10 @@ function JitsiMeetModal({ onClose, userName, userId }) {
           'fodeviceselection',
           'hangup',
           'chat',
-          'recording',
-          'livestreaming',
           'settings',
           'videoquality',
           'filmstrip',
-          'stats',
-          'shortcuts',
           'tileview',
-          'help',
-          'mute-everyone',
         ],
         DEFAULT_BACKGROUND: '#1e293b',
       },
@@ -91,7 +116,9 @@ function JitsiMeetModal({ onClose, userName, userId }) {
         <div className="flex items-center justify-between p-4 bg-slate-800 border-b border-slate-700">
           <div>
             <h3 className="text-lg font-semibold text-white">Görüntülü Görüşme</h3>
-            <p className="text-sm text-slate-400">Uzman bekleniyor...</p>
+            <p className="text-sm text-slate-400">
+              {roomId ? 'Görüşme devam ediyor...' : 'Uzman bekleniyor...'}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -108,7 +135,7 @@ function JitsiMeetModal({ onClose, userName, userId }) {
         {/* Footer Info */}
         <div className="p-3 bg-slate-800 border-t border-slate-700">
           <p className="text-xs text-slate-400 text-center">
-            Güvenli bağlantı sağlanmaktadır. Oda kodu: FidBal-Support-{userId}
+            Güvenli bağlantı sağlanmaktadır. Oda kodu: {roomId || `FidBal-Support-${userId}`}
           </p>
         </div>
       </div>
