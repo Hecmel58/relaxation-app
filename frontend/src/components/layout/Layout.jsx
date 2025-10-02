@@ -44,7 +44,18 @@ function Layout() {
     } catch (error) {
       console.error('Mark read error:', error);
     }
-    navigate('/support');
+    
+    // Admin ise admin panelindeki mesajlar sekmesine, değilse support sayfasına git
+    if (user?.isAdmin) {
+      navigate('/admin');
+      // Admin panelinde Mesajlar tab'ına geçmek için state gönder
+      setTimeout(() => {
+        const messagesTab = document.querySelector('[data-tab="messages"]');
+        if (messagesTab) messagesTab.click();
+      }, 100);
+    } else {
+      navigate('/support');
+    }
   };
 
   // Tüm kullanıcılar için temel menü
