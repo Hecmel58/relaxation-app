@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
 function AdminForms() {
+  const [openDropdown, setOpenDropdown] = useState(null);
+
   const formSheets = [
     {
       title: 'Haftalık Uyku Değerlendirmesi',
@@ -39,10 +41,16 @@ function AdminForms() {
       return;
     }
     window.open(url, '_blank');
+    setOpenDropdown(null);
   };
 
   const handleOpenForm = (url) => {
     window.open(url, '_blank');
+    setOpenDropdown(null);
+  };
+
+  const toggleDropdown = (index) => {
+    setOpenDropdown(openDropdown === index ? null : index);
   };
 
   const activeCount = formSheets.filter(f => f.status === 'active').length;
@@ -104,22 +112,44 @@ function AdminForms() {
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              
+              {/* Dropdown Menu */}
+              <div className="relative">
                 <Button
-                  onClick={() => handleOpenForm(form.formUrl)}
+                  onClick={() => toggleDropdown(index)}
                   variant="outline"
                   size="sm"
                 >
-                  Formu Aç
+                  İşlemler ▼
                 </Button>
-                <Button
-                  onClick={() => handleOpenSheet(form.sheetsUrl)}
-                  variant={form.sheetsUrl ? 'primary' : 'outline'}
-                  size="sm"
-                  disabled={!form.sheetsUrl}
-                >
-                  {form.sheetsUrl ? 'Sheets\'te Aç' : 'Yanıt Yok'}
-                </Button>
+                
+                {openDropdown === index && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setOpenDropdown(null)}
+                    />
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                      <button
+                        onClick={() => handleOpenForm(form.formUrl)}
+                        className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        📝 Formu Aç
+                      </button>
+                      <button
+                        onClick={() => handleOpenSheet(form.sheetsUrl)}
+                        className={`block w-full text-left px-4 py-2 text-sm ${
+                          form.sheetsUrl 
+                            ? 'text-slate-700 hover:bg-slate-50' 
+                            : 'text-slate-400 cursor-not-allowed'
+                        }`}
+                        disabled={!form.sheetsUrl}
+                      >
+                        📊 Sheet'i Aç
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </Card>
@@ -134,7 +164,7 @@ function AdminForms() {
             <ul className="text-primary-700 text-sm space-y-1">
               <li>• Kullanıcılar "Formlar" sayfasından formu doldurur</li>
               <li>• Yanıtlar otomatik olarak Google Sheets'e kaydedilir</li>
-              <li>• "Sheets'te Aç" butonuyla tüm yanıtları görüntüleyebilirsiniz</li>
+              <li>• "Sheet'i Aç" ile tüm yanıtları görüntüleyebilirsiniz</li>
               <li>• Sheets'te filtreleme, sıralama ve analiz yapabilirsiniz</li>
             </ul>
           </div>

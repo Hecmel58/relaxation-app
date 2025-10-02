@@ -8,6 +8,7 @@ function FormsPage() {
   const { user } = useAuthStore();
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedForm, setSelectedForm] = useState(null);
 
   const availableForms = [
     {
@@ -52,14 +53,50 @@ function FormsPage() {
   };
 
   const handleFormClick = (form) => {
-    window.open(form.googleFormUrl, '_blank');
+    setSelectedForm(form);
   };
 
+  const handleCloseForm = () => {
+    setSelectedForm(null);
+  };
+
+  // İframe modunda
+  if (selectedForm) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">{selectedForm.title}</h2>
+            <p className="text-slate-600">{selectedForm.description}</p>
+          </div>
+          <Button onClick={handleCloseForm} variant="outline">
+            ← Geri Dön
+          </Button>
+        </div>
+
+        <Card className="p-0 overflow-hidden">
+          <iframe
+            src={selectedForm.googleFormUrl}
+            width="100%"
+            height="800"
+            frameBorder="0"
+            marginHeight="0"
+            marginWidth="0"
+            className="w-full"
+          >
+            Yükleniyor...
+          </iframe>
+        </Card>
+      </div>
+    );
+  }
+
+  // Form listesi
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Değerlendirme Formları</h1>
-        <p className="text-slate-600 mt-1">Periyodik değerlendirme formlarını doldurun</p>
+        <p className="text-slate-600 mt-1">Periyodik değerlendirme formlarınızı doldurun</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

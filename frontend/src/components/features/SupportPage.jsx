@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { collection, addDoc, onSnapshot, orderBy, query, where, Timestamp, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import api from '../../api/axios';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
@@ -37,6 +38,7 @@ function SupportPage() {
     if (!newMessage.trim() || !user?.userId) return;
 
     try {
+      // Firebase'e mesajı kaydet
       await addDoc(collection(db, 'messages'), {
         text: newMessage,
         userId: user.userId,
@@ -44,6 +46,18 @@ function SupportPage() {
         sender: 'user',
         timestamp: Timestamp.now()
       });
+      
+      // Backend'e bildirim gönder (tüm adminlere)
+      try {
+        await api.post('/chat/send-message', {
+          receiverId: 'admin',
+          message: newMessage
+        });
+      } catch (apiError) {
+        console.error('Bildirim gönderilemedi:', apiError);
+        // Mesaj Firebase'e kaydedildi, bildirim hatası sessizce yoksayılır
+      }
+      
       setNewMessage('');
     } catch (error) {
       console.error('Mesaj gönderilemedi:', error);
@@ -70,7 +84,7 @@ function SupportPage() {
           <p className="text-slate-600 mt-1">Uyku uzmanlarımızla iletişime geçin</p>
         </div>
         <Button onClick={() => alert('Video call yakında aktif olacak')}>
-          📹 Görüntülü Görüşme
+          🎥 Görüntülü Görüşme
         </Button>
       </div>
 

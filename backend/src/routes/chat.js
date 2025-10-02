@@ -134,19 +134,41 @@ async function sendMessage(request, env) {
   try {
     const { receiverId, message } = await request.json();
     
-    // Okunmamış mesaj sayacını artır
-    await env.DB.prepare(`
-      INSERT INTO unread_messages (id, user_id, sender_id, message_count, last_message_at)
-      VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
-      ON CONFLICT(user_id, sender_id) 
-      DO UPDATE SET 
-        message_count = message_count + 1,
-        last_message_at = CURRENT_TIMESTAMP
-    `).bind(
-      crypto.randomUUID(),
-      receiverId,
-      user.userId
-    ).run();
+    // Eğer receiverId 'admin' ise, tüm admin kullanıcılarına bildirim gönder
+    if (receiverId === 'admin') {
+      const admins = await env.DB.prepare(`
+        SELECT id FROM users WHERE is_admin = 1
+      `).all();
+      
+      for (const admin of admins.results) {
+        await env.DB.prepare(`
+          INSERT INTO unread_messages (id, user_id, sender_id, message_count, last_message_at)
+          VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+          ON CONFLICT(user_id, sender_id) 
+          DO UPDATE SET 
+            message_count = message_count + 1,
+            last_message_at = CURRENT_TIMESTAMP
+        `).bind(
+          crypto.randomUUID(),
+          admin.id,
+          user.userId
+        ).run();
+      }
+    } else {
+      // Normal kullanıcıya mesaj
+      await env.DB.prepare(`
+        INSERT INTO unread_messages (id, user_id, sender_id, message_count, last_message_at)
+        VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+        ON CONFLICT(user_id, sender_id) 
+        DO UPDATE SET 
+          message_count = message_count + 1,
+          last_message_at = CURRENT_TIMESTAMP
+      `).bind(
+        crypto.randomUUID(),
+        receiverId,
+        user.userId
+      ).run();
+    }
 
     return new Response(JSON.stringify({
       success: true,
