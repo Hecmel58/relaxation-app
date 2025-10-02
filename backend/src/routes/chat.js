@@ -28,6 +28,10 @@ export async function handleChat(request, env) {
     return markMessagesAsRead(request, env);
   }
 
+  if (path === '/mark-all-read' && request.method === 'POST') {
+    return markAllAsRead(request, env);
+  }
+
   if (path === '/send-message' && request.method === 'POST') {
     return sendMessage(request, env);
   }
@@ -113,6 +117,32 @@ async function markMessagesAsRead(request, env) {
     return new Response(JSON.stringify({
       success: true,
       message: 'Mesajlar okundu olarak işaretlendi'
+    }), {
+      headers: corsHeaders
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: corsHeaders
+    });
+  }
+}
+
+async function markAllAsRead(request, env) {
+  const user = await requireAuth(request, env);
+  if (user instanceof Response) return user;
+
+  try {
+    await env.DB.prepare(`
+      DELETE FROM unread_messages WHERE user_id = ?
+    `).bind(user.userId).run();
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Tüm mesajlar okundu olarak işaretlendi'
     }), {
       headers: corsHeaders
     });

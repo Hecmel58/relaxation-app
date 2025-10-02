@@ -14,8 +14,8 @@ function Layout() {
   useEffect(() => {
     if (user) {
       fetchUnreadMessages();
-      // Her 30 saniyede bir güncelle
-      const interval = setInterval(fetchUnreadMessages, 30000);
+      // Her 10 saniyede bir güncelle
+      const interval = setInterval(fetchUnreadMessages, 10000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -36,8 +36,14 @@ function Layout() {
     navigate('/login');
   };
 
-  const handleMessageClick = () => {
-    setUnreadCount(0);
+  const handleMessageClick = async () => {
+    // Mesajları okundu olarak işaretle
+    try {
+      await api.post('/chat/mark-all-read');
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Mark read error:', error);
+    }
     navigate('/support');
   };
 

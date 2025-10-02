@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, Timestamp, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import api from '../../api/axios';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
@@ -57,6 +58,7 @@ function AdminMessages() {
     if (!newMessage.trim() || !selectedUserId) return;
 
     try {
+      // Firebase'e mesajı kaydet
       await addDoc(collection(db, 'messages'), {
         text: newMessage,
         sender: 'expert',
@@ -64,6 +66,17 @@ function AdminMessages() {
         userName: 'Uzman',
         timestamp: Timestamp.now()
       });
+      
+      // Backend'e bildirim gönder (kullanıcıya)
+      try {
+        await api.post('/chat/send-message', {
+          receiverId: selectedUserId,
+          message: newMessage
+        });
+      } catch (apiError) {
+        console.error('Bildirim gönderilemedi:', apiError);
+      }
+      
       setNewMessage('');
     } catch (error) {
       console.error('Mesaj gönderilemedi:', error);
