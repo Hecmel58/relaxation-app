@@ -5,7 +5,7 @@ import { db } from '../../config/firebase';
 import api from '../../api/axios';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import VideoCallModal from './VideoCallModal';
+import JitsiMeetModal from './JitsiMeetModal';
 
 function SupportPage() {
   const { user } = useAuthStore();
@@ -40,7 +40,6 @@ function SupportPage() {
     if (!newMessage.trim() || !user?.userId) return;
 
     try {
-      // Firebase'e mesajı kaydet
       await addDoc(collection(db, 'messages'), {
         text: newMessage,
         userId: user.userId,
@@ -49,7 +48,6 @@ function SupportPage() {
         timestamp: Timestamp.now()
       });
       
-      // Backend'e bildirim gönder (tüm adminlere)
       try {
         await api.post('/chat/send-message', {
           receiverId: 'admin',
@@ -77,10 +75,6 @@ function SupportPage() {
     }
   };
 
-  const handleStartVideoCall = () => {
-    setShowVideoCall(true);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -88,7 +82,7 @@ function SupportPage() {
           <h1 className="text-3xl font-bold text-slate-900">Uzman Desteği</h1>
           <p className="text-slate-600 mt-1">Uyku uzmanlarımızla iletişime geçin</p>
         </div>
-        <Button onClick={handleStartVideoCall}>
+        <Button onClick={() => setShowVideoCall(true)}>
           🎥 Görüntülü Görüşme
         </Button>
       </div>
@@ -154,17 +148,17 @@ function SupportPage() {
             <h4 className="font-semibold text-wellness-800 mb-2">İpucu</h4>
             <p className="text-wellness-700 text-sm">
               Uzmanlarımız 09:00-18:00 saatleri arasında çevrimiçidir.
-              Görüntülü görüşme için kamera ve mikrofon izni vermeniz gerekir.
+              Görüntülü görüşme için güvenli Jitsi Meet platformunu kullanıyoruz.
             </p>
           </div>
         </div>
       </Card>
 
       {showVideoCall && (
-        <VideoCallModal
+        <JitsiMeetModal
           onClose={() => setShowVideoCall(false)}
+          userName={user?.name || 'Kullanıcı'}
           userId={user?.userId}
-          userName={user?.name}
         />
       )}
     </div>
