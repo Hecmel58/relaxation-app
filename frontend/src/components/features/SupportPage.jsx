@@ -5,11 +5,13 @@ import { db } from '../../config/firebase';
 import api from '../../api/axios';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
+import VideoCallModal from './VideoCallModal';
 
 function SupportPage() {
   const { user } = useAuthStore();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [showVideoCall, setShowVideoCall] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -55,7 +57,6 @@ function SupportPage() {
         });
       } catch (apiError) {
         console.error('Bildirim gönderilemedi:', apiError);
-        // Mesaj Firebase'e kaydedildi, bildirim hatası sessizce yoksayılır
       }
       
       setNewMessage('');
@@ -76,6 +77,10 @@ function SupportPage() {
     }
   };
 
+  const handleStartVideoCall = () => {
+    setShowVideoCall(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -83,7 +88,7 @@ function SupportPage() {
           <h1 className="text-3xl font-bold text-slate-900">Uzman Desteği</h1>
           <p className="text-slate-600 mt-1">Uyku uzmanlarımızla iletişime geçin</p>
         </div>
-        <Button onClick={() => alert('Video call yakında aktif olacak')}>
+        <Button onClick={handleStartVideoCall}>
           🎥 Görüntülü Görüşme
         </Button>
       </div>
@@ -149,10 +154,19 @@ function SupportPage() {
             <h4 className="font-semibold text-wellness-800 mb-2">İpucu</h4>
             <p className="text-wellness-700 text-sm">
               Uzmanlarımız 09:00-18:00 saatleri arasında çevrimiçidir.
+              Görüntülü görüşme için kamera ve mikrofon izni vermeniz gerekir.
             </p>
           </div>
         </div>
       </Card>
+
+      {showVideoCall && (
+        <VideoCallModal
+          onClose={() => setShowVideoCall(false)}
+          userId={user?.userId}
+          userName={user?.name}
+        />
+      )}
     </div>
   );
 }
