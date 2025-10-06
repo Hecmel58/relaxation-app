@@ -47,7 +47,14 @@ app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'FidBal Backend API v2.0',
-    docs: '/api/health'
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      sleep: '/api/sleep',
+      forms: '/api/forms',
+      admin: '/api/admin'
+    },
+    docs: 'https://github.com/hecmel58/fidbal-backend'
   });
 });
 
