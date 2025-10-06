@@ -6,7 +6,7 @@ const { sleepRecordValidation, validate } = require('../middleware/validation');
 
 router.use(authenticateToken);
 
-router.post('/record', sleepRecordValidation, validate, sleepController.createSession);
+router.post('/sessions', sleepRecordValidation, validate, sleepController.createSession);
 router.get('/sessions', sleepController.getSessions);
 router.get('/sessions/:id', sleepController.getSession);
 router.delete('/sessions/:id', sleepController.deleteSession);
