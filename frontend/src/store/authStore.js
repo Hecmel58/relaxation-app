@@ -19,7 +19,6 @@ export const useAuthStore = create((set, get) => {
     }
   } catch (error) {
     console.error('localStorage read error:', error);
-    // Hata durumunda temizle
     localStorage.removeItem('fidbal_user');
     localStorage.removeItem('fidbal_token');
   }
@@ -30,18 +29,18 @@ export const useAuthStore = create((set, get) => {
     isAuthenticated: Boolean(initialUser && initialToken),
 
     login: (userData, token) => {
+      // Backend'den gelen alan isimleri: userId, name, phone, email, isAdmin, abGroup
       const user = {
-        userId: userData.id,
+        userId: userData.userId,
         phone: userData.phone,
         name: userData.name,
         email: userData.email || null,
-        isAdmin: Boolean(userData.is_admin),
-        abGroup: userData.ab_group || 'control'
+        isAdmin: Boolean(userData.isAdmin), // Backend isAdmin gönderiyor
+        abGroup: userData.abGroup || 'control' // Backend abGroup gönderiyor
       };
       
       console.log('Login - User data:', user);
       
-      // Manuel localStorage kaydet
       localStorage.setItem('fidbal_user', JSON.stringify(user));
       localStorage.setItem('fidbal_token', token);
       

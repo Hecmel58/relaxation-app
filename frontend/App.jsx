@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import api from './api/axios';
@@ -19,14 +19,15 @@ import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 
 function App() {
-  const { isAuthenticated, login, logout } = useAuthStore();
+  const { isAuthenticated, token, user, setUser, logout } = useAuthStore();
+  const hasVerified = useRef(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('fidbal_token');
-    if (token) {
+    if (token && !user && !hasVerified.current) {
+      hasVerified.current = true;
       verifyToken(token);
     }
-  }, []);
+  }, [token, user]);
 
   const verifyToken = async (token) => {
     try {
@@ -34,14 +35,27 @@ function App() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.data.success) {
-        login(response.data.user, token);
+      if (response.data.success && response.data.user) {
+        // Backend /auth/verify endpoint'i is_admin ve ab_group gönderiyor
+        const userData = {
+          userId: response.data.user.id,
+          phone: response.data.user.phone,
+          name: response.data.user.name,
+          email: response.data.user.email || null,
+          isAdmin: Boolean(response.data.user.is_admin), // Dikkat: is_admin (snake_case)
+          abGroup: response.data.user.ab_group || 'control' // Dikkat: ab_group (snake_case)
+        };
+        
+        console.log('Verify - User data:', userData);
+        setUser(userData);
       } else {
         logout();
       }
     } catch (error) {
       console.error('Token verification failed:', error);
-      logout();
+      if (error.response?.status === 401 || error.response?.status === 404) {
+        logout();
+      }
     }
   };
 
@@ -49,11 +63,17 @@ function App() {
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" />} />
-        <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" />} />
+        <Route 
+          path="/login" 
+          element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
+        />
+        <Route 
+          path="/register" 
+          element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" replace />} 
+        />
 
         {/* Protected Routes */}
-        <Route element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
+        <Route element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/sleep" element={<SleepPage />} />
           <Route path="/relaxation" element={<RelaxationPage />} />
@@ -65,8 +85,8 @@ function App() {
         </Route>
 
         {/* Default Redirect */}
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
