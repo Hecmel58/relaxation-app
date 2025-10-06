@@ -19,18 +19,13 @@ import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 
 function App() {
-  const { isAuthenticated, login, logout, restoreUser } = useAuthStore();
+  const { isAuthenticated, token, setUser, logout } = useAuthStore();
 
   useEffect(() => {
-    // Önce localStorage'dan kullanıcı bilgilerini geri yükle
-    restoreUser();
-    
-    // Sonra token varsa doğrula
-    const token = localStorage.getItem('fidbal_token');
     if (token) {
       verifyToken(token);
     }
-  }, []);
+  }, [token]);
 
   const verifyToken = async (token) => {
     try {
@@ -38,23 +33,23 @@ function App() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.data.success) {
-        // API'den gelen user data ile login'i güncelle
-        // Ama mevcut localStorage'daki ismi koru
-        const savedName = localStorage.getItem('fidbal_user_name');
+      if (response.data.success && response.data.user) {
         const userData = {
-          ...response.data.user,
-          name: savedName || response.data.user.name
+          userId: response.data.user.id,
+          phone: response.data.user.phone,
+          name: response.data.user.name,
+          email: response.data.user.email || null,
+          isAdmin: Boolean(response.data.user.is_admin),
+          abGroup: response.data.user.ab_group || 'control'
         };
-        login(userData, token);
+        
+        setUser(userData);
       } else {
         logout();
       }
     } catch (error) {
       console.error('Token verification failed:', error);
-      // Token geçersiz ama localStorage'da bilgi varsa logout yapma
-      // Sadece yeni login gerektiğinde temizle
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 404) {
         logout();
       }
     }
