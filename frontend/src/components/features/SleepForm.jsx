@@ -12,6 +12,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
     deep_sleep_duration: 0,
     light_sleep_duration: 0,
     awake_duration: 0,
+    heart_rate: 0,
     night_awakenings: 0,
     snoring_level: 0,
     sleep_quality: 5,
@@ -50,7 +51,6 @@ const SleepForm = ({ onSubmit, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Section Navigation */}
       <Card>
         <div className="flex space-x-2 overflow-x-auto">
           {Object.entries(sections).map(([key, label]) => (
@@ -70,16 +70,13 @@ const SleepForm = ({ onSubmit, onCancel }) => {
         </div>
       </Card>
 
-      {/* Basic Information */}
       {activeSection === 'basic' && (
         <Card>
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Temel Bilgiler</h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Tarih
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tarih</label>
               <input
                 type="date"
                 className="input"
@@ -91,9 +88,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Yatma Saati
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Yatma Saati</label>
                 <input
                   type="time"
                   className="input"
@@ -102,11 +97,8 @@ const SleepForm = ({ onSubmit, onCancel }) => {
                   required
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Uykuya Dalma Saati
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Uykuya Dalma Saati</label>
                 <input
                   type="time"
                   className="input"
@@ -115,11 +107,8 @@ const SleepForm = ({ onSubmit, onCancel }) => {
                   required
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Uyanma Saati
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Uyanma Saati</label>
                 <input
                   type="time"
                   className="input"
@@ -149,9 +138,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Gece Uyanma Sayısı
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Gece Uyanma Sayısı</label>
               <input
                 type="number"
                 min="0"
@@ -183,19 +170,14 @@ const SleepForm = ({ onSubmit, onCancel }) => {
         </Card>
       )}
 
-      {/* Sleep Stages */}
       {activeSection === 'sleep' && (
         <Card>
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Uyku Aşamaları (Dakika)</h3>
-          <p className="text-sm text-slate-600 mb-4">
-            Xiaomi Band veya manuel tahmininize göre doldurun
-          </p>
+          <p className="text-sm text-slate-600 mb-4">Xiaomi Band veya manuel tahmininize göre doldurun</p>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                REM Uykusu (Dakika)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">REM Uykusu (Dakika)</label>
               <input
                 type="number"
                 min="0"
@@ -208,9 +190,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Derin Uyku (Dakika)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Derin Uyku (Dakika)</label>
               <input
                 type="number"
                 min="0"
@@ -223,9 +203,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Hafif Uyku (Dakika)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Hafif Uyku (Dakika)</label>
               <input
                 type="number"
                 min="0"
@@ -238,9 +216,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Uyanık Kalma Süresi (Dakika)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Uyanık Kalma Süresi (Dakika)</label>
               <input
                 type="number"
                 min="0"
@@ -250,6 +226,19 @@ const SleepForm = ({ onSubmit, onCancel }) => {
                 onChange={(e) => updateField('awake_duration', parseInt(e.target.value))}
               />
               <p className="text-xs text-slate-500 mt-1">Gece boyunca uyanık geçen toplam süre</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Kalp Atım Hızı (bpm)</label>
+              <input
+                type="number"
+                min="40"
+                max="120"
+                className="input"
+                value={formData.heart_rate}
+                onChange={(e) => updateField('heart_rate', parseInt(e.target.value))}
+              />
+              <p className="text-xs text-slate-500 mt-1">Uyku sırasında ortalama kalp atım hızı</p>
             </div>
 
             <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mt-4">
@@ -265,7 +254,6 @@ const SleepForm = ({ onSubmit, onCancel }) => {
         </Card>
       )}
 
-      {/* Affecting Factors */}
       {activeSection === 'factors' && (
         <Card>
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Etkileyen Faktörler</h3>
@@ -304,9 +292,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Oda Sıcaklığı (°C)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Oda Sıcaklığı (°C)</label>
               <input
                 type="number"
                 min="10"
@@ -318,9 +304,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Son Yemek Saati
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Son Yemek Saati</label>
               <input
                 type="time"
                 className="input"
@@ -339,7 +323,6 @@ const SleepForm = ({ onSubmit, onCancel }) => {
                 />
                 <span className="text-sm text-slate-700">Kafein tükettim (öğleden sonra)</span>
               </label>
-
               <label className="flex items-center space-x-3">
                 <input
                   type="checkbox"
@@ -349,7 +332,6 @@ const SleepForm = ({ onSubmit, onCancel }) => {
                 />
                 <span className="text-sm text-slate-700">Alkol tükettim</span>
               </label>
-
               <label className="flex items-center space-x-3">
                 <input
                   type="checkbox"
@@ -359,7 +341,6 @@ const SleepForm = ({ onSubmit, onCancel }) => {
                 />
                 <span className="text-sm text-slate-700">Egzersiz yaptım</span>
               </label>
-
               <label className="flex items-center space-x-3">
                 <input
                   type="checkbox"
@@ -369,7 +350,6 @@ const SleepForm = ({ onSubmit, onCancel }) => {
                 />
                 <span className="text-sm text-slate-700">İlaç kullandım</span>
               </label>
-
               <label className="flex items-center space-x-3">
                 <input
                   type="checkbox"
@@ -379,7 +359,6 @@ const SleepForm = ({ onSubmit, onCancel }) => {
                 />
                 <span className="text-sm text-slate-700">Meditasyon/nefes egzersizi yaptım</span>
               </label>
-
               <label className="flex items-center space-x-3">
                 <input
                   type="checkbox"
@@ -394,7 +373,6 @@ const SleepForm = ({ onSubmit, onCancel }) => {
         </Card>
       )}
 
-      {/* Mood & Notes */}
       {activeSection === 'mood' && (
         <Card>
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Ruh Hali ve Notlar</h3>
@@ -437,9 +415,7 @@ const SleepForm = ({ onSubmit, onCancel }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Notlar ve Gözlemler
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Notlar ve Gözlemler</label>
               <textarea
                 className="input"
                 rows="4"
@@ -452,15 +428,10 @@ const SleepForm = ({ onSubmit, onCancel }) => {
         </Card>
       )}
 
-      {/* Form Actions */}
       <Card>
         <div className="flex justify-between items-center">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            İptal
-          </Button>
-          <Button type="submit">
-            Kaydet
-          </Button>
+          <Button type="button" variant="outline" onClick={onCancel}>İptal</Button>
+          <Button type="submit">Kaydet</Button>
         </div>
       </Card>
     </form>

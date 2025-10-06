@@ -1,12 +1,12 @@
 import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
-  baseURL: 'https://api.fidbal.com/api',
+  baseURL: 'https://fidbal-backend.vercel.app/api',
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: false
+  withCredentials: false,
+  timeout: 15000
 });
 
 api.interceptors.request.use(
@@ -26,8 +26,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      const { logout } = useAuthStore.getState();
-      logout();
+      localStorage.removeItem('fidbal_token');
+      localStorage.removeItem('fidbal_user');
       window.location.href = '/login';
     }
     return Promise.reject(error);

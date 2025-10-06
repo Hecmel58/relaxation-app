@@ -6,50 +6,44 @@ import Button from '../ui/Button';
 
 function FormsPage() {
   const { user } = useAuthStore();
-  const [forms, setForms] = useState([]);
+  const [availableForms, setAvailableForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedForm, setSelectedForm] = useState(null);
 
-  const availableForms = [
-    {
-      id: 'weekly_sleep',
-      title: 'Haftalık Uyku Değerlendirmesi',
-      description: 'Son 7 günlük uyku kalitenizi değerlendirin',
-      googleFormUrl: 'https://forms.gle/5gTwRgjEqK3AFFWT8',
-      icon: '📊',
-      status: 'active'
-    },
-    {
-      id: 'stress_level',
-      title: 'Stres Seviyesi Anketi',
-      description: 'Günlük stres seviyenizi ölçün',
-      googleFormUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/viewform',
-      icon: '📈',
-      status: 'active'
-    },
-    {
-      id: 'life_quality',
-      title: 'Yaşam Kalitesi Formu',
-      description: 'Genel yaşam kalitenizi değerlendirin',
-      googleFormUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/viewform',
-      icon: '❤️',
-      status: 'completed'
-    }
-  ];
-
   useEffect(() => {
-    loadUserForms();
+    loadForms();
   }, []);
 
-  const loadUserForms = async () => {
+  const loadForms = async () => {
     try {
-      const response = await api.get('/forms/list');
-      setForms(response.data.forms || []);
+      const response = await api.get('/forms/types');
+      if (response.data.success) {
+        // Backend'den gelen formları frontend formatına çevir
+        const formattedForms = response.data.forms.map(form => ({
+          id: form.id,
+          title: form.title,
+          description: form.description,
+          googleFormUrl: form.url,
+          icon: getFormIcon(form.id),
+          status: 'active'
+        }));
+        setAvailableForms(formattedForms);
+      }
     } catch (error) {
       console.error('Formlar yüklenemedi:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFormIcon = (formId) => {
+    const icons = {
+      'personal': '📋',
+      'stress': '📊',
+      'nursing': '🏥',
+      'psqi': '😴'
+    };
+    return icons[formId] || '📄';
   };
 
   const handleFormClick = (form) => {
@@ -59,6 +53,14 @@ function FormsPage() {
   const handleCloseForm = () => {
     setSelectedForm(null);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-slate-600">Formlar yükleniyor...</div>
+      </div>
+    );
+  }
 
   // İframe modunda
   if (selectedForm) {
@@ -99,7 +101,7 @@ function FormsPage() {
         <p className="text-slate-600 mt-1">Periyodik değerlendirme formlarınızı doldurun</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {availableForms.map((form) => (
           <Card key={form.id} className="hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
@@ -107,11 +109,6 @@ function FormsPage() {
               {form.status === 'active' && (
                 <span className="px-3 py-1 bg-primary-100 text-primary-800 text-xs font-medium rounded-full">
                   Aktif
-                </span>
-              )}
-              {form.status === 'completed' && (
-                <span className="px-3 py-1 bg-wellness-100 text-wellness-800 text-xs font-medium rounded-full">
-                  Tamamlandı
                 </span>
               )}
             </div>
@@ -126,9 +123,9 @@ function FormsPage() {
             <Button 
               className="w-full" 
               onClick={() => handleFormClick(form)}
-              variant={form.status === 'completed' ? 'outline' : 'primary'}
+              variant="primary"
             >
-              {form.status === 'completed' ? 'Tekrar Doldur' : 'Formu Doldur'}
+              Formu Doldur
             </Button>
           </Card>
         ))}

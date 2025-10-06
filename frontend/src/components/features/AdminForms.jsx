@@ -1,39 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axios';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
 function AdminForms() {
+  const [formSheets, setFormSheets] = useState([]);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const formSheets = [
-    {
-      title: 'Haftalık Uyku Değerlendirmesi',
-      formUrl: 'https://forms.gle/5gTwRgjEqK3AFFWT8',
-      sheetsUrl: 'https://docs.google.com/spreadsheets/d/1OxTZzq40LDSLiL9leJex_BPWRnYaS-ooX3UQ4MF0zoo/edit',
-      responseCount: '1 yanıt',
-      lastResponse: '30.09.2025',
-      icon: '📊',
-      status: 'active'
-    },
-    {
-      title: 'Stres Seviyesi Anketi',
-      formUrl: 'https://forms.gle/FORM_2',
-      sheetsUrl: null,
-      responseCount: 'Henüz yanıt yok',
-      lastResponse: '-',
-      icon: '📈',
-      status: 'pending'
-    },
-    {
-      title: 'Yaşam Kalitesi Formu',
-      formUrl: 'https://forms.gle/FORM_3',
-      sheetsUrl: null,
-      responseCount: 'Henüz yanıt yok',
-      lastResponse: '-',
-      icon: '❤️',
-      status: 'pending'
+  useEffect(() => {
+    loadForms();
+  }, []);
+
+  const loadForms = async () => {
+    try {
+      const response = await api.get('/forms/types');
+      if (response.data.success) {
+        const forms = response.data.forms.map(form => ({
+          title: form.title,
+          formUrl: form.url,
+          sheetsUrl: null, // Google Sheets URL'leri manuel eklenebilir
+          responseCount: 'Henüz yanıt yok',
+          lastResponse: '-',
+          icon: getFormIcon(form.id),
+          status: 'active'
+        }));
+        setFormSheets(forms);
+      }
+    } catch (error) {
+      console.error('Formlar yüklenemedi:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const getFormIcon = (formId) => {
+    const icons = {
+      'personal': '📋',
+      'stress': '📊',
+      'nursing': '🏥',
+      'psqi': '😴'
+    };
+    return icons[formId] || '📄';
+  };
 
   const handleOpenSheet = (url) => {
     if (!url) {
@@ -52,6 +61,14 @@ function AdminForms() {
   const toggleDropdown = (index) => {
     setOpenDropdown(openDropdown === index ? null : index);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-slate-600">Formlar yükleniyor...</div>
+      </div>
+    );
+  }
 
   const activeCount = formSheets.filter(f => f.status === 'active').length;
   const totalResponses = formSheets.reduce((sum, f) => {
@@ -113,7 +130,6 @@ function AdminForms() {
                 </div>
               </div>
               
-              {/* Dropdown Menu */}
               <div className="relative">
                 <Button
                   onClick={() => toggleDropdown(index)}

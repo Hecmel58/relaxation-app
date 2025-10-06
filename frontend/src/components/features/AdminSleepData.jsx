@@ -123,7 +123,7 @@ function AdminSleepData() {
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
                       <div>
                         <div className="text-slate-500 text-xs">Tarih</div>
                         <div className="font-medium">
@@ -143,9 +143,13 @@ function AdminSleepData() {
                         <div className="font-medium">{session.rem_duration || 0}dk</div>
                       </div>
                       <div>
+                        <div className="text-slate-500 text-xs">Kalp</div>
+                        <div className="font-medium">{session.heart_rate || 0} bpm</div>
+                      </div>
+                      <div>
                         <div className="text-slate-500 text-xs">Verimlilik</div>
                         <div className="font-medium">
-                          {session.sleep_efficiency ? `${session.sleep_efficiency.toFixed(0)}%` : '-'}
+                          {session.sleep_efficiency ? `${session.sleep_efficiency}%` : '-'}
                         </div>
                       </div>
                     </div>
@@ -178,7 +182,6 @@ function SleepDetailView({ session, onClose }) {
   const hours = Math.floor(session.sleep_duration / 60);
   const minutes = session.sleep_duration % 60;
 
-  // Haftalık, 15 günlük ve aylık analiz
   const analyzeHistory = (history) => {
     const now = new Date();
     const week = history.filter(s => new Date(s.sleep_date) >= new Date(now - 7 * 24 * 60 * 60 * 1000));
@@ -260,7 +263,7 @@ function SleepDetailView({ session, onClose }) {
               <div className="bg-warning-50 p-3 rounded">
                 <div className="text-slate-500 text-xs">Verimlilik</div>
                 <div className="font-semibold text-warning-700">
-                  {session.sleep_efficiency ? `${session.sleep_efficiency.toFixed(0)}%` : '-'}
+                  {session.sleep_efficiency ? `${session.sleep_efficiency}%` : '-'}
                 </div>
               </div>
             </div>
@@ -284,6 +287,62 @@ function SleepDetailView({ session, onClose }) {
               <div className="bg-slate-50 p-3 rounded">
                 <div className="text-slate-500 text-xs">Uyanıklık</div>
                 <div className="font-semibold">{session.awake_duration || 0}dk</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <h3 className="font-semibold text-lg mb-2">Sağlık ve Yaşam Tarzı</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-red-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Kalp Atım Hızı</div>
+                <div className="font-semibold text-red-700">{session.heart_rate || 0} bpm</div>
+              </div>
+              <div className="bg-orange-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Stres Seviyesi</div>
+                <div className="font-semibold text-orange-700">{session.stress_level || 0}/10</div>
+              </div>
+              <div className="bg-blue-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Ekran Süresi</div>
+                <div className="font-semibold text-blue-700">{session.screen_time_before || 0}dk</div>
+              </div>
+              <div className="bg-purple-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Oda Sıcaklığı</div>
+                <div className="font-semibold text-purple-700">{session.room_temperature || 20}°C</div>
+              </div>
+            </div>
+            {session.last_meal_time && (
+              <div className="mt-3 p-2 bg-slate-50 rounded text-sm">
+                <span className="font-medium">Son Yemek:</span> {session.last_meal_time}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t pt-4">
+            <h3 className="font-semibold text-lg mb-2">Uyku Öncesi Alışkanlıklar</h3>
+            <div className="flex flex-wrap gap-2">
+              {session.caffeine_intake ? <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">☕ Kafein</span> : null}
+              {session.alcohol_intake ? <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">🍷 Alkol</span> : null}
+              {session.exercise ? <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">🏃 Egzersiz</span> : null}
+              {session.medication ? <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">💊 İlaç</span> : null}
+              {session.meditation ? <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">🧘 Meditasyon</span> : null}
+              {session.reading ? <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">📚 Kitap</span> : null}
+              {!session.caffeine_intake && !session.alcohol_intake && !session.exercise && !session.medication && !session.meditation && !session.reading && (
+                <span className="text-slate-500 text-sm">Kayıtlı alışkanlık yok</span>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <h3 className="font-semibold text-lg mb-2">Ruh Hali</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-blue-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Uyku Öncesi</div>
+                <div className="font-semibold text-blue-700">{session.mood_before || 0}/5</div>
+              </div>
+              <div className="bg-green-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Uyanış Sonrası</div>
+                <div className="font-semibold text-green-700">{session.mood_after || 0}/5</div>
               </div>
             </div>
           </div>
