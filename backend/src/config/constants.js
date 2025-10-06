@@ -8,6 +8,7 @@ module.exports = {
     WINDOW_MS: 15 * 60 * 1000,
     MAX_REQUESTS: 100,
     AUTH_MAX: 5,
+    SKIP_SUCCESS: true // YENİ: Başarılı istekleri sayma
   },
   
   FORM_TYPES: {

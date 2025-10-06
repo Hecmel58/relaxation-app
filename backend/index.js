@@ -29,6 +29,7 @@ const generalLimiter = rateLimit({
   message: { success: false, error: 'Çok fazla istek gönderdiniz. Lütfen biraz bekleyin.' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path.includes('/health') // Health check sayılmasın
 });
 
 const authLimiter = rateLimit({
@@ -37,6 +38,8 @@ const authLimiter = rateLimit({
   message: { success: false, error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.body.phone || req.ip, // Telefon bazlı
+  skipSuccessfulRequests: true // BAŞARILI GİRİŞLER SAYILMAZ - ÖNEMLİ
 });
 
 app.use('/api', generalLimiter);
@@ -53,13 +56,11 @@ app.get('/', (req, res) => {
       sleep: '/api/sleep',
       forms: '/api/forms',
       admin: '/api/admin'
-    },
-    docs: 'https://github.com/hecmel58/fidbal-backend'
+    }
   });
 });
 
 app.use('/api', routes);
-
 app.use(errorHandler);
 
 app.use((req, res) => {
@@ -72,13 +73,7 @@ app.use((req, res) => {
 
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`
-╔═══════════════════════════════════════╗
-║   FidBal Backend API v2.0             ║
-║   Server running on port ${PORT}        ║
-║   Environment: ${process.env.NODE_ENV || 'development'}           ║
-╚═══════════════════════════════════════╝
-    `);
+    console.log(`FidBal Backend API v2.0 running on port ${PORT}`);
   });
 }
 
