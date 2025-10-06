@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import api from './api/axios';
@@ -19,15 +19,18 @@ import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 
 function App() {
-  const { isAuthenticated, token, setUser, logout } = useAuthStore();
+  const { isAuthenticated, token, user, setUser, logout } = useAuthStore();
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
-    if (token) {
+    // Sadece token varsa VE user yoksa verify et
+    if (token && !user && !isVerifying) {
       verifyToken(token);
     }
-  }, [token]);
+  }, []); // Boş dependency array - sadece mount'ta çalışır
 
   const verifyToken = async (token) => {
+    setIsVerifying(true);
     try {
       const response = await api.get('/auth/verify', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -52,6 +55,9 @@ function App() {
       if (error.response?.status === 401 || error.response?.status === 404) {
         logout();
       }
+      // 429 hatası durumunda logout yapma, user data zaten Zustand'da var
+    } finally {
+      setIsVerifying(false);
     }
   };
 
