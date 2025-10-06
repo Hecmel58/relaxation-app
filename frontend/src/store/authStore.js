@@ -1,12 +1,28 @@
 import { create } from 'zustand';
 
 export const useAuthStore = create((set, get) => {
-  // İlk yüklemede localStorage'dan oku
-  const storedUser = localStorage.getItem('fidbal_user');
-  const storedToken = localStorage.getItem('fidbal_token');
-  
-  const initialUser = storedUser ? JSON.parse(storedUser) : null;
-  const initialToken = storedToken || null;
+  // İlk yüklemede localStorage'dan oku - HATA YÖNETİMİ İLE
+  let initialUser = null;
+  let initialToken = null;
+
+  try {
+    const storedUser = localStorage.getItem('fidbal_user');
+    const storedToken = localStorage.getItem('fidbal_token');
+    
+    if (storedUser) {
+      initialUser = JSON.parse(storedUser);
+      console.log('Stored user loaded:', initialUser);
+    }
+    if (storedToken) {
+      initialToken = storedToken;
+      console.log('Stored token loaded');
+    }
+  } catch (error) {
+    console.error('localStorage read error:', error);
+    // Hata durumunda temizle
+    localStorage.removeItem('fidbal_user');
+    localStorage.removeItem('fidbal_token');
+  }
 
   return {
     user: initialUser,
@@ -47,8 +63,10 @@ export const useAuthStore = create((set, get) => {
     },
 
     setUser: (user) => {
-      localStorage.setItem('fidbal_user', JSON.stringify(user));
-      set({ user });
+      if (user) {
+        localStorage.setItem('fidbal_user', JSON.stringify(user));
+        set({ user, isAuthenticated: true });
+      }
     }
   };
 });
