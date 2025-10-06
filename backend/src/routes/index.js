@@ -11,20 +11,21 @@ router.use('/sleep', sleepRoutes);
 router.use('/forms', formRoutes);
 router.use('/admin', adminRoutes);
 
+// Chat endpoints - geçici placeholder
+router.get('/chat/unread-count', (req, res) => {
+  res.json({ success: true, unreadCount: 0 });
+});
+
+router.post('/chat/send-message', (req, res) => {
+  res.json({ success: true, message: 'Mesaj gönderildi' });
+});
+
 router.post('/relaxation/track-usage', (req, res) => {
-  res.json({ success: true, message: 'Relaxation usage tracked' });
+  res.json({ success: true, message: 'Usage tracked' });
 });
 
 router.post('/binaural/track-usage', (req, res) => {
-  res.json({ success: true, message: 'Binaural usage tracked' });
-});
-
-router.get('/relaxation/content', (req, res) => {
-  res.json({ success: true, content: [] });
-});
-
-router.get('/binaural/sounds', (req, res) => {
-  res.json({ success: true, sounds: [] });
+  res.json({ success: true, message: 'Usage tracked' });
 });
 
 router.get('/health', (req, res) => {
