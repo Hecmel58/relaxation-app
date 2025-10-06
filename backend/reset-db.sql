@@ -1,9 +1,0 @@
-DROP TABLE IF EXISTS user_preferences;
-DROP TABLE IF EXISTS form_submissions;
-DROP TABLE IF EXISTS user_content_interactions;
-DROP TABLE IF EXISTS binaural_sessions;
-DROP TABLE IF EXISTS binaural_sounds;
-DROP TABLE IF EXISTS relaxation_content;
-DROP TABLE IF EXISTS ab_test_events;
-DROP TABLE IF EXISTS sleep_sessions;
-DROP TABLE IF EXISTS users;
