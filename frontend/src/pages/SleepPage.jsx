@@ -27,7 +27,6 @@ function SleepPage() {
 
   const handleFormSubmit = async (formData) => {
     try {
-      // Toplam uyku süresini hesapla (dakika cinsinden)
       const totalSleep = (formData.rem_duration || 0) + 
                         (formData.deep_sleep_duration || 0) + 
                         (formData.light_sleep_duration || 0);
@@ -57,6 +56,24 @@ function SleepPage() {
     return `${hours}sa ${mins}dk`;
   };
 
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Geçersiz tarih';
+      }
+      return date.toLocaleDateString('tr-TR', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } catch (error) {
+      console.error('Tarih formatlama hatası:', error);
+      return dateString;
+    }
+  };
+
   if (showForm) {
     return (
       <div className="space-y-6">
@@ -74,7 +91,7 @@ function SleepPage() {
   }
 
   const totalSleepAvg = sessions.length > 0 
-    ? sessions.reduce((sum, s) => sum + (s.total_sleep_minutes || 0), 0) / sessions.length 
+    ? sessions.reduce((sum, s) => sum + (s.sleep_duration || 0), 0) / sessions.length 
     : 0;
 
   const qualityAvg = sessions.length > 0 
@@ -82,10 +99,14 @@ function SleepPage() {
     : 0;
 
   const thisWeekCount = sessions.filter(s => {
-    const sessionDate = new Date(s.date);
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return sessionDate >= weekAgo;
+    try {
+      const sessionDate = new Date(s.sleep_date);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return !isNaN(sessionDate.getTime()) && sessionDate >= weekAgo;
+    } catch {
+      return false;
+    }
   }).length;
 
   return (
@@ -139,15 +160,13 @@ function SleepPage() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="font-semibold text-slate-900 mb-2">
-                      {new Date(session.date).toLocaleDateString('tr-TR', { 
-                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-                      })}
+                      {formatDate(session.sleep_date)}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
                         <span className="text-slate-600">Uyku Süresi:</span>
                         <span className="ml-1 font-medium text-primary-600">
-                          {formatSleepDuration(session.total_sleep_minutes)}
+                          {formatSleepDuration(session.sleep_duration)}
                         </span>
                       </div>
                       <div>

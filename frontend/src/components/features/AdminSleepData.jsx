@@ -5,6 +5,7 @@ import Button from '../ui/Button';
 
 function AdminSleepData() {
   const [sleepData, setSleepData] = useState([]);
+  const [groupedData, setGroupedData] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -17,10 +18,28 @@ function AdminSleepData() {
     setLoading(true);
     try {
       const response = await api.get('/admin/sleep-data');
-      setSleepData(response.data.sessions || []);
+      const sessions = response.data.sessions || [];
+      setSleepData(sessions);
       
-      if (response.data.sessions?.length > 0) {
-        const sessions = response.data.sessions;
+      // Kullanıcılara göre grupla
+      const grouped = sessions.reduce((acc, session) => {
+        const userId = session.user_id;
+        if (!acc[userId]) {
+          acc[userId] = {
+            user_id: userId,
+            user_name: session.user_name,
+            user_phone: session.user_phone,
+            ab_group: session.ab_group,
+            sessions: []
+          };
+        }
+        acc[userId].sessions.push(session);
+        return acc;
+      }, {});
+      
+      setGroupedData(Object.values(grouped));
+      
+      if (sessions.length > 0) {
         const avgQuality = sessions.reduce((sum, s) => sum + (s.sleep_quality || 0), 0) / sessions.length;
         const avgDuration = sessions.reduce((sum, s) => sum + (s.sleep_duration || 0), 0) / sessions.length;
         
@@ -47,9 +66,18 @@ function AdminSleepData() {
     }
   };
 
-  const handleViewDetails = async (session) => {
-    const history = await loadUserSleepHistory(session.user_id);
-    setSelectedSession({ ...session, history });
+  const handleViewDetails = async (userGroup) => {
+    const history = userGroup.sessions;
+    setSelectedSession({ ...userGroup.sessions[0], history, user_name: userGroup.user_name, user_phone: userGroup.user_phone, ab_group: userGroup.ab_group });
+  };
+
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return dateString;
+    }
   };
 
   if (loading) {
@@ -62,7 +90,7 @@ function AdminSleepData() {
   }
 
   if (selectedSession) {
-    return <SleepDetailView session={selectedSession} onClose={() => setSelectedSession(null)} />;
+    return <SleepDetailView session={selectedSession} onClose={() => setSelectedSession(null)} formatDate={formatDate} />;
   }
 
   return (
@@ -90,7 +118,7 @@ function AdminSleepData() {
         </div>
       )}
 
-      {sleepData.length === 0 ? (
+      {groupedData.length === 0 ? (
         <Card>
           <div className="text-center py-12">
             <div className="text-4xl mb-4">😴</div>
@@ -99,64 +127,69 @@ function AdminSleepData() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {sleepData.map((session) => {
-            const hours = Math.floor(session.sleep_duration / 60);
-            const minutes = session.sleep_duration % 60;
+          {groupedData.map((userGroup) => {
+            const latestSession = userGroup.sessions[0];
+            const hours = Math.floor(latestSession.sleep_duration / 60);
+            const minutes = latestSession.sleep_duration % 60;
+            const totalSessions = userGroup.sessions.length;
             
             return (
-              <Card key={session.id} className="hover:shadow-md transition-shadow">
+              <Card key={userGroup.user_id} className="hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <div className="font-semibold text-slate-900">
-                        {session.user_name || 'Kullanıcı'}
+                        {userGroup.user_name || 'Kullanıcı'}
                       </div>
                       <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs">
-                        {session.user_phone || 'Tel yok'}
+                        {userGroup.user_phone || 'Tel yok'}
                       </span>
                       <span className={`px-2 py-1 rounded text-xs ${
-                        session.ab_group === 'experiment' 
+                        userGroup.ab_group === 'experiment' 
                           ? 'bg-warning-100 text-warning-800' 
                           : 'bg-slate-100 text-slate-800'
                       }`}>
-                        {session.ab_group === 'experiment' ? 'Deney' : 'Kontrol'}
+                        {userGroup.ab_group === 'experiment' ? 'Deney' : 'Kontrol'}
+                      </span>
+                      <span className="px-2 py-1 bg-primary-100 text-primary-800 rounded text-xs">
+                        {totalSessions} kayıt
                       </span>
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
                       <div>
-                        <div className="text-slate-500 text-xs">Tarih</div>
+                        <div className="text-slate-500 text-xs">Son Tarih</div>
                         <div className="font-medium">
-                          {new Date(session.sleep_date).toLocaleDateString('tr-TR')}
+                          {formatDate(latestSession.sleep_date)}
                         </div>
                       </div>
                       <div>
-                        <div className="text-slate-500 text-xs">Süre</div>
+                        <div className="text-slate-500 text-xs">Son Süre</div>
                         <div className="font-medium">{hours}sa {minutes}dk</div>
                       </div>
                       <div>
-                        <div className="text-slate-500 text-xs">Kalite</div>
-                        <div className="font-medium">{session.sleep_quality}/10</div>
+                        <div className="text-slate-500 text-xs">Son Kalite</div>
+                        <div className="font-medium">{latestSession.sleep_quality}/10</div>
                       </div>
                       <div>
-                        <div className="text-slate-500 text-xs">REM</div>
-                        <div className="font-medium">{session.rem_duration || 0}dk</div>
+                        <div className="text-slate-500 text-xs">Son REM</div>
+                        <div className="font-medium">{latestSession.rem_duration || 0}dk</div>
                       </div>
                       <div>
-                        <div className="text-slate-500 text-xs">Kalp</div>
-                        <div className="font-medium">{session.heart_rate || 0} bpm</div>
+                        <div className="text-slate-500 text-xs">Son Kalp</div>
+                        <div className="font-medium">{latestSession.heart_rate || 0} bpm</div>
                       </div>
                       <div>
-                        <div className="text-slate-500 text-xs">Verimlilik</div>
+                        <div className="text-slate-500 text-xs">Son Verimlilik</div>
                         <div className="font-medium">
-                          {session.sleep_efficiency ? `${session.sleep_efficiency}%` : '-'}
+                          {latestSession.sleep_efficiency ? `${latestSession.sleep_efficiency}%` : '-'}
                         </div>
                       </div>
                     </div>
 
-                    {session.notes && (
+                    {latestSession.notes && (
                       <div className="mt-3 p-2 bg-slate-50 rounded text-sm text-slate-700">
-                        <span className="font-medium">Not:</span> {session.notes}
+                        <span className="font-medium">Son Not:</span> {latestSession.notes}
                       </div>
                     )}
                   </div>
@@ -164,7 +197,7 @@ function AdminSleepData() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleViewDetails(session)}
+                    onClick={() => handleViewDetails(userGroup)}
                   >
                     Detay
                   </Button>
@@ -178,7 +211,9 @@ function AdminSleepData() {
   );
 }
 
-function SleepDetailView({ session, onClose }) {
+function SleepDetailView({ session, onClose, formatDate }) {
+  const [expandedSessionId, setExpandedSessionId] = useState(null);
+  
   const hours = Math.floor(session.sleep_duration / 60);
   const minutes = session.sleep_duration % 60;
 
@@ -197,27 +232,40 @@ function SleepDetailView({ session, onClose }) {
       week: {
         count: week.length,
         avgQuality: calcAvg(week, 'sleep_quality'),
-        avgDuration: calcAvg(week, 'sleep_duration')
+        avgDuration: calcAvg(week, 'sleep_duration'),
+        avgRem: calcAvg(week, 'rem_duration'),
+        avgDeep: calcAvg(week, 'deep_sleep_duration'),
+        avgLight: calcAvg(week, 'light_sleep_duration'),
+        avgHeart: calcAvg(week, 'heart_rate')
       },
       twoWeeks: {
         count: twoWeeks.length,
         avgQuality: calcAvg(twoWeeks, 'sleep_quality'),
-        avgDuration: calcAvg(twoWeeks, 'sleep_duration')
+        avgDuration: calcAvg(twoWeeks, 'sleep_duration'),
+        avgRem: calcAvg(twoWeeks, 'rem_duration'),
+        avgDeep: calcAvg(twoWeeks, 'deep_sleep_duration'),
+        avgLight: calcAvg(twoWeeks, 'light_sleep_duration'),
+        avgHeart: calcAvg(twoWeeks, 'heart_rate')
       },
       month: {
         count: month.length,
         avgQuality: calcAvg(month, 'sleep_quality'),
-        avgDuration: calcAvg(month, 'sleep_duration')
+        avgDuration: calcAvg(month, 'sleep_duration'),
+        avgRem: calcAvg(month, 'rem_duration'),
+        avgDeep: calcAvg(month, 'deep_sleep_duration'),
+        avgLight: calcAvg(month, 'light_sleep_duration'),
+        avgHeart: calcAvg(month, 'heart_rate')
       }
     };
   };
 
   const analysis = session.history ? analyzeHistory(session.history) : null;
+  const sortedHistory = session.history ? [...session.history].sort((a, b) => new Date(b.sleep_date) - new Date(a.sleep_date)) : [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Uyku Detayı</h2>
+        <h2 className="text-2xl font-bold">Uyku Detayı - {session.user_name}</h2>
         <Button variant="outline" onClick={onClose}>Geri Dön</Button>
       </div>
 
@@ -246,11 +294,11 @@ function SleepDetailView({ session, onClose }) {
           </div>
 
           <div className="border-t pt-4">
-            <h3 className="font-semibold text-lg mb-2">Uyku Verileri</h3>
+            <h3 className="font-semibold text-lg mb-2">Son Uyku Kaydı</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-slate-50 p-3 rounded">
                 <div className="text-slate-500 text-xs">Tarih</div>
-                <div className="font-semibold">{new Date(session.sleep_date).toLocaleDateString('tr-TR')}</div>
+                <div className="font-semibold">{formatDate(session.sleep_date)}</div>
               </div>
               <div className="bg-primary-50 p-3 rounded">
                 <div className="text-slate-500 text-xs">Toplam Süre</div>
@@ -268,91 +316,6 @@ function SleepDetailView({ session, onClose }) {
               </div>
             </div>
           </div>
-
-          <div className="border-t pt-4">
-            <h3 className="font-semibold text-lg mb-2">Uyku Evreleri</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-slate-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">REM</div>
-                <div className="font-semibold">{session.rem_duration || 0}dk</div>
-              </div>
-              <div className="bg-slate-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Derin Uyku</div>
-                <div className="font-semibold">{session.deep_sleep_duration || 0}dk</div>
-              </div>
-              <div className="bg-slate-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Hafif Uyku</div>
-                <div className="font-semibold">{session.light_sleep_duration || 0}dk</div>
-              </div>
-              <div className="bg-slate-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Uyanıklık</div>
-                <div className="font-semibold">{session.awake_duration || 0}dk</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <h3 className="font-semibold text-lg mb-2">Sağlık ve Yaşam Tarzı</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-red-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Kalp Atım Hızı</div>
-                <div className="font-semibold text-red-700">{session.heart_rate || 0} bpm</div>
-              </div>
-              <div className="bg-orange-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Stres Seviyesi</div>
-                <div className="font-semibold text-orange-700">{session.stress_level || 0}/10</div>
-              </div>
-              <div className="bg-blue-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Ekran Süresi</div>
-                <div className="font-semibold text-blue-700">{session.screen_time_before || 0}dk</div>
-              </div>
-              <div className="bg-purple-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Oda Sıcaklığı</div>
-                <div className="font-semibold text-purple-700">{session.room_temperature || 20}°C</div>
-              </div>
-            </div>
-            {session.last_meal_time && (
-              <div className="mt-3 p-2 bg-slate-50 rounded text-sm">
-                <span className="font-medium">Son Yemek:</span> {session.last_meal_time}
-              </div>
-            )}
-          </div>
-
-          <div className="border-t pt-4">
-            <h3 className="font-semibold text-lg mb-2">Uyku Öncesi Alışkanlıklar</h3>
-            <div className="flex flex-wrap gap-2">
-              {session.caffeine_intake ? <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">☕ Kafein</span> : null}
-              {session.alcohol_intake ? <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">🍷 Alkol</span> : null}
-              {session.exercise ? <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">🏃 Egzersiz</span> : null}
-              {session.medication ? <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">💊 İlaç</span> : null}
-              {session.meditation ? <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">🧘 Meditasyon</span> : null}
-              {session.reading ? <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">📚 Kitap</span> : null}
-              {!session.caffeine_intake && !session.alcohol_intake && !session.exercise && !session.medication && !session.meditation && !session.reading && (
-                <span className="text-slate-500 text-sm">Kayıtlı alışkanlık yok</span>
-              )}
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <h3 className="font-semibold text-lg mb-2">Ruh Hali</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Uyku Öncesi</div>
-                <div className="font-semibold text-blue-700">{session.mood_before || 0}/5</div>
-              </div>
-              <div className="bg-green-50 p-3 rounded">
-                <div className="text-slate-500 text-xs">Uyanış Sonrası</div>
-                <div className="font-semibold text-green-700">{session.mood_after || 0}/5</div>
-              </div>
-            </div>
-          </div>
-
-          {session.notes && (
-            <div className="border-t pt-4">
-              <h3 className="font-semibold text-lg mb-2">Notlar</h3>
-              <div className="bg-slate-50 p-3 rounded text-sm">{session.notes}</div>
-            </div>
-          )}
         </div>
       </Card>
 
@@ -375,6 +338,22 @@ function SleepDetailView({ session, onClose }) {
                   <span className="text-slate-600">Ort. Süre:</span>
                   <span className="font-semibold">{(analysis.week.avgDuration / 60).toFixed(1)}sa</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. REM:</span>
+                  <span className="font-semibold">{analysis.week.avgRem}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Derin:</span>
+                  <span className="font-semibold">{analysis.week.avgDeep}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Hafif:</span>
+                  <span className="font-semibold">{analysis.week.avgLight}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Kalp:</span>
+                  <span className="font-semibold">{analysis.week.avgHeart} bpm</span>
+                </div>
               </div>
             </div>
 
@@ -392,6 +371,22 @@ function SleepDetailView({ session, onClose }) {
                 <div className="flex justify-between">
                   <span className="text-slate-600">Ort. Süre:</span>
                   <span className="font-semibold">{(analysis.twoWeeks.avgDuration / 60).toFixed(1)}sa</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. REM:</span>
+                  <span className="font-semibold">{analysis.twoWeeks.avgRem}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Derin:</span>
+                  <span className="font-semibold">{analysis.twoWeeks.avgDeep}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Hafif:</span>
+                  <span className="font-semibold">{analysis.twoWeeks.avgLight}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Kalp:</span>
+                  <span className="font-semibold">{analysis.twoWeeks.avgHeart} bpm</span>
                 </div>
               </div>
             </div>
@@ -411,8 +406,98 @@ function SleepDetailView({ session, onClose }) {
                   <span className="text-slate-600">Ort. Süre:</span>
                   <span className="font-semibold">{(analysis.month.avgDuration / 60).toFixed(1)}sa</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. REM:</span>
+                  <span className="font-semibold">{analysis.month.avgRem}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Derin:</span>
+                  <span className="font-semibold">{analysis.month.avgDeep}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Hafif:</span>
+                  <span className="font-semibold">{analysis.month.avgLight}dk</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Ort. Kalp:</span>
+                  <span className="font-semibold">{analysis.month.avgHeart} bpm</span>
+                </div>
               </div>
             </div>
+          </div>
+        </Card>
+      )}
+
+      {sortedHistory.length > 0 && (
+        <Card>
+          <h3 className="font-semibold text-lg mb-4">Tüm Kayıtlar ({sortedHistory.length})</h3>
+          <div className="space-y-3">
+            {sortedHistory.map((s) => {
+              const h = Math.floor(s.sleep_duration / 60);
+              const m = s.sleep_duration % 60;
+              const isExpanded = expandedSessionId === s.id;
+              
+              return (
+                <div key={s.id} className="border rounded p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 grid grid-cols-6 gap-2 text-sm">
+                      <div>
+                        <div className="text-xs text-slate-500">Tarih</div>
+                        <div className="font-medium">{formatDate(s.sleep_date)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Süre</div>
+                        <div className="font-medium">{h}sa {m}dk</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Kalite</div>
+                        <div className="font-medium">{s.sleep_quality}/10</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">REM</div>
+                        <div className="font-medium">{s.rem_duration}dk</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Kalp</div>
+                        <div className="font-medium">{s.heart_rate} bpm</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Verimlilik</div>
+                        <div className="font-medium">{s.sleep_efficiency}%</div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setExpandedSessionId(isExpanded ? null : s.id)}
+                    >
+                      {isExpanded ? 'Gizle' : 'Detay'}
+                    </Button>
+                  </div>
+                  {isExpanded && (
+                    <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <div className="text-xs text-slate-500">Derin Uyku</div>
+                        <div>{s.deep_sleep_duration}dk</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Hafif Uyku</div>
+                        <div>{s.light_sleep_duration}dk</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Uyanıklık</div>
+                        <div>{s.awake_duration}dk</div>
+                      </div>
+                      {s.notes && (
+                        <div className="col-span-3 bg-slate-50 p-2 rounded text-xs">
+                          <span className="font-medium">Not:</span> {s.notes}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
