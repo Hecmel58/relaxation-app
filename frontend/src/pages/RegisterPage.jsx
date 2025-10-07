@@ -13,6 +13,8 @@ function RegisterPage() {
     password: '',
     confirmPassword: ''
   });
+  const [kvkkConsent, setKvkkConsent] = useState(false);
+  const [termsConsent, setTermsConsent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -21,6 +23,16 @@ function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!kvkkConsent) {
+      setError('KVKK Aydınlatma Metni onayı zorunludur');
+      return;
+    }
+
+    if (!termsConsent) {
+      setError('Kullanım Koşulları onayı zorunludur');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Şifreler eşleşmiyor');
@@ -134,6 +146,42 @@ function RegisterPage() {
               />
             </div>
 
+            <div className="space-y-3 pt-2">
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={kvkkConsent}
+                  onChange={(e) => setKvkkConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  required
+                />
+                <span className="text-sm text-gray-700">
+                  <a 
+                    href="/privacy-policy" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:text-primary-700 hover:underline font-medium"
+                  >
+                    KVKK Aydınlatma Metni
+                  </a>
+                  'ni okudum, kişisel verilerimin işlenmesini kabul ediyorum. <span className="text-red-500">*</span>
+                </span>
+              </label>
+              
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={termsConsent}
+                  onChange={(e) => setTermsConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  required
+                />
+                <span className="text-sm text-gray-700">
+                  Kullanım Koşulları'nı kabul ediyorum. <span className="text-red-500">*</span>
+                </span>
+              </label>
+            </div>
+
             <Button type="submit" loading={loading} className="w-full">
               {loading ? 'Kayıt yapılıyor...' : 'Kayıt Ol'}
             </Button>
@@ -148,6 +196,10 @@ function RegisterPage() {
             </p>
           </div>
         </Card>
+
+        <p className="text-xs text-center text-slate-500 mt-4">
+          Kayıt olarak 6698 sayılı KVKK kapsamında kişisel verilerinizin işlenmesini kabul etmiş olursunuz.
+        </p>
       </div>
     </div>
   );

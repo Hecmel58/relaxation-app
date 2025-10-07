@@ -1,9 +1,84 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import api from '../api/axios';
 import Card from '../components/ui/Card';
 
 function ProfilePage() {
   const { user } = useAuthStore();
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadData = async () => {
+    try {
+      setDownloading(true);
+      const token = localStorage.getItem('fidbal_token');
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/user/data/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Veri indirme başarısız');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fidbal-verilerim-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Veri indirme sırasında bir hata oluştu');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm('⚠️ UYARI: Hesabınız ve TÜM verileriniz kalıcı olarak silinecektir.\n\nBu işlem GERİ ALINAMAZ!\n\nDevam etmek istiyor musunuz?')) {
+      return;
+    }
+
+    if (!confirm('SON UYARI: Bu işlem geri alınamaz!\n\n- Tüm uyku kayıtlarınız silinecek\n- Tüm kalp atım hızı verileriniz silinecek\n- Tüm form yanıtlarınız silinecek\n- Hesabınız kalıcı olarak silinecek\n\nEmin misiniz?')) {
+      return;
+    }
+
+    const confirmText = prompt('Hesabınızı silmek için "SİL" yazın:');
+    if (confirmText !== 'SİL') {
+      alert('Hesap silme işlemi iptal edildi');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('fidbal_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/user/account`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Hesabınız başarıyla silindi. Güle güle...');
+        localStorage.clear();
+        window.location.href = '/login';
+      } else {
+        throw new Error(data.error || 'Hesap silme başarısız');
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      alert('Hesap silme sırasında bir hata oluştu: ' + error.message);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -34,6 +109,45 @@ function ProfilePage() {
               )}
             </p>
           </div>
+        </div>
+      </Card>
+
+      <Card>
+        <h3 className="text-lg font-semibold mb-4">📋 Kişisel Verilerim (KVKK)</h3>
+        <p className="text-sm text-slate-600 mb-4">
+          6698 sayılı KVKK kapsamında kişisel verilerinizi indirebilir veya hesabınızı silebilirsiniz.
+        </p>
+        
+        <div className="space-y-3">
+          <button
+            onClick={handleDownloadData}
+            disabled={downloading}
+            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+          >
+            {downloading ? '📥 İndiriliyor...' : '📥 Verilerimi İndir (JSON)'}
+          </button>
+          
+          <button
+            onClick={handleDeleteAccount}
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+          >
+            🗑️ Hesabımı Kalıcı Olarak Sil
+          </button>
+          
+          
+            href="/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center text-blue-600 hover:text-blue-700 hover:underline py-2"
+          >
+            📄 Gizlilik Politikası ve KVKK Aydınlatma Metni
+          </a>
+        </div>
+
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-800">
+            <strong>⚠️ Önemli:</strong> Hesabınızı sildiğinizde tüm verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.
+          </p>
         </div>
       </Card>
     </div>

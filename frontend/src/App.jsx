@@ -17,13 +17,13 @@ import FormsPage from './components/features/FormsPage';
 import SupportPage from './components/features/SupportPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 function App() {
   const { isAuthenticated, token, user, setUser, logout } = useAuthStore();
   const hasVerified = useRef(false);
 
   useEffect(() => {
-    // Sadece bir kere çalış
     if (token && !user && !hasVerified.current) {
       hasVerified.current = true;
       verifyToken(token);
@@ -52,7 +52,6 @@ function App() {
       }
     } catch (error) {
       console.error('Token verification failed:', error);
-      // 429 veya başka hata durumunda user zaten localStorage'da var, logout yapma
       if (error.response?.status === 401 || error.response?.status === 404) {
         logout();
       }
@@ -71,6 +70,7 @@ function App() {
           path="/register" 
           element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" replace />} 
         />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 
         {/* Protected Routes */}
         <Route element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
