@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import api from '../api/axios';
 import Card from '../components/ui/Card';
 
 function ProfilePage() {
@@ -142,12 +141,12 @@ function ProfilePage() {
           >
             📄 Gizlilik Politikası ve KVKK Aydınlatma Metni
           </a>
-        </div>
 
-        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-xs text-amber-800">
-            <strong>⚠️ Önemli:</strong> Hesabınızı sildiğinizde tüm verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.
-          </p>
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-xs text-amber-800">
+              <strong>⚠️ Önemli:</strong> Hesabınızı sildiğinizde tüm verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.
+            </p>
+          </div>
         </div>
       </Card>
     </div>
