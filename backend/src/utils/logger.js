@@ -12,18 +12,18 @@ const logger = winston.createLogger({
   ),
   defaultMeta: { service: 'fidbal-backend' },
   transports: [
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    })
   ]
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
+// Production'da sadece console kullan (Vercel logs)
+if (process.env.NODE_ENV === 'production') {
+  logger.info('Logger initialized for production (console only)');
 }
 
 module.exports = logger;
