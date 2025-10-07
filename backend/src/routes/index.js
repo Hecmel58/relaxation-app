@@ -5,13 +5,14 @@ const authRoutes = require('./authRoutes');
 const sleepRoutes = require('./sleepRoutes');
 const formRoutes = require('./formRoutes');
 const adminRoutes = require('./adminRoutes');
+const heartRateRoutes = require('./heartRateRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/sleep', sleepRoutes);
 router.use('/forms', formRoutes);
 router.use('/admin', adminRoutes);
+router.use('/heart-rate', heartRateRoutes);
 
-// Chat endpoints - geçici placeholder
 router.get('/chat/unread-count', (req, res) => {
   res.json({ success: true, unreadCount: 0 });
 });
