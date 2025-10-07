@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+const heartRateController = require('../controllers/heartRateController');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 router.use(authenticateToken);
@@ -13,5 +14,7 @@ router.delete('/users/:userId', adminController.deleteUser);
 router.get('/sleep-data', adminController.getSleepData);
 router.get('/sleep-history/:userId', adminController.getUserSleepHistory);
 router.get('/form-responses', adminController.getFormResponses);
+router.get('/heart-rate-data', heartRateController.getAllSessions);
+router.get('/heart-rate-history/:userId', heartRateController.getUserHistory);
 
 module.exports = router;

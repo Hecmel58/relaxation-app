@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const routes = require('./src/routes');
+const heartRateRoutes = require('./src/routes/heartRateRoutes');
 const { errorHandler } = require('./src/middleware/errorHandler');
 const { RATE_LIMIT } = require('./src/config/constants');
 
@@ -29,7 +30,7 @@ const generalLimiter = rateLimit({
   message: { success: false, error: 'Çok fazla istek gönderdiniz. Lütfen biraz bekleyin.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path.includes('/health') // Health check sayılmasın
+  skip: (req) => req.path.includes('/health')
 });
 
 const authLimiter = rateLimit({
@@ -38,8 +39,8 @@ const authLimiter = rateLimit({
   message: { success: false, error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body.phone || req.ip, // Telefon bazlı
-  skipSuccessfulRequests: true // BAŞARILI GİRİŞLER SAYILMAZ - ÖNEMLİ
+  keyGenerator: (req) => req.body.phone || req.ip,
+  skipSuccessfulRequests: true
 });
 
 app.use('/api', generalLimiter);
@@ -55,12 +56,14 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       sleep: '/api/sleep',
       forms: '/api/forms',
-      admin: '/api/admin'
+      admin: '/api/admin',
+      heartRate: '/api/heart-rate'
     }
   });
 });
 
 app.use('/api', routes);
+app.use('/api/heart-rate', heartRateRoutes);
 app.use(errorHandler);
 
 app.use((req, res) => {
