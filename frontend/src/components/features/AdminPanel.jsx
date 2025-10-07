@@ -7,6 +7,7 @@ import Button from '../ui/Button';
 import AdminSleepData from './AdminSleepData';
 import AdminMessages from './AdminMessages';
 import AdminForms from './AdminForms';
+import AdminHeartRateData from './AdminHeartRateData';
 import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
 
@@ -79,6 +80,7 @@ function AdminPanel() {
   const tabs = [
     { id: 'users', name: 'Kullanıcılar', icon: '👥' },
     { id: 'sleep', name: 'Uyku Verileri', icon: '😴' },
+    { id: 'heart-rate', name: 'Kalp Atım Hızı', icon: '❤️' },
     { id: 'forms', name: 'Form Yanıtları', icon: '📋' },
     { id: 'messages', name: 'Mesajlar', icon: '💬' }
   ];
@@ -215,6 +217,8 @@ function AdminPanel() {
           )}
 
           {activeTab === 'sleep' && <AdminSleepData />}
+          
+          {activeTab === 'heart-rate' && <AdminHeartRateData />}
           
           {activeTab === 'forms' && <AdminForms />}
           

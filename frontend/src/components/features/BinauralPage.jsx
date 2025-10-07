@@ -11,9 +11,14 @@ function BinauralPage() {
   const [currentPlaying, setCurrentPlaying] = useState(null);
   const [selectedType, setSelectedType] = useState('delta');
   const [progress, setProgress] = useState(0);
+  const [showHeartRateModal, setShowHeartRateModal] = useState(false);
+  const [heartRateBefore, setHeartRateBefore] = useState('');
+  const [heartRateAfter, setHeartRateAfter] = useState('');
+  const [pendingSound, setPendingSound] = useState(null);
+  const [isWaitingForAfter, setIsWaitingForAfter] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
   const audioRef = useRef(new Audio());
 
-  // Test sesleri
   const testSounds = {
     delta: [
       {
@@ -26,18 +31,6 @@ function BinauralPage() {
         purpose: 'Derin uyku, fiziksel iyileşme',
         brainwave_type: 'delta',
         url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-        play_count: 0
-      },
-      {
-        id: 'test-delta-2',
-        name: 'Tam Gevşeme 0.5Hz',
-        description: 'Uykuya geçiş için ultra düşük frekans',
-        base_frequency: 100,
-        binaural_frequency: 0.5,
-        duration: 3600,
-        purpose: 'Rahat uyku, stres azaltma',
-        brainwave_type: 'delta',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
         play_count: 0
       }
     ],
@@ -53,18 +46,6 @@ function BinauralPage() {
         brainwave_type: 'theta',
         url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3',
         play_count: 0
-      },
-      {
-        id: 'test-theta-2',
-        name: 'Meditasyon 7Hz',
-        description: 'Derin meditasyon için theta',
-        base_frequency: 200,
-        binaural_frequency: 7,
-        duration: 1800,
-        purpose: 'Meditasyon, yaratıcılık',
-        brainwave_type: 'theta',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3',
-        play_count: 0
       }
     ],
     alpha: [
@@ -78,18 +59,6 @@ function BinauralPage() {
         purpose: 'Rahat uyanıklık, odaklanma',
         brainwave_type: 'alpha',
         url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3',
-        play_count: 0
-      },
-      {
-        id: 'test-alpha-2',
-        name: 'Odaklanma 12Hz',
-        description: 'Konsantrasyon için alpha dalgası',
-        base_frequency: 200,
-        binaural_frequency: 12,
-        duration: 1800,
-        purpose: 'Odaklanma, öğrenme',
-        brainwave_type: 'alpha',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3',
         play_count: 0
       }
     ]
@@ -125,7 +94,6 @@ function BinauralPage() {
       const response = await api.get(`/binaural/sounds?category=${selectedType}`);
       const apiSounds = response.data.sounds || [];
       
-      // API'den ses gelmezse test seslerini kullan
       if (apiSounds.length === 0) {
         setSounds(testSounds[selectedType] || []);
       } else {
@@ -148,8 +116,8 @@ function BinauralPage() {
   };
 
   const handleAudioEnded = () => {
-    setCurrentPlaying(null);
-    setProgress(0);
+    setIsWaitingForAfter(true);
+    setShowHeartRateModal(true);
   };
 
   const handlePlay = (sound) => {
@@ -160,12 +128,56 @@ function BinauralPage() {
       setCurrentPlaying(null);
       setProgress(0);
     } else {
-      audio.src = sound.url;
+      setPendingSound(sound);
+      setIsWaitingForAfter(false);
+      setShowHeartRateModal(true);
+    }
+  };
+
+  const handleHeartRateSubmit = async () => {
+    if (isWaitingForAfter) {
+      if (!heartRateAfter || heartRateAfter < 40 || heartRateAfter > 200) {
+        alert('Lütfen geçerli bir kalp atım hızı girin (40-200 arası)');
+        return;
+      }
+
+      try {
+        await api.post('/heart-rate/sessions', {
+          content_type: 'binaural',
+          content_id: currentPlaying,
+          content_name: pendingSound?.name || 'Bilinmeyen',
+          heart_rate_before: parseInt(heartRateBefore),
+          heart_rate_after: parseInt(heartRateAfter),
+          duration: Math.floor((Date.now() - sessionStartTime) / 1000)
+        });
+
+        setCurrentPlaying(null);
+        setProgress(0);
+        setShowHeartRateModal(false);
+        setHeartRateBefore('');
+        setHeartRateAfter('');
+        setPendingSound(null);
+        setIsWaitingForAfter(false);
+        alert('Kalp atım hızı kaydedildi!');
+      } catch (error) {
+        console.error('Kalp atım hızı kaydedilemedi:', error);
+        alert('Kayıt başarısız oldu');
+      }
+    } else {
+      if (!heartRateBefore || heartRateBefore < 40 || heartRateBefore > 200) {
+        alert('Lütfen geçerli bir kalp atım hızı girin (40-200 arası)');
+        return;
+      }
+
+      const audio = audioRef.current;
+      audio.src = pendingSound.url;
       audio.play().catch(err => {
         console.error('Oynatma hatası:', err);
         alert('Ses dosyası oynatılamadı. Lütfen kulaklık takın ve tarayıcı izinlerini kontrol edin.');
       });
-      setCurrentPlaying(sound.id);
+      setCurrentPlaying(pendingSound.id);
+      setSessionStartTime(Date.now());
+      setShowHeartRateModal(false);
     }
   };
 
@@ -297,6 +309,48 @@ function BinauralPage() {
               )}
             </Card>
           ))}
+        </div>
+      )}
+
+      {showHeartRateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">
+              {isWaitingForAfter ? 'Ses Sonrası Kalp Atım Hızı' : 'Ses Öncesi Kalp Atım Hızı'}
+            </h3>
+            <p className="text-slate-600 mb-4">
+              {isWaitingForAfter 
+                ? 'Ses bitti. Şimdi kalp atım hızınızı ölçün ve girin.' 
+                : 'Sesi başlatmadan önce kalp atım hızınızı ölçün ve girin.'}
+            </p>
+            <input
+              type="number"
+              min="40"
+              max="200"
+              placeholder="Örn: 72"
+              value={isWaitingForAfter ? heartRateAfter : heartRateBefore}
+              onChange={(e) => isWaitingForAfter ? setHeartRateAfter(e.target.value) : setHeartRateBefore(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg mb-4"
+            />
+            <div className="flex space-x-3">
+              <Button onClick={handleHeartRateSubmit} className="flex-1">
+                {isWaitingForAfter ? 'Kaydet' : 'Başlat'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowHeartRateModal(false);
+                  setHeartRateBefore('');
+                  setHeartRateAfter('');
+                  setPendingSound(null);
+                  setIsWaitingForAfter(false);
+                }}
+                className="flex-1"
+              >
+                İptal
+              </Button>
+            </div>
+          </Card>
         </div>
       )}
     </div>

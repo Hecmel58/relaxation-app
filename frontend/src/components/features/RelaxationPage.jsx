@@ -8,69 +8,47 @@ function RelaxationPage() {
   const { user } = useAuthStore();
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('breathing');
+  const [selectedCategory, setSelectedCategory] = useState('box_breathing');
   const [currentPlaying, setCurrentPlaying] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [showHeartRateModal, setShowHeartRateModal] = useState(false);
+  const [heartRateBefore, setHeartRateBefore] = useState('');
+  const [heartRateAfter, setHeartRateAfter] = useState('');
+  const [pendingSound, setPendingSound] = useState(null);
+  const [isWaitingForAfter, setIsWaitingForAfter] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
   const audioRef = useRef(new Audio());
 
-  // Test sesleri - gerçek API yanıt vermezse bunlar kullanılacak
   const testContent = {
-    breathing: [
+    box_breathing: [
       { 
-        id: 'test-breath-1', 
-        title: '4-7-8 Nefes Tekniği',
-        description: 'Stres ve kaygıyı azaltan klasik nefes egzersizi',
+        id: 'test-box-1', 
+        title: 'Kutu Nefes Tekniği - Temel',
+        description: '4-4-4-4 kutu nefes egzersizi ile stres azaltın',
         url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
         duration: 240,
         type: 'audio',
         view_count: 0
-      },
-      { 
-        id: 'test-breath-2', 
-        title: 'Derin Karın Nefesi',
-        description: 'Rahatlama için diyafram nefes egzersizi',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        duration: 300,
-        type: 'audio',
-        view_count: 0
       }
     ],
-    meditation: [
+    guided_imagery: [
       { 
-        id: 'test-med-1', 
-        title: 'Uyku Meditasyonu',
-        description: '10 dakikalık rehberli uyku meditasyonu',
+        id: 'test-imagery-1', 
+        title: 'Rehberli İmgeleme - Huzurlu Orman',
+        description: 'Zihninizi sakinleştiren görsel meditasyon',
         url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
         duration: 600,
         type: 'audio',
         view_count: 0
-      },
-      { 
-        id: 'test-med-2', 
-        title: 'Beden Taraması',
-        description: 'Kas gevşetme için beden taraması meditasyonu',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-        duration: 900,
-        type: 'audio',
-        view_count: 0
       }
     ],
-    nature_sound: [
+    progressive_relaxation: [
       { 
-        id: 'test-nature-1', 
-        title: 'Yağmur Sesi',
-        description: 'Sakinleştirici yağmur damlaları',
+        id: 'test-pmr-1', 
+        title: 'Progresif Kas Gevşetme',
+        description: 'Tüm vücut kaslarını sırayla gevşetin',
         url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-        duration: 3600,
-        type: 'audio',
-        view_count: 0
-      },
-      { 
-        id: 'test-nature-2', 
-        title: 'Dalga Sesi',
-        description: 'Rahatlatıcı okyanus dalgaları',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-        duration: 3600,
+        duration: 900,
         type: 'audio',
         view_count: 0
       }
@@ -78,9 +56,9 @@ function RelaxationPage() {
   };
 
   const categories = [
-    { id: 'breathing', name: 'Nefes Egzersizleri', icon: '🌬️' },
-    { id: 'meditation', name: 'Meditasyon', icon: '🧘‍♀️' },
-    { id: 'nature_sound', name: 'Doğa Sesleri', icon: '🌊' }
+    { id: 'box_breathing', name: 'Kutu Nefes Tekniği', icon: '🌬️' },
+    { id: 'guided_imagery', name: 'Rehberli İmgeleme', icon: '🧘‍♀️' },
+    { id: 'progressive_relaxation', name: 'Progresif Kas Gevşetme', icon: '🌊' }
   ];
 
   useEffect(() => {
@@ -107,7 +85,6 @@ function RelaxationPage() {
       const response = await api.get(`/relaxation/content?category=${selectedCategory}`);
       const apiContent = response.data.content || [];
       
-      // API'den içerik gelmezse test içeriğini kullan
       if (apiContent.length === 0) {
         setContent(testContent[selectedCategory] || []);
       } else {
@@ -130,8 +107,8 @@ function RelaxationPage() {
   };
 
   const handleAudioEnded = () => {
-    setCurrentPlaying(null);
-    setProgress(0);
+    setIsWaitingForAfter(true);
+    setShowHeartRateModal(true);
   };
 
   const handlePlay = (item) => {
@@ -142,14 +119,58 @@ function RelaxationPage() {
       setCurrentPlaying(null);
       setProgress(0);
     } else {
-      audio.src = item.url;
+      setPendingSound(item);
+      setIsWaitingForAfter(false);
+      setShowHeartRateModal(true);
+    }
+  };
+
+  const handleHeartRateSubmit = async () => {
+    if (isWaitingForAfter) {
+      if (!heartRateAfter || heartRateAfter < 40 || heartRateAfter > 200) {
+        alert('Lütfen geçerli bir kalp atım hızı girin (40-200 arası)');
+        return;
+      }
+
+      try {
+        await api.post('/heart-rate/sessions', {
+          content_type: 'relaxation',
+          content_id: currentPlaying,
+          content_name: pendingSound?.title || 'Bilinmeyen',
+          heart_rate_before: parseInt(heartRateBefore),
+          heart_rate_after: parseInt(heartRateAfter),
+          duration: Math.floor((Date.now() - sessionStartTime) / 1000)
+        });
+
+        setCurrentPlaying(null);
+        setProgress(0);
+        setShowHeartRateModal(false);
+        setHeartRateBefore('');
+        setHeartRateAfter('');
+        setPendingSound(null);
+        setIsWaitingForAfter(false);
+        alert('Kalp atım hızı kaydedildi!');
+      } catch (error) {
+        console.error('Kalp atım hızı kaydedilemedi:', error);
+        alert('Kayıt başarısız oldu');
+      }
+    } else {
+      if (!heartRateBefore || heartRateBefore < 40 || heartRateBefore > 200) {
+        alert('Lütfen geçerli bir kalp atım hızı girin (40-200 arası)');
+        return;
+      }
+
+      const audio = audioRef.current;
+      audio.src = pendingSound.url;
       audio.play().catch(err => {
         console.error('Oynatma hatası:', err);
-        alert('Ses dosyası oynatılamadı. Lütfen tarayıcı izinlerini kontrol edin.');
+        alert('Ses dosyası oynatılamadı.');
       });
-      setCurrentPlaying(item.id);
+      setCurrentPlaying(pendingSound.id);
+      setSessionStartTime(Date.now());
+      setShowHeartRateModal(false);
       
-      trackContentUsage(item.id, 'view');
+      trackContentUsage(pendingSound.id, 'view');
     }
   };
 
@@ -283,6 +304,48 @@ function RelaxationPage() {
           </div>
         </div>
       </Card>
+
+      {showHeartRateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">
+              {isWaitingForAfter ? 'Ses Sonrası Kalp Atım Hızı' : 'Ses Öncesi Kalp Atım Hızı'}
+            </h3>
+            <p className="text-slate-600 mb-4">
+              {isWaitingForAfter 
+                ? 'Ses bitti. Şimdi kalp atım hızınızı ölçün ve girin.' 
+                : 'Sesi başlatmadan önce kalp atım hızınızı ölçün ve girin.'}
+            </p>
+            <input
+              type="number"
+              min="40"
+              max="200"
+              placeholder="Örn: 72"
+              value={isWaitingForAfter ? heartRateAfter : heartRateBefore}
+              onChange={(e) => isWaitingForAfter ? setHeartRateAfter(e.target.value) : setHeartRateBefore(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg mb-4"
+            />
+            <div className="flex space-x-3">
+              <Button onClick={handleHeartRateSubmit} className="flex-1">
+                {isWaitingForAfter ? 'Kaydet' : 'Başlat'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowHeartRateModal(false);
+                  setHeartRateBefore('');
+                  setHeartRateAfter('');
+                  setPendingSound(null);
+                  setIsWaitingForAfter(false);
+                }}
+                className="flex-1"
+              >
+                İptal
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
