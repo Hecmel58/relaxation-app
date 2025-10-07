@@ -1,4 +1,6 @@
 const pool = require('../config/database');
+const AppError = require('../utils/AppError');
+const logger = require('../utils/logger');
 
 class HeartRateController {
   async createSession(req, res, next) {
@@ -25,13 +27,15 @@ class HeartRateController {
       
       const result = await pool.query(query, values);
       
+      logger.info(`Heart rate session created by user ${req.userId}`);
+      
       res.status(201).json({
         success: true,
         message: 'Kalp atım hızı kaydedildi',
         session: result.rows[0]
       });
     } catch (error) {
-      console.error('Heart rate session error:', error);
+      logger.error('Heart rate session error:', error);
       next(error);
     }
   }
@@ -52,7 +56,7 @@ class HeartRateController {
         sessions: result.rows
       });
     } catch (error) {
-      console.error('Get user sessions error:', error);
+      logger.error('Get user sessions error:', error);
       next(error);
     }
   }
@@ -78,7 +82,7 @@ class HeartRateController {
         sessions: result.rows
       });
     } catch (error) {
-      console.error('Get all sessions error:', error);
+      logger.error('Get all sessions error:', error);
       next(error);
     }
   }
@@ -100,7 +104,7 @@ class HeartRateController {
         sessions: result.rows
       });
     } catch (error) {
-      console.error('Get user history error:', error);
+      logger.error('Get user history error:', error);
       next(error);
     }
   }

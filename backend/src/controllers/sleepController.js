@@ -1,9 +1,13 @@
 const sleepService = require('../services/sleepService');
+const AppError = require('../utils/AppError');
+const logger = require('../utils/logger');
 
 class SleepController {
   async createSession(req, res, next) {
     try {
       const session = await sleepService.createSession(req.userId, req.body);
+      
+      logger.info(`Sleep session created by user ${req.userId}`);
       
       res.status(201).json({
         success: true,
@@ -11,7 +15,7 @@ class SleepController {
         session
       });
     } catch (error) {
-      console.error('Create session error:', error);
+      logger.error('Create session error:', error);
       next(error);
     }
   }
@@ -19,6 +23,11 @@ class SleepController {
   async getSessions(req, res, next) {
     try {
       const limit = parseInt(req.query.limit) || 50;
+      
+      if (limit < 1 || limit > 100) {
+        return next(new AppError('Limit 1-100 arasında olmalıdır', 400));
+      }
+      
       const sessions = await sleepService.getUserSessions(req.userId, limit);
       
       res.json({
@@ -26,7 +35,7 @@ class SleepController {
         sessions
       });
     } catch (error) {
-      console.error('Get sessions error:', error);
+      logger.error('Get sessions error:', error);
       next(error);
     }
   }
@@ -36,10 +45,7 @@ class SleepController {
       const session = await sleepService.getSessionById(req.params.id, req.userId);
       
       if (!session) {
-        return res.status(404).json({
-          success: false,
-          error: 'Uyku kaydı bulunamadı'
-        });
+        return next(new AppError('Uyku kaydı bulunamadı', 404));
       }
       
       res.json({
@@ -47,7 +53,7 @@ class SleepController {
         session
       });
     } catch (error) {
-      console.error('Get session error:', error);
+      logger.error('Get session error:', error);
       next(error);
     }
   }
@@ -57,18 +63,17 @@ class SleepController {
       const deleted = await sleepService.deleteSession(req.params.id, req.userId);
       
       if (!deleted) {
-        return res.status(404).json({
-          success: false,
-          error: 'Uyku kaydı bulunamadı'
-        });
+        return next(new AppError('Uyku kaydı bulunamadı', 404));
       }
+      
+      logger.info(`Sleep session ${req.params.id} deleted by user ${req.userId}`);
       
       res.json({
         success: true,
         message: 'Uyku kaydı silindi'
       });
     } catch (error) {
-      console.error('Delete session error:', error);
+      logger.error('Delete session error:', error);
       next(error);
     }
   }
@@ -76,6 +81,11 @@ class SleepController {
   async getAnalytics(req, res, next) {
     try {
       const period = req.query.period || 'week';
+      
+      if (!['week', 'month', 'year'].includes(period)) {
+        return next(new AppError('Geçersiz periyod. week, month veya year olmalıdır', 400));
+      }
+      
       const analytics = await sleepService.getAnalytics(req.userId, period);
       
       res.json({
@@ -83,7 +93,7 @@ class SleepController {
         analytics
       });
     } catch (error) {
-      console.error('Get analytics error:', error);
+      logger.error('Get analytics error:', error);
       next(error);
     }
   }

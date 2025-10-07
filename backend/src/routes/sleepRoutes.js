@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const sleepController = require('../controllers/sleepController');
 const { authenticateToken } = require('../middleware/auth');
-const { sleepRecordValidation, validate } = require('../middleware/validation');
+const { validateSleepSession } = require('../validators/sleepValidator');
 
 router.use(authenticateToken);
 
-router.post('/sessions', sleepRecordValidation, validate, sleepController.createSession);
+router.post('/sessions', validateSleepSession, sleepController.createSession);
 router.get('/sessions', sleepController.getSessions);
 router.get('/sessions/:id', sleepController.getSession);
 router.delete('/sessions/:id', sleepController.deleteSession);

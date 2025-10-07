@@ -2,16 +2,15 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
-const { registerValidation, loginValidation, validate } = require('../middleware/validation');
+const { validateRegister, validateLogin, validateForgotPassword } = require('../validators/authValidator');
+const pool = require('../config/database');
 
-router.post('/register', registerValidation, validate, authController.register);
-router.post('/login', loginValidation, validate, authController.login);
-router.post('/forgot-password', authController.forgotPassword);
+router.post('/register', validateRegister, authController.register);
+router.post('/login', validateLogin, authController.login);
+router.post('/forgot-password', validateForgotPassword, authController.forgotPassword);
 
-// Token doğrulama endpoint'i
 router.get('/verify', authenticateToken, async (req, res) => {
   try {
-    const pool = require('../config/database');
     const result = await pool.query(
       'SELECT id, name, phone, email, is_admin, ab_group FROM users WHERE id = $1',
       [req.userId]

@@ -1,28 +1,38 @@
-class AppError extends Error {
-  constructor(message, statusCode) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
+const logger = require('../utils/logger');
 
 const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.isOperational ? err.message : 'Sunucu hatası oluştu';
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
   
-  console.error('[ERROR]', {
+  logger.error({
     message: err.message,
     stack: err.stack,
-    url: req.url,
+    statusCode: err.statusCode,
+    path: req.path,
     method: req.method,
+    ip: req.ip
   });
   
-  res.status(statusCode).json({
-    success: false,
-    error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
+  if (process.env.NODE_ENV === 'production') {
+    if (err.isOperational) {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: err.message
+      });
+    }
+    
+    console.error('ERROR:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Bir hata oluştu'
+    });
+  } else {
+    return res.status(err.statusCode).json({
+      success: false,
+      error: err.message,
+      stack: err.stack
+    });
+  }
 };
 
-module.exports = { AppError, errorHandler };
+module.exports = { errorHandler };

@@ -1,4 +1,6 @@
 const authService = require('../services/authService');
+const AppError = require('../utils/AppError');
+const logger = require('../utils/logger');
 
 class AuthController {
   async register(req, res, next) {
@@ -6,13 +8,15 @@ class AuthController {
       const { name, phone, email, password } = req.body;
       const result = await authService.register(name, phone, email, password);
       
+      logger.info(`New user registered: ${phone}`);
+      
       res.status(201).json({
         success: true,
         ...result
       });
     } catch (error) {
       if (error.message.includes('zaten kayıtlı')) {
-        return res.status(400).json({ success: false, error: error.message });
+        return next(new AppError(error.message, 400));
       }
       next(error);
     }
@@ -23,13 +27,16 @@ class AuthController {
       const { phone, password } = req.body;
       const result = await authService.login(phone, password);
       
+      logger.info(`User logged in: ${phone}`);
+      
       res.json({
         success: true,
         ...result
       });
     } catch (error) {
       if (error.message.includes('hatalı')) {
-        return res.status(401).json({ success: false, error: error.message });
+        logger.warn(`Failed login attempt for phone: ${req.body.phone} from IP: ${req.ip}`);
+        return next(new AppError(error.message, 401));
       }
       next(error);
     }
@@ -40,13 +47,15 @@ class AuthController {
       const { phone } = req.body;
       const result = await authService.forgotPassword(phone);
       
+      logger.info(`Password reset requested for: ${phone}`);
+      
       res.json({
         success: true,
         ...result
       });
     } catch (error) {
       if (error.message.includes('kayıtlı değil')) {
-        return res.status(404).json({ success: false, error: error.message });
+        return next(new AppError(error.message, 404));
       }
       next(error);
     }

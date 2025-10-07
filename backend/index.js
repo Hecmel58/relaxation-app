@@ -2,13 +2,35 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
 const routes = require('./src/routes');
-const heartRateRoutes = require('./src/routes/heartRateRoutes');
 const { errorHandler } = require('./src/middleware/errorHandler');
 const { RATE_LIMIT } = require('./src/config/constants');
+const logger = require('./src/utils/logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'NODE_ENV'];
+requiredEnvVars.forEach(varName => {
+  if (!process.env[varName]) {
+    logger.error(`FATAL: ${varName} is not defined`);
+    process.exit(1);
+  }
+});
+
+if (process.env.JWT_SECRET.length < 32) {
+  logger.error('FATAL: JWT_SECRET must be at least 32 characters');
+  process.exit(1);
+}
+
+app.use(helmet());
+app.use(mongoSanitize());
+app.use(xss());
+app.use(hpp());
 
 app.use(cors({
   origin: [
@@ -35,12 +57,19 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: RATE_LIMIT.WINDOW_MS,
-  max: RATE_LIMIT.AUTH_MAX,
+  max: RATE_LIMIT.AUTH_MAX || 5,
+  skipSuccessfulRequests: true,
   message: { success: false, error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.body.phone || req.ip,
-  skipSuccessfulRequests: true
+  handler: (req, res) => {
+    logger.warn(`Rate limit exceeded for IP: ${req.ip}, Phone: ${req.body.phone || 'N/A'}`);
+    res.status(429).json({
+      success: false,
+      error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.'
+    });
+  }
 });
 
 app.use('/api', generalLimiter);
@@ -63,7 +92,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', routes);
-app.use('/api/heart-rate', heartRateRoutes);
 app.use(errorHandler);
 
 app.use((req, res) => {
@@ -74,9 +102,19 @@ app.use((req, res) => {
   });
 });
 
+process.on('unhandledRejection', (err) => {
+  logger.error('UNHANDLED REJECTION! Shutting down...', err);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error('UNCAUGHT EXCEPTION! Shutting down...', err);
+  process.exit(1);
+});
+
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`FidBal Backend API v2.0 running on port ${PORT}`);
+    logger.info(`FidBal Backend API v2.0 running on port ${PORT}`);
   });
 }
 
