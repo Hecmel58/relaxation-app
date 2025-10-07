@@ -21,7 +21,6 @@ function AdminSleepData() {
       const sessions = response.data.sessions || [];
       setSleepData(sessions);
       
-      // Kullanıcılara göre grupla
       const grouped = sessions.reduce((acc, session) => {
         const userId = session.user_id;
         if (!acc[userId]) {
@@ -295,7 +294,7 @@ function SleepDetailView({ session, onClose, formatDate }) {
 
           <div className="border-t pt-4">
             <h3 className="font-semibold text-lg mb-2">Son Uyku Kaydı</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <div className="bg-slate-50 p-3 rounded">
                 <div className="text-slate-500 text-xs">Tarih</div>
                 <div className="font-semibold">{formatDate(session.sleep_date)}</div>
@@ -313,6 +312,32 @@ function SleepDetailView({ session, onClose, formatDate }) {
                 <div className="font-semibold text-warning-700">
                   {session.sleep_efficiency ? `${session.sleep_efficiency}%` : '-'}
                 </div>
+              </div>
+              <div className="bg-blue-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">REM</div>
+                <div className="font-semibold text-blue-700">{session.rem_duration || 0}dk</div>
+              </div>
+              <div className="bg-purple-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Derin Uyku</div>
+                <div className="font-semibold text-purple-700">{session.deep_sleep_duration || 0}dk</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+              <div className="bg-indigo-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Hafif Uyku</div>
+                <div className="font-semibold text-indigo-700">{session.light_sleep_duration || 0}dk</div>
+              </div>
+              <div className="bg-red-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Kalp Atım Hızı</div>
+                <div className="font-semibold text-red-700">{session.heart_rate || 0} bpm</div>
+              </div>
+              <div className="bg-orange-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Stres Seviyesi</div>
+                <div className="font-semibold text-orange-700">{session.stress_level || 0}/10</div>
+              </div>
+              <div className="bg-green-50 p-3 rounded">
+                <div className="text-slate-500 text-xs">Uyanıklık</div>
+                <div className="font-semibold text-green-700">{session.awake_duration || 0}dk</div>
               </div>
             </div>
           </div>
@@ -475,7 +500,7 @@ function SleepDetailView({ session, onClose, formatDate }) {
                     </Button>
                   </div>
                   {isExpanded && (
-                    <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-3 text-sm">
+                    <div className="mt-3 pt-3 border-t grid grid-cols-4 gap-3 text-sm">
                       <div>
                         <div className="text-xs text-slate-500">Derin Uyku</div>
                         <div>{s.deep_sleep_duration}dk</div>
@@ -488,8 +513,28 @@ function SleepDetailView({ session, onClose, formatDate }) {
                         <div className="text-xs text-slate-500">Uyanıklık</div>
                         <div>{s.awake_duration}dk</div>
                       </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Kalp</div>
+                        <div>{s.heart_rate} bpm</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Stres</div>
+                        <div>{s.stress_level}/10</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Ekran Süresi</div>
+                        <div>{s.screen_time_before}dk</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Oda Sıcaklığı</div>
+                        <div>{s.room_temperature}°C</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Ruh Hali Önce/Sonra</div>
+                        <div>{s.mood_before}/{s.mood_after}</div>
+                      </div>
                       {s.notes && (
-                        <div className="col-span-3 bg-slate-50 p-2 rounded text-xs">
+                        <div className="col-span-4 bg-slate-50 p-2 rounded text-xs">
                           <span className="font-medium">Not:</span> {s.notes}
                         </div>
                       )}

@@ -26,6 +26,18 @@ function DashboardPage() {
     }
   };
 
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Geçersiz tarih';
+      }
+      return date.toLocaleDateString('tr-TR');
+    } catch (error) {
+      return dateString;
+    }
+  };
+
   const lastSleep = sleepSessions[0];
   const avgQuality = sleepSessions.length > 0 
     ? (sleepSessions.reduce((sum, s) => sum + s.sleep_quality, 0) / sleepSessions.length).toFixed(1)
@@ -35,7 +47,7 @@ function DashboardPage() {
     {
       title: 'Son Uyku Kalitesi',
       value: lastSleep ? `${lastSleep.sleep_quality}/10` : '—',
-      subtitle: lastSleep ? new Date(lastSleep.date).toLocaleDateString('tr-TR') : 'Henüz kayıt yok',
+      subtitle: lastSleep ? formatDate(lastSleep.sleep_date) : 'Henüz kayıt yok',
       color: 'text-primary-600'
     },
     {
@@ -123,7 +135,7 @@ function DashboardPage() {
               <div key={session.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                 <div>
                   <div className="font-medium text-slate-900">
-                    {new Date(session.date).toLocaleDateString('tr-TR')}
+                    {formatDate(session.sleep_date)}
                   </div>
                   <div className="text-sm text-slate-500">{session.notes || 'Not eklenmemiş'}</div>
                 </div>
