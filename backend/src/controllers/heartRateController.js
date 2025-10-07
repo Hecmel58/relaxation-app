@@ -20,7 +20,7 @@ class HeartRateController {
         content_name,
         heart_rate_before,
         heart_rate_after,
-        duration
+        duration || 0
       ];
       
       const result = await pool.query(query, values);
