@@ -6,12 +6,14 @@ const sleepRoutes = require('./sleepRoutes');
 const formRoutes = require('./formRoutes');
 const adminRoutes = require('./adminRoutes');
 const heartRateRoutes = require('./heartRateRoutes');
+const userRoutes = require('./userRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/sleep', sleepRoutes);
 router.use('/forms', formRoutes);
 router.use('/admin', adminRoutes);
 router.use('/heart-rate', heartRateRoutes);
+router.use('/user', userRoutes);
 
 router.get('/chat/unread-count', (req, res) => {
   res.json({ success: true, unreadCount: 0 });
