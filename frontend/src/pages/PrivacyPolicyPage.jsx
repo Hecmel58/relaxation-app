@@ -19,6 +19,15 @@ function PrivacyPolicyPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Veri Sorumlusu</h2>
               <p>FidBal Uyku ve Stres Yönetimi olarak kişisel verilerinizin korunmasına önem veriyoruz. 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında veri sorumlusu sıfatıyla, kişisel verilerinizin işlenmesine ilişkin olarak sizi bilgilendirmek isteriz.</p>
+              <div className="bg-blue-50 p-4 rounded-lg mt-3">
+                <p className="font-semibold mb-2">Veri Sorumlusu Bilgileri:</p>
+                <ul className="text-sm space-y-1">
+                  <li><strong>Ad Soyad:</strong> Hasan Balkaya</li>
+                  <li><strong>Telefon:</strong> 0539 487 00 58</li>
+                  <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
+                  <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
+                </ul>
+              </div>
             </section>
 
             <section>
@@ -40,7 +49,7 @@ function PrivacyPolicyPage() {
                 <li>Uyku ve stres yönetimi hizmeti sunmak</li>
                 <li>Kullanıcı deneyimini kişiselleştirmek ve iyileştirmek</li>
                 <li>Sağlık ve yaşam kalitesi analizi yapmak</li>
-                <li>İstatistiksel analiz ve araştırma yapmak</li>
+                <li>İstatistiksel analiz ve araştırma yapmak (akademik tez çalışması)</li>
                 <li>Hizmet kalitesini artırmak</li>
                 <li>Yasal yükümlülükleri yerine getirmek</li>
                 <li>Platform güvenliğini sağlamak</li>
@@ -83,7 +92,7 @@ function PrivacyPolicyPage() {
                 <li>Düzeltme, silme ve yok edilme işlemlerinin kişisel verilerin aktarıldığı üçüncü kişilere bildirilmesini isteme</li>
                 <li>İşlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz edilmesi suretiyle aleyhinize bir sonucun ortaya çıkmasına itiraz etme</li>
                 <li>Kişisel verilerinizin kanuna aykırı olarak işlenmesi sebebiyle zarara uğramanız hâlinde zararın giderilmesini talep etme</li>
-                <li><strong>Veri taşınabilirliği hakkı:</strong> Verilerinizi yapılandırılmış ve yaygın kullanılan bir formatta indirme</li>
+                <li><strong>Veri taşınabilirliği hakkı:</strong> Verilerinizi yapılandırılmış ve yaygın kullanılan bir formatta indirme (JSON)</li>
               </ul>
             </section>
 
@@ -121,9 +130,9 @@ function PrivacyPolicyPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-3">10. Haklarınızı Kullanma Yolları</h2>
               <p className="mb-2">KVKK kapsamındaki haklarınızı kullanmak için:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>E-posta:</strong> kvkk@fidbal.com</li>
+                <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
                 <li><strong>Platform Üzerinden:</strong> Profil → Hesap Ayarları → "Verilerimi İndir" veya "Hesabımı Sil"</li>
-                <li><strong>Yazılı Başvuru:</strong> Kimlik belgesi fotokopisi ile birlikte</li>
+                <li><strong>Yazılı Başvuru:</strong> Kimlik belgesi fotokopisi ile birlikte posta adresimize gönderebilirsiniz</li>
               </ul>
               <p className="mt-2">Başvurularınız en geç 30 gün içinde ücretsiz olarak yanıtlanacaktır. Başvurunun ayrıca bir maliyet gerektirmesi halinde, Kişisel Verileri Koruma Kurulu tarafından belirlenen tarifedeki ücret alınacaktır.</p>
             </section>
@@ -141,11 +150,14 @@ function PrivacyPolicyPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">13. İletişim</h2>
               <p className="mb-2">Kişisel verilerinizin işlenmesi hakkında sorularınız için:</p>
-              <ul className="list-none space-y-1">
-                <li><strong>E-posta:</strong> kvkk@fidbal.com</li>
-                <li><strong>Telefon:</strong> 0850 XXX XX XX</li>
-                <li><strong>Adres:</strong> [Şirket Adresi]</li>
-              </ul>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ul className="list-none space-y-2">
+                  <li><strong>Ad Soyad:</strong> Hasan Balkaya</li>
+                  <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
+                  <li><strong>Telefon:</strong> 0539 487 00 58</li>
+                  <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
+                </ul>
+              </div>
             </section>
 
             <section className="border-t pt-6">
