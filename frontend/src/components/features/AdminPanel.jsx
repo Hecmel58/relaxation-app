@@ -20,6 +20,9 @@ function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [passwordResetRequests, setPasswordResetRequests] = useState([]);
+  const [newPassword, setNewPassword] = useState('');
+  const [processingRequestId, setProcessingRequestId] = useState(null);
 
   useEffect(() => {
     if (!user?.isAdmin) {
@@ -31,12 +34,14 @@ function AdminPanel() {
 
   const loadAdminData = async () => {
     try {
-      const [usersRes, statsRes] = await Promise.all([
+      const [usersRes, statsRes, passwordResetRes] = await Promise.all([
         api.get('/admin/users'),
-        api.get('/admin/stats')
+        api.get('/admin/stats'),
+        api.get('/admin/password-reset-requests')
       ]);
       setUsers(usersRes.data.users || []);
       setStats(statsRes.data.stats || null);
+      setPasswordResetRequests(passwordResetRes.data.requests || []);
     } catch (error) {
       console.error('Admin verileri yüklenemedi:', error);
     } finally {
@@ -77,10 +82,59 @@ function AdminPanel() {
     }
   };
 
+  const handleApprovePasswordReset = async (requestId) => {
+    if (!newPassword || newPassword.length < 6) {
+      alert('Şifre en az 6 karakter olmalıdır');
+      return;
+    }
+
+    if (!confirm('Bu şifre sıfırlama talebini onaylamak istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    setProcessingRequestId(requestId);
+    try {
+      const response = await api.post('/admin/password-reset/approve', {
+        requestId,
+        newPassword
+      });
+      
+      if (response.data.success) {
+        alert(`✅ Şifre güncellendi!\n\nTelefon: ${response.data.phone}\nYeni Şifre: ${response.data.newPassword}\n\nKullanıcıya bu bilgileri iletmeyi unutmayın!`);
+        setNewPassword('');
+        loadAdminData();
+      }
+    } catch (error) {
+      console.error('Şifre sıfırlama hatası:', error);
+      alert('Şifre sıfırlanamadı: ' + (error.response?.data?.message || 'Bilinmeyen hata'));
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  const handleRejectPasswordReset = async (requestId) => {
+    if (!confirm('Bu şifre sıfırlama talebini reddetmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    setProcessingRequestId(requestId);
+    try {
+      await api.post('/admin/password-reset/reject', { requestId });
+      alert('Talep reddedildi');
+      loadAdminData();
+    } catch (error) {
+      console.error('Talep reddetme hatası:', error);
+      alert('Talep reddedilemedi');
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
   const tabs = [
     { id: 'users', name: 'Kullanıcılar', icon: '👥' },
+    { id: 'password-reset', name: 'Şifre Sıfırlama', icon: '🔑', badge: passwordResetRequests.length },
     { id: 'sleep', name: 'Uyku Verileri', icon: '😴' },
-    { id: 'heart-rate', name: 'Kalp Atım Hızı', icon: '❤️' },
+    { id: 'heart-rate', name: 'Kalp Atım Hızı', icon: '💗' },
     { id: 'forms', name: 'Form Yanıtları', icon: '📋' },
     { id: 'messages', name: 'Mesajlar', icon: '💬' }
   ];
@@ -141,13 +195,13 @@ function AdminPanel() {
 
       <Card>
         <div className="border-b border-slate-200">
-          <nav className="flex space-x-8">
+          <nav className="flex space-x-8 overflow-x-auto">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 data-tab={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap relative ${
                   activeTab === tab.id
                     ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
@@ -155,6 +209,11 @@ function AdminPanel() {
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.name}
+                {tab.badge > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -213,6 +272,71 @@ function AdminPanel() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {activeTab === 'password-reset' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                Bekleyen Şifre Sıfırlama Talepleri ({passwordResetRequests.length})
+              </h3>
+              
+              {passwordResetRequests.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <div className="text-4xl mb-2">🔑</div>
+                  <p>Bekleyen şifre sıfırlama talebi yok</p>
+                </div>
+              ) : (
+                passwordResetRequests.map(request => (
+                  <div key={request.id} className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-semibold text-slate-900">{request.user_name}</div>
+                        <div className="text-sm text-slate-600 mt-1">📱 {request.phone}</div>
+                        {request.email && (
+                          <div className="text-sm text-slate-600">📧 {request.email}</div>
+                        )}
+                        <div className="text-xs text-slate-500 mt-2">
+                          Talep Tarihi: {new Date(request.created_at).toLocaleString('tr-TR')}
+                        </div>
+                      </div>
+                      
+                      <div className="ml-4 space-y-2">
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Yeni şifre (min 6 karakter)"
+                            value={processingRequestId === request.id ? newPassword : ''}
+                            onChange={(e) => {
+                              setProcessingRequestId(request.id);
+                              setNewPassword(e.target.value);
+                            }}
+                            className="px-3 py-2 border border-slate-300 rounded-lg text-sm w-64"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprovePasswordReset(request.id)}
+                            disabled={processingRequestId !== request.id || !newPassword}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            ✅ Onayla
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRejectPasswordReset(request.id)}
+                            disabled={processingRequestId && processingRequestId !== request.id}
+                          >
+                            ❌ Reddet
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
