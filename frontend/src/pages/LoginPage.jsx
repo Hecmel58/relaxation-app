@@ -279,7 +279,7 @@ function LoginPage() {
                     <li><strong>Ad Soyad:</strong> Hasan Balkaya</li>
                     <li><strong>Telefon:</strong> 0539 487 00 58</li>
                     <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
-                    <li><strong>E-posta:</strong> hecmel58@gmail.com</li>
+                    <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
                   </ul>
                 </div>
               </section>
@@ -322,40 +322,124 @@ function LoginPage() {
               <section>
                 <h4 className="text-lg font-semibold text-slate-900 mb-3">5. Fikri Mülkiyet Hakları</h4>
                 <p>
-                  Platform'daki tüm içerik, tasarım, yazılım, kod, logo, metin, görsel, ses dosyaları ve diğer tüm materyaller Hasan Balkaya'ya aittir ve telif hakkı, ticari marka, patent ve diğer fikri mülkiyet hakları ile korunmaktadır.
+                  Platform'daki tüm içerik, tasarım, yazılım, kod, logo, metin, görsel, ses dosyaları ve diğer tüm materyaller Hasan Balkaya'ya aittir ve telif hakkı, ticari marka, patent ve diğer fikri mülkiyet hakları ile korunmaktadır. Kullanıcı, Platform'daki hiçbir içeriği ticari amaçla kullanamaz, kopyalayamaz, değiştiremez veya dağıtamaz.
+                </p>
+                <div className="bg-amber-50 p-4 rounded-lg mt-3">
+                  <p className="font-semibold text-amber-900">⚠️ Önemli Uyarı:</p>
+                  <p className="text-sm text-amber-800">
+                    Bu platform, akademik bir tez çalışması kapsamında geliştirilmiştir. Tüm hakları saklıdır. İzinsiz kullanım, kopyalama veya dağıtım yasal işlem gerektirir.
+                  </p>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">6. Hizmetin Ücretsiz Olması</h4>
+                <p>
+                  Platform, akademik bir tez çalışması kapsamında geliştirilmiş olup, şu anda tamamen ücretsiz olarak sunulmaktadır. Ancak, gelecekte belirli hizmetler için ücretlendirme yapılması durumunda, kullanıcılar önceden bilgilendirilecek ve onayları alınacaktır.
                 </p>
               </section>
 
               <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">6. Sorumluluk Reddi ve Garanti</h4>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">7. Sorumluluk Reddi ve Garanti</h4>
                 <div className="bg-red-50 p-4 rounded-lg">
                   <p className="font-semibold text-red-900 mb-2">🚨 ÖNEMLİ SAĞLIK UYARISI:</p>
                   <ul className="list-disc list-inside space-y-2 text-sm text-red-800">
                     <li>Platform, tıbbi teşhis veya tedavi amacı taşımamaktadır</li>
                     <li>Platform'da sunulan bilgiler, profesyonel tıbbi tavsiye yerine geçmez</li>
                     <li>Sağlık sorunları için mutlaka bir sağlık uzmanına başvurulmalıdır</li>
+                    <li>Platform'un kullanımından kaynaklanan herhangi bir sağlık sorunundan Platform sahibi sorumlu tutulamaz</li>
                     <li>Acil durumlarda 112'yi arayın</li>
+                  </ul>
+                </div>
+                <p className="mt-3">
+                  Platform "olduğu gibi" sunulmaktadır. Platform sahibi, hizmetin kesintisiz, hatasız veya güvenli olacağına dair hiçbir garanti vermemektedir.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">8. Gizlilik ve Veri Koruma</h4>
+                <p>
+                  Kullanıcı verileri, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) ve ilgili mevzuat kapsamında işlenmekte ve korunmaktadır. Kullanıcılar, kişisel verilerinin toplanması, işlenmesi ve saklanmasına açıkça rıza göstermiş sayılır.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">9. Hesap İptali ve Askıya Alma</h4>
+                <p className="mb-2">Platform sahibi, aşağıdaki durumlarda Kullanıcı hesabını askıya alabilir veya silebilir:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li>Sözleşme hükümlerinin ihlali</li>
+                  <li>Yanlış veya yanıltıcı bilgi sağlanması</li>
+                  <li>Platform'a zarar verecek faaliyetler</li>
+                  <li>Diğer kullanıcıların haklarının ihlali</li>
+                  <li>Yasadışı faaliyetler</li>
+                </ul>
+                <p className="mt-2">
+                  Kullanıcı, KVKK kapsamındaki haklarını kullanarak hesabını istediği zaman silebilir.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">10. Hizmet Değişiklikleri ve Sonlandırma</h4>
+                <p>
+                  Platform sahibi, önceden bildirimde bulunarak veya bulunmaksızın, Platform'un tamamını veya bir kısmını geçici veya kalıcı olarak değiştirme, askıya alma veya sonlandırma hakkını saklı tutar. Bu durumlardan dolayı Platform sahibinin herhangi bir sorumluluğu bulunmamaktadır.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">11. Sözleşme Değişiklikleri</h4>
+                <p>
+                  Platform sahibi, işbu Sözleşme'yi dilediği zaman değiştirme hakkını saklı tutar. Değişiklikler Platform üzerinden duyurulacak ve yürürlük tarihinden itibaren geçerli olacaktır. Kullanıcı, Platform'u kullanmaya devam ederek değişiklikleri kabul etmiş sayılır.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">12. Uyuşmazlık Çözümü</h4>
+                <p>
+                  İşbu Sözleşme'nin uygulanmasından veya yorumlanmasından doğabilecek her türlü uyuşmazlığın çözümünde Türkiye Cumhuriyeti yasaları uygulanır. Uyuşmazlıkların çözümünde <strong>Sivas Mahkemeleri ve İcra Daireleri</strong> yetkilidir.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">13. Yürürlük</h4>
+                <p>
+                  İşbu Sözleşme, Kullanıcı'nın Platform'a kayıt olması veya Platform'u kullanmaya başlaması ile yürürlüğe girer ve Kullanıcı'nın hesabını silmesi veya Platform tarafından hesabın kapatılması ile sona erer.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">14. İletişim</h4>
+                <p className="mb-2">
+                  Sözleşme ile ilgili sorularınız veya talepleriniz için aşağıdaki iletişim kanallarını kullanabilirsiniz:
+                </p>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <ul className="space-y-1 text-sm">
+                    <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
+                    <li><strong>Telefon:</strong> 0539 487 00 58</li>
+                    <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
                   </ul>
                 </div>
               </section>
 
               <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">7. Gizlilik ve Veri Koruma</h4>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">15. Mücbir Sebepler</h4>
                 <p>
-                  Kullanıcı verileri, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında işlenmekte ve korunmaktadır.
+                  Doğal afetler, savaş, terör, grev, internet altyapı arızaları, siber saldırılar veya Platform sahibinin kontrolü dışındaki diğer olaylar nedeniyle hizmetin sunulamamasından Platform sahibi sorumlu tutulamaz.
                 </p>
               </section>
 
               <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">8. Uyuşmazlık Çözümü</h4>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">16. Delil Sözleşmesi</h4>
                 <p>
-                  İşbu Sözleşme'nin uygulanmasından doğabilecek uyuşmazlıkların çözümünde <strong>Sivas Mahkemeleri ve İcra Daireleri</strong> yetkilidir.
+                  Taraflar, işbu Sözleşme'den doğabilecek ihtilaflarda Platform'un elektronik kayıtlarının, bilgisayar ve sunucu kayıtlarının, e-posta kayıtlarının geçerli, bağlayıcı, kesin ve münhasır delil teşkil edeceğini ve bu maddenin HMK m. 193 anlamında delil sözleşmesi niteliğinde olduğunu kabul eder.
                 </p>
               </section>
 
               <section className="border-t pt-4 mt-6">
                 <p className="text-xs text-gray-600">
-                  <strong>Son Güncelleme:</strong> 8 Ekim 2025 | <strong>Versiyon:</strong> 1.0
+                  <strong>Son Güncelleme Tarihi:</strong> 8 Ekim 2025<br/>
+                  <strong>Yürürlük Tarihi:</strong> 8 Ekim 2025<br/>
+                  <strong>Versiyon:</strong> 1.0<br/><br/>
+                  Bu Kullanıcı Sözleşmesi, Platform'a kayıt olan veya Platform'u kullanan her kullanıcı tarafından kabul edilmiş sayılır.
                 </p>
               </section>
             </div>

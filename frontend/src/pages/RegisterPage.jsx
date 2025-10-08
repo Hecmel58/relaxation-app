@@ -116,6 +116,11 @@ function RegisterPage() {
             </Button>
           </div>
         </Card>
+        
+        <footer className="mt-8 text-center">
+          <p className="text-sm text-slate-600">© Telif Hakkı 2025, Tüm Hakları Saklıdır</p>
+          <p className="text-sm text-blue-600 font-medium mt-1">Hecmel Tarafından Hazırlanmıştır</p>
+        </footer>
       </div>
     );
   }
@@ -215,27 +220,27 @@ function RegisterPage() {
             value={formData.password}
             onChange={handleChange}
             placeholder="••••••••"
-            minLength={6}
+            minLength={8}
             required
           />
 
           <div className="bg-blue-50 p-3 rounded-lg">
             <p className="text-xs font-semibold text-blue-900 mb-1">Şifre Gereksinimleri:</p>
             <ul className="text-xs text-blue-800 space-y-1">
-              <li className={formData.password.length >= 8 ? 'text-green-700' : ''}>
-                ✓ En az 8 karakter
+              <li className={formData.password.length >= 8 ? 'text-green-700 font-semibold' : ''}>
+                {formData.password.length >= 8 ? '✓' : '○'} En az 8 karakter
               </li>
-              <li className={/[a-z]/.test(formData.password) ? 'text-green-700' : ''}>
-                ✓ En az 1 küçük harf (a-z)
+              <li className={/[a-z]/.test(formData.password) ? 'text-green-700 font-semibold' : ''}>
+                {/[a-z]/.test(formData.password) ? '✓' : '○'} En az 1 küçük harf (a-z)
               </li>
-              <li className={/[A-Z]/.test(formData.password) ? 'text-green-700' : ''}>
-                ✓ En az 1 büyük harf (A-Z)
+              <li className={/[A-Z]/.test(formData.password) ? 'text-green-700 font-semibold' : ''}>
+                {/[A-Z]/.test(formData.password) ? '✓' : '○'} En az 1 büyük harf (A-Z)
               </li>
-              <li className={/\d/.test(formData.password) ? 'text-green-700' : ''}>
-                ✓ En az 1 rakam (0-9)
+              <li className={/\d/.test(formData.password) ? 'text-green-700 font-semibold' : ''}>
+                {/\d/.test(formData.password) ? '✓' : '○'} En az 1 rakam (0-9)
               </li>
-              <li className={/[@$!%*?&]/.test(formData.password) ? 'text-green-700' : ''}>
-                ✓ En az 1 özel karakter (@$!%*?&)
+              <li className={/[@$!%*?&]/.test(formData.password) ? 'text-green-700 font-semibold' : ''}>
+                {/[@$!%*?&]/.test(formData.password) ? '✓' : '○'} En az 1 özel karakter (@$!%*?&)
               </li>
             </ul>
           </div>
@@ -247,7 +252,7 @@ function RegisterPage() {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="••••••••"
-            minLength={6}
+            minLength={8}
             required
           />
 
@@ -294,22 +299,25 @@ function RegisterPage() {
 
       {showTermsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowTermsModal(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
-              <h3 className="text-2xl font-bold text-slate-900">Kullanıcı Sözleşmesi</h3>
+              <h3 className="text-xl font-bold text-slate-900">Kullanıcı Sözleşmesi</h3>
               <button
                 onClick={() => setShowTermsModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-3xl leading-none"
+                className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
               >
                 ×
               </button>
             </div>
-            <div className="p-6 space-y-4 text-sm text-slate-700">
-              <p className="text-center text-slate-600">
+            <div className="p-6">
+              <p className="text-center text-slate-600 mb-4">
                 Detaylı kullanıcı sözleşmesi için{' '}
                 <Link to="/terms" target="_blank" className="text-primary-600 hover:underline font-medium">
                   buraya tıklayın
                 </Link>
+              </p>
+              <p className="text-sm text-slate-500">
+                Kayıt olarak, hizmet koşullarımızı ve gizlilik politikamızı kabul etmiş olursunuz.
               </p>
             </div>
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t">

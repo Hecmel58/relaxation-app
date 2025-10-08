@@ -133,20 +133,20 @@ function AddUserModal({ onClose, onSuccess }) {
           <div className="bg-blue-50 p-3 rounded-lg">
             <p className="text-xs font-semibold text-blue-900 mb-1">Şifre Gereksinimleri:</p>
             <ul className="text-xs text-blue-800 space-y-1">
-              <li className={formData.password.length >= 8 ? 'text-green-700' : ''}>
-                ✓ En az 8 karakter
+              <li className={formData.password.length >= 8 ? 'text-green-700 font-semibold' : ''}>
+                {formData.password.length >= 8 ? '✓' : '○'} En az 8 karakter
               </li>
-              <li className={/[a-z]/.test(formData.password) ? 'text-green-700' : ''}>
-                ✓ En az 1 küçük harf (a-z)
+              <li className={/[a-z]/.test(formData.password) ? 'text-green-700 font-semibold' : ''}>
+                {/[a-z]/.test(formData.password) ? '✓' : '○'} En az 1 küçük harf (a-z)
               </li>
-              <li className={/[A-Z]/.test(formData.password) ? 'text-green-700' : ''}>
-                ✓ En az 1 büyük harf (A-Z)
+              <li className={/[A-Z]/.test(formData.password) ? 'text-green-700 font-semibold' : ''}>
+                {/[A-Z]/.test(formData.password) ? '✓' : '○'} En az 1 büyük harf (A-Z)
               </li>
-              <li className={/\d/.test(formData.password) ? 'text-green-700' : ''}>
-                ✓ En az 1 rakam (0-9)
+              <li className={/\d/.test(formData.password) ? 'text-green-700 font-semibold' : ''}>
+                {/\d/.test(formData.password) ? '✓' : '○'} En az 1 rakam (0-9)
               </li>
-              <li className={/[@$!%*?&]/.test(formData.password) ? 'text-green-700' : ''}>
-                ✓ En az 1 özel karakter (@$!%*?&)
+              <li className={/[@$!%*?&]/.test(formData.password) ? 'text-green-700 font-semibold' : ''}>
+                {/[@$!%*?&]/.test(formData.password) ? '✓' : '○'} En az 1 özel karakter (@$!%*?&)
               </li>
             </ul>
           </div>

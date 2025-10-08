@@ -40,6 +40,7 @@ function AdminPanel() {
         api.get('/admin/password-reset-requests')
       ]);
       
+      // Alfabetik sıralama (Türkçe karakter desteği ile)
       const sortedUsers = (usersRes.data.users || []).sort((a, b) => {
         const nameA = (a.name || '').toLowerCase();
         const nameB = (b.name || '').toLowerCase();
