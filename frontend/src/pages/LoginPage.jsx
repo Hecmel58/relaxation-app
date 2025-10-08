@@ -20,6 +20,20 @@ function LoginPage() {
   const [forgotMessage, setForgotMessage] = useState('');
   const [showTermsModal, setShowTermsModal] = useState(false);
 
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+      setPhone(value);
+    }
+  };
+
+  const handleForgotPhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+      setForgotPhone(value);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -31,6 +45,11 @@ function LoginPage() {
 
     if (!phone || !password) {
       setError('Telefon numarası ve şifre gereklidir');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Şifre en az 6 karakter olmalıdır');
       return;
     }
 
@@ -108,8 +127,9 @@ function LoginPage() {
               label="Telefon Numarası"
               type="tel"
               value={forgotPhone}
-              onChange={(e) => setForgotPhone(e.target.value)}
+              onChange={handleForgotPhoneChange}
               placeholder="5XX XXX XX XX"
+              maxLength={11}
               required
             />
 
@@ -167,8 +187,9 @@ function LoginPage() {
             label="Telefon Numarası"
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={handlePhoneChange}
             placeholder="5XX XXX XX XX"
+            maxLength={11}
             required
           />
 
@@ -178,6 +199,7 @@ function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
+            minLength={6}
             required
           />
 
@@ -234,53 +256,110 @@ function LoginPage() {
 
       {showTermsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowTermsModal(false)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-slate-900">Kullanıcı Sözleşmesi</h3>
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+              <h3 className="text-2xl font-bold text-slate-900">Kullanıcı Sözleşmesi ve Kullanım Koşulları</h3>
               <button
                 onClick={() => setShowTermsModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+                className="text-slate-400 hover:text-slate-600 text-3xl leading-none"
               >
                 ×
               </button>
             </div>
-            <div className="p-6 space-y-4 text-sm text-slate-700">
+            
+            <div className="p-6 space-y-6 text-sm text-slate-700">
               <section>
-                <h4 className="font-semibold text-slate-900 mb-2">1. Hizmet Kapsamı</h4>
-                <p>FidBal, kullanıcılarına uyku takibi, stres yönetimi ve rahatlama teknikleri sunan bir platformdur.</p>
-              </section>
-              
-              <section>
-                <h4 className="font-semibold text-slate-900 mb-2">2. Kullanıcı Sorumlulukları</h4>
-                <p>Kullanıcılar, hesap bilgilerini gizli tutmakla yükümlüdür. Platformun kötüye kullanımından kullanıcı sorumludur.</p>
-              </section>
-              
-              <section>
-                <h4 className="font-semibold text-slate-900 mb-2">3. Gizlilik ve Veri Koruma</h4>
-                <p>Kişisel verileriniz 6698 sayılı KVKK kapsamında korunmaktadır. Detaylı bilgi için Gizlilik Politikamızı inceleyebilirsiniz.</p>
-              </section>
-              
-              <section>
-                <h4 className="font-semibold text-slate-900 mb-2">4. Hizmet Değişiklikleri</h4>
-                <p>FidBal, hizmetlerinde değişiklik yapma hakkını saklı tutar. Önemli değişiklikler kullanıcılara bildirilir.</p>
-              </section>
-              
-              <section>
-                <h4 className="font-semibold text-slate-900 mb-2">5. Sorumluluk Reddi</h4>
-                <p>FidBal tıbbi tavsiye vermez. Sağlık sorunları için mutlaka bir sağlık uzmanına danışınız.</p>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">1. Taraflar ve Tanımlar</h4>
+                <p className="mb-2">
+                  İşbu Kullanıcı Sözleşmesi ("Sözleşme"), FidBal Uyku ve Stres Yönetimi platformu ("Platform") ve Platform'u kullanan gerçek veya tüzel kişiler ("Kullanıcı") arasında elektronik ortamda akdedilmiştir.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg mt-3">
+                  <p className="font-semibold mb-2">Platform Sahibi Bilgileri:</p>
+                  <ul className="text-sm space-y-1">
+                    <li><strong>Ad Soyad:</strong> Hasan Balkaya</li>
+                    <li><strong>Telefon:</strong> 0539 487 00 58</li>
+                    <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
+                    <li><strong>E-posta:</strong> hecmel58@gmail.com</li>
+                  </ul>
+                </div>
               </section>
 
-              <div className="mt-4 pt-4 border-t">
-                <Link
-                  to="/terms"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:underline text-sm font-medium"
-                >
-                  📄 Detaylı Kullanıcı Sözleşmesini Görüntüle
-                </Link>
-              </div>
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">2. Sözleşmenin Konusu</h4>
+                <p>
+                  İşbu Sözleşme, Platform'un sunduğu hizmetlerin Kullanıcı tarafından kullanımına ilişkin tarafların hak ve yükümlülüklerini düzenlemektedir. Platform, akademik bir tez çalışması kapsamında ücretsiz olarak sunulmakta olup, uyku takibi, stres yönetimi, rahatlama teknikleri ve ilgili sağlık hizmetlerini içermektedir.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">3. Hizmetin Kapsamı</h4>
+                <p className="mb-2">Platform aşağıdaki hizmetleri sunmaktadır:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li>Uyku kalitesi takibi ve analizi</li>
+                  <li>Kalp atım hızı izleme</li>
+                  <li>Stres seviyesi değerlendirmesi</li>
+                  <li>Rahatlama sesleri ve meditasyon teknikleri</li>
+                  <li>Binaural sesler ile zihinsel rahatlama</li>
+                  <li>Kişiselleştirilmiş raporlama ve öneriler</li>
+                  <li>Uzman desteği ve danışmanlık</li>
+                </ul>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">4. Kullanıcı Yükümlülükleri</h4>
+                <p className="mb-2">Kullanıcı, Platform'u kullanırken:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li>Doğru, güncel ve eksiksiz bilgi sağlamakla yükümlüdür</li>
+                  <li>Hesap güvenliğini sağlamak ve şifresini gizli tutmakla sorumludur</li>
+                  <li>Platform'u yasalara uygun ve etik kurallara uygun şekilde kullanacağını kabul eder</li>
+                  <li>Platform'un teknik altyapısına zarar verecek davranışlardan kaçınacağını taahhüt eder</li>
+                  <li>Diğer kullanıcıların haklarına saygı gösterecektir</li>
+                  <li>Ticari amaçla kullanmayacağını kabul eder</li>
+                  <li>Platform içeriğini izinsiz kopyalamayacak, çoğaltmayacak veya dağıtmayacaktır</li>
+                </ul>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">5. Fikri Mülkiyet Hakları</h4>
+                <p>
+                  Platform'daki tüm içerik, tasarım, yazılım, kod, logo, metin, görsel, ses dosyaları ve diğer tüm materyaller Hasan Balkaya'ya aittir ve telif hakkı, ticari marka, patent ve diğer fikri mülkiyet hakları ile korunmaktadır.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">6. Sorumluluk Reddi ve Garanti</h4>
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <p className="font-semibold text-red-900 mb-2">🚨 ÖNEMLİ SAĞLIK UYARISI:</p>
+                  <ul className="list-disc list-inside space-y-2 text-sm text-red-800">
+                    <li>Platform, tıbbi teşhis veya tedavi amacı taşımamaktadır</li>
+                    <li>Platform'da sunulan bilgiler, profesyonel tıbbi tavsiye yerine geçmez</li>
+                    <li>Sağlık sorunları için mutlaka bir sağlık uzmanına başvurulmalıdır</li>
+                    <li>Acil durumlarda 112'yi arayın</li>
+                  </ul>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">7. Gizlilik ve Veri Koruma</h4>
+                <p>
+                  Kullanıcı verileri, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında işlenmekte ve korunmaktadır.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">8. Uyuşmazlık Çözümü</h4>
+                <p>
+                  İşbu Sözleşme'nin uygulanmasından doğabilecek uyuşmazlıkların çözümünde <strong>Sivas Mahkemeleri ve İcra Daireleri</strong> yetkilidir.
+                </p>
+              </section>
+
+              <section className="border-t pt-4 mt-6">
+                <p className="text-xs text-gray-600">
+                  <strong>Son Güncelleme:</strong> 8 Ekim 2025 | <strong>Versiyon:</strong> 1.0
+                </p>
+              </section>
             </div>
+
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t">
               <Button
                 onClick={() => {

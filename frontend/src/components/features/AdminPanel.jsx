@@ -39,13 +39,36 @@ function AdminPanel() {
         api.get('/admin/stats'),
         api.get('/admin/password-reset-requests')
       ]);
-      setUsers(usersRes.data.users || []);
+      
+      const sortedUsers = (usersRes.data.users || []).sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB, 'tr');
+      });
+      
+      setUsers(sortedUsers);
       setStats(statsRes.data.stats || null);
       setPasswordResetRequests(passwordResetRes.data.requests || []);
     } catch (error) {
       console.error('Admin verileri yüklenemedi:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApproveUser = async (userId, currentStatus) => {
+    const action = currentStatus ? 'iptal etmek' : 'onaylamak';
+    if (!confirm(`Bu kullanıcıyı ${action} istediğinizden emin misiniz?`)) {
+      return;
+    }
+
+    try {
+      await api.put(`/admin/users/${userId}`, { isApproved: !currentStatus });
+      alert(currentStatus ? 'Kullanıcı onayı iptal edildi' : 'Kullanıcı onaylandı');
+      loadAdminData();
+    } catch (error) {
+      console.error('Onay değiştirme hatası:', error);
+      alert('İşlem başarısız');
     }
   };
 
@@ -233,6 +256,16 @@ function AdminPanel() {
                             Admin
                           </span>
                         )}
+                        {!u.is_approved && !u.is_admin && (
+                          <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+                            Onay Bekliyor
+                          </span>
+                        )}
+                        {u.is_approved && !u.is_admin && (
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                            Onaylı
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-slate-600 mt-1">{u.phone}</div>
                       {u.email && <div className="text-xs text-slate-500 mt-1">{u.email}</div>}
@@ -252,6 +285,15 @@ function AdminPanel() {
                       <span className="text-xs text-slate-500">
                         {new Date(u.created_at).toLocaleDateString('tr-TR')}
                       </span>
+                      {!u.is_admin && (
+                        <Button
+                          variant={u.is_approved ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => handleApproveUser(u.id, u.is_approved)}
+                        >
+                          {u.is_approved ? 'Onayı İptal Et' : 'Onayla'}
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"

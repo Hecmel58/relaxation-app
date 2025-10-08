@@ -1,36 +1,66 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import api from '../api/axios';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import logoImage from '../assets/logo.png';
 
 function RegisterPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    phone: '',
     name: '',
+    phone: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    abGroup: 'control'
   });
-  const [kvkkConsent, setKvkkConsent] = useState(false);
-  const [termsConsent, setTermsConsent] = useState(false);
-  const [error, setError] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const [error, setError] = useState('');
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+      setFormData({ ...formData, phone: value });
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 8) {
+      return 'Şifre en az 8 karakter olmalıdır';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Şifre en az bir küçük harf içermelidir';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Şifre en az bir büyük harf içermelidir';
+    }
+    if (!/\d/.test(password)) {
+      return 'Şifre en az bir rakam içermelidir';
+    }
+    if (!/[@$!%*?&]/.test(password)) {
+      return 'Şifre en az bir özel karakter (@$!%*?&) içermelidir';
+    }
+    return null;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!kvkkConsent) {
-      setError('KVKK Aydınlatma Metni onayı zorunludur');
-      return;
-    }
-
-    if (!termsConsent) {
-      setError('Kullanım Koşulları onayı zorunludur');
+    if (!agreedToTerms) {
+      setError('Kullanıcı sözleşmesini onaylamanız gerekmektedir');
       return;
     }
 
@@ -39,168 +69,263 @@ function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Şifre en az 6 karakter olmalıdır');
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
     setLoading(true);
-
     try {
       const response = await api.post('/auth/register', {
-        phone: formData.phone,
         name: formData.name,
+        phone: formData.phone,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        abGroup: formData.abGroup
       });
-      
-      if (response.data.token) {
-        localStorage.setItem('fidbal_token', response.data.token);
-        login(response.data.user, response.data.token);
-        navigate('/dashboard');
+
+      if (response.data.success) {
+        setRegistrationSuccess(true);
+      } else {
+        setError(response.data.message || 'Kayıt başarısız');
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Kayıt başarısız');
+      setError(err.response?.data?.message || err.response?.data?.details || 'Bir hata oluştu');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full mb-4">
-            <span className="text-white text-2xl">🌙</span>
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <div className="text-center">
+            <div className="mx-auto w-20 h-20 mb-4 flex items-center justify-center bg-green-100 rounded-full">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-3">Kayıt Başarılı!</h2>
+            <p className="text-slate-600 mb-6">
+              Kaydınız alındı. Admin onayından sonra uygulamaya erişebileceksiniz. Onay sonrası giriş yapabilirsiniz.
+            </p>
+            <Button onClick={() => navigate('/login')} className="w-full">
+              Giriş Sayfasına Dön
+            </Button>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Fidbal</h1>
-          <p className="text-slate-600 mt-2">Uyku ve Stres Yönetimi</p>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <div className="text-center mb-6">
+          <div className="mx-auto w-20 h-20 mb-3 flex items-center justify-center bg-white rounded-2xl shadow-lg p-3">
+            <img 
+              src={logoImage}
+              alt="FidBal Logo" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-1">
+            FidBal
+          </h1>
+          <p className="text-lg font-semibold text-slate-800">Uyku ve Stres Yönetimi</p>
         </div>
 
-        <Card>
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Kayıt Ol</h2>
+        <h2 className="text-2xl font-bold text-slate-900 mb-4">Kayıt Ol</h2>
 
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Ad Soyad</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="Adınız Soyadınız"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
+          <Input
+            label="Ad Soyad"
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Ad Soyad"
+            required
+          />
+
+          <Input
+            label="Telefon Numarası"
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handlePhoneChange}
+            placeholder="5XX XXX XX XX"
+            maxLength={11}
+            required
+          />
+
+          <Input
+            label="E-posta (Opsiyonel)"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="ornek@email.com"
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Grup Seçimi
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, abGroup: 'control' })}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  formData.abGroup === 'control'
+                    ? 'border-blue-600 bg-blue-50 text-blue-900'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <div className="font-semibold">Kontrol Grubu</div>
+                <div className="text-xs mt-1">Standart deneyim</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, abGroup: 'experiment' })}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  formData.abGroup === 'experiment'
+                    ? 'border-purple-600 bg-purple-50 text-purple-900'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <div className="font-semibold">Deney Grubu</div>
+                <div className="text-xs mt-1">Gelişmiş özellikler</div>
+              </button>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Telefon Numarası</label>
-              <input
-                type="tel"
-                className="input"
-                placeholder="5XX XXX XX XX"
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">E-posta (Opsiyonel)</label>
-              <input
-                type="email"
-                className="input"
-                placeholder="ornek@email.com"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Şifre</label>
-              <input
-                type="password"
-                className="input"
-                placeholder="En az 6 karakter"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Şifre Tekrar</label>
-              <input
-                type="password"
-                className="input"
-                placeholder="Şifrenizi tekrar girin"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                required
-              />
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={kvkkConsent}
-                  onChange={(e) => setKvkkConsent(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  required
-                />
-                <span className="text-sm text-gray-700">
-                  <a 
-                    href="/privacy-policy" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary-600 hover:text-primary-700 hover:underline font-medium"
-                  >
-                    KVKK Aydınlatma Metni
-                  </a>
-                  'ni okudum, kişisel verilerimin işlenmesini kabul ediyorum. <span className="text-red-500">*</span>
-                </span>
-              </label>
-              
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={termsConsent}
-                  onChange={(e) => setTermsConsent(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  required
-                />
-                <span className="text-sm text-gray-700">
-                  Kullanım Koşulları'nı kabul ediyorum. <span className="text-red-500">*</span>
-                </span>
-              </label>
-            </div>
-
-            <Button type="submit" loading={loading} className="w-full">
-              {loading ? 'Kayıt yapılıyor...' : 'Kayıt Ol'}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-600">
-              Zaten hesabınız var mı?{' '}
-              <Link to="/login" className="text-primary-600 font-medium hover:text-primary-700">
-                Giriş Yap
-              </Link>
-            </p>
           </div>
-        </Card>
 
-        <p className="text-xs text-center text-slate-500 mt-4">
-          Kayıt olarak 6698 sayılı KVKK kapsamında kişisel verilerinizin işlenmesini kabul etmiş olursunuz.
-        </p>
-      </div>
+          <Input
+            label="Şifre"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="••••••••"
+            minLength={6}
+            required
+          />
+
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <p className="text-xs font-semibold text-blue-900 mb-1">Şifre Gereksinimleri:</p>
+            <ul className="text-xs text-blue-800 space-y-1">
+              <li className={formData.password.length >= 8 ? 'text-green-700' : ''}>
+                ✓ En az 8 karakter
+              </li>
+              <li className={/[a-z]/.test(formData.password) ? 'text-green-700' : ''}>
+                ✓ En az 1 küçük harf (a-z)
+              </li>
+              <li className={/[A-Z]/.test(formData.password) ? 'text-green-700' : ''}>
+                ✓ En az 1 büyük harf (A-Z)
+              </li>
+              <li className={/\d/.test(formData.password) ? 'text-green-700' : ''}>
+                ✓ En az 1 rakam (0-9)
+              </li>
+              <li className={/[@$!%*?&]/.test(formData.password) ? 'text-green-700' : ''}>
+                ✓ En az 1 özel karakter (@$!%*?&)
+              </li>
+            </ul>
+          </div>
+
+          <Input
+            label="Şifre Tekrar"
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="••••••••"
+            minLength={6}
+            required
+          />
+
+          <div className="flex items-start">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-1 mr-2 h-4 w-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="terms" className="text-sm text-slate-700">
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="text-primary-600 hover:underline font-medium"
+              >
+                Kullanıcı sözleşmesini
+              </button> okudum ve onaylıyorum
+            </label>
+          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={loading || !agreedToTerms}
+          >
+            {loading ? 'Kaydediliyor...' : 'Kayıt Ol'}
+          </Button>
+
+          <div className="text-center text-sm">
+            <span className="text-slate-600">Zaten hesabınız var mı? </span>
+            <Link to="/login" className="text-primary-600 hover:underline font-medium">
+              Giriş Yap
+            </Link>
+          </div>
+        </form>
+      </Card>
+
+      <footer className="mt-8 text-center">
+        <p className="text-sm text-slate-600">© Telif Hakkı 2025, Tüm Hakları Saklıdır</p>
+        <p className="text-sm text-blue-600 font-medium mt-1">Hecmel Tarafından Hazırlanmıştır</p>
+      </footer>
+
+      {showTermsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowTermsModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+              <h3 className="text-2xl font-bold text-slate-900">Kullanıcı Sözleşmesi</h3>
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="text-slate-400 hover:text-slate-600 text-3xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 space-y-4 text-sm text-slate-700">
+              <p className="text-center text-slate-600">
+                Detaylı kullanıcı sözleşmesi için{' '}
+                <Link to="/terms" target="_blank" className="text-primary-600 hover:underline font-medium">
+                  buraya tıklayın
+                </Link>
+              </p>
+            </div>
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t">
+              <Button
+                onClick={() => {
+                  setShowTermsModal(false);
+                  setAgreedToTerms(true);
+                }}
+                className="w-full"
+              >
+                Anladım ve Kabul Ediyorum
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
