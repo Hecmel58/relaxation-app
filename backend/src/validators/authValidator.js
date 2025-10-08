@@ -12,7 +12,9 @@ const registerSchema = Joi.object({
     .messages({
       'string.min': 'Şifre en az 8 karakter olmalıdır',
       'string.pattern.base': 'Şifre en az bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter (@$!%*?&) içermelidir'
-    })
+    }),
+  abGroup: Joi.string().valid('control', 'experiment').optional(),
+  isAdmin: Joi.boolean().optional()
 });
 
 const loginSchema = Joi.object({
