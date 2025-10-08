@@ -4,7 +4,7 @@ const pool = require('../config/database');
 const { JWT_SECRET, JWT_EXPIRES_IN, BCRYPT_ROUNDS, AB_GROUPS } = require('../config/constants');
 
 class AuthService {
-  async register(name, phone, email, password) {
+  async register(name, phone, email, password, abGroup) {
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE phone = $1',
       [phone]
@@ -15,34 +15,33 @@ class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const abGroup = Math.random() < 0.5 ? AB_GROUPS.CONTROL : AB_GROUPS.EXPERIMENT;
+    const selectedGroup = abGroup || (Math.random() < 0.5 ? AB_GROUPS.CONTROL : AB_GROUPS.EXPERIMENT);
 
     const result = await pool.query(
-      `INSERT INTO users (name, phone, email, password_hash, ab_group, created_at) 
-       VALUES ($1, $2, $3, $4, $5, NOW()) 
-       RETURNING id, name, phone, email, ab_group, is_admin`,
-      [name, phone, email || null, hashedPassword, abGroup]
+      `INSERT INTO users (name, phone, email, password_hash, ab_group, is_approved, created_at) 
+       VALUES ($1, $2, $3, $4, $5, false, NOW()) 
+       RETURNING id, name, phone, email, ab_group, is_admin, is_approved`,
+      [name, phone, email || null, hashedPassword, selectedGroup]
     );
 
     const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
     return {
-      token,
+      message: 'Kayıt başarılı! Admin onayından sonra giriş yapabilirsiniz.',
       user: {
         userId: user.id,
         name: user.name,
         phone: user.phone,
         email: user.email,
         abGroup: user.ab_group,
-        isAdmin: user.is_admin || false
+        isApproved: user.is_approved || false
       }
     };
   }
 
   async login(phone, password) {
     const result = await pool.query(
-      'SELECT id, name, phone, email, password_hash, ab_group, is_admin FROM users WHERE phone = $1',
+      'SELECT id, name, phone, email, password_hash, ab_group, is_admin, is_approved FROM users WHERE phone = $1',
       [phone]
     );
 
@@ -51,6 +50,11 @@ class AuthService {
     }
 
     const user = result.rows[0];
+    
+    if (!user.is_approved && !user.is_admin) {
+      throw new Error('Hesabınız henüz admin tarafından onaylanmamıştır. Lütfen bekleyiniz.');
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {

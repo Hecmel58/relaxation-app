@@ -4,7 +4,7 @@ class AdminController {
   async getUsers(req, res, next) {
     try {
       const result = await pool.query(
-        'SELECT id, name, phone, email, is_admin, ab_group, created_at FROM users ORDER BY created_at DESC'
+        'SELECT id, name, phone, email, is_admin, is_approved, ab_group, created_at FROM users ORDER BY created_at DESC'
       );
       
       res.json({
@@ -59,19 +59,20 @@ class AdminController {
   async updateUser(req, res, next) {
     try {
       const { userId } = req.params;
-      const { name, email, abGroup, isAdmin } = req.body;
+      const { name, email, abGroup, isAdmin, isApproved } = req.body;
       
       const query = `
         UPDATE users 
         SET name = COALESCE($1, name),
             email = COALESCE($2, email),
             ab_group = COALESCE($3, ab_group),
-            is_admin = COALESCE($4, is_admin)
-        WHERE id = $5
-        RETURNING id, name, phone, email, is_admin, ab_group
+            is_admin = COALESCE($4, is_admin),
+            is_approved = COALESCE($5, is_approved)
+        WHERE id = $6
+        RETURNING id, name, phone, email, is_admin, is_approved, ab_group
       `;
       
-      const result = await pool.query(query, [name, email, abGroup, isAdmin, userId]);
+      const result = await pool.query(query, [name, email, abGroup, isAdmin, isApproved, userId]);
       
       if (result.rows.length === 0) {
         return res.status(404).json({ success: false, error: 'Kullanıcı bulunamadı' });
