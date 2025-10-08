@@ -28,35 +28,48 @@ if (process.env.JWT_SECRET.length < 32) {
 }
 
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
 }));
+
 app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://fidbal.com',
+  'https://www.fidbal.com',
+  'https://fidbal-backend.vercel.app',
+  'https://relaxation-app.pages.dev'
+];
+
 app.use(cors({
   origin: function(origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://fidbal.com',
-      'https://www.fidbal.com',
-      'https://fidbal-backend.vercel.app',
-      'https://relaxation-app.pages.dev'
-    ];
-    
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('pages.dev')) {
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('pages.dev') || origin.includes('cloudflare')) {
       callback(null, true);
     } else {
+      logger.warn(`CORS blocked origin: ${origin}`);
       callback(null, true);
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Length', 'X-Request-Id']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ],
+  exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 app.options('*', cors());
