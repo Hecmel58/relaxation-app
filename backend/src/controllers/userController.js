@@ -9,14 +9,15 @@ class UserController {
     try {
       await client.query('BEGIN');
       
-      const userId = req.userId;
+      const userId = req.user.userId;
       
+      await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM heart_rate_sessions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM sleep_sessions WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM form_submissions WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM form_responses WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
       await client.query('DELETE FROM video_calls WHERE participant1_id = $1 OR participant2_id = $1', [userId]);
-      await client.query('DELETE FROM users WHERE id = $1', [userId]);
+      await client.query('DELETE FROM users WHERE id = $1 AND is_admin = false', [userId]);
       
       await client.query('COMMIT');
       
@@ -37,26 +38,45 @@ class UserController {
 
   async downloadData(req, res, next) {
     try {
-      const userId = req.userId;
+      const userId = req.user.userId;
       
-      const userData = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-      const sleepData = await pool.query('SELECT * FROM sleep_sessions WHERE user_id = $1', [userId]);
-      const heartRateData = await pool.query('SELECT * FROM heart_rate_sessions WHERE user_id = $1', [userId]);
-      const formData = await pool.query('SELECT * FROM form_submissions WHERE user_id = $1', [userId]);
+      const userData = await pool.query(
+        'SELECT id, name, phone, email, ab_group, is_admin, created_at FROM users WHERE id = $1', 
+        [userId]
+      );
+      const sleepData = await pool.query(
+        'SELECT * FROM sleep_sessions WHERE user_id = $1 ORDER BY sleep_date DESC', 
+        [userId]
+      );
+      const heartRateData = await pool.query(
+        'SELECT * FROM heart_rate_sessions WHERE user_id = $1 ORDER BY created_at DESC', 
+        [userId]
+      );
+      const formData = await pool.query(
+        'SELECT * FROM form_responses WHERE user_id = $1 ORDER BY created_at DESC', 
+        [userId]
+      );
       
       const exportData = {
         user: userData.rows[0],
         sleepSessions: sleepData.rows,
         heartRateSessions: heartRateData.rows,
-        formSubmissions: formData.rows,
-        exportDate: new Date().toISOString()
+        formResponses: formData.rows,
+        exportDate: new Date().toISOString(),
+        dataProtectionInfo: {
+          law: 'KVKK 6698 sayılı Kişisel Verilerin Korunması Kanunu',
+          rights: 'Bu veri size aittir ve istediğiniz zaman silebilirsiniz.',
+          contact: 'ecmelazizoglu@gmail.com',
+          phone: '0539 487 00 58',
+          address: 'Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez'
+        }
       };
       
-      delete exportData.user.password;
-      
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', 'attachment; filename=fidbal-verilerim.json');
+      res.setHeader('Content-Disposition', `attachment; filename=fidbal-verilerim-${new Date().toISOString().split('T')[0]}.json`);
       res.json(exportData);
+      
+      logger.info(`User data downloaded: ${userId}`);
     } catch (error) {
       logger.error('Download data error:', error);
       next(error);
