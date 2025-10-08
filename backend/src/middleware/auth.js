@@ -22,20 +22,24 @@ const authenticateToken = (req, res, next) => {
       return next(new AppError('Geçersiz token yapısı', 403));
     }
 
-    req.userId = decoded.userId;
+    // ✅ DOĞRU: req.user objesi oluştur
+    req.user = { userId: decoded.userId };
+    req.userId = decoded.userId; // Geriye dönük uyumluluk için
     next();
   });
 };
 
 const requireAdmin = async (req, res, next) => {
   try {
+    const userId = req.user?.userId || req.userId;
+    
     const result = await pool.query(
       'SELECT is_admin FROM users WHERE id = $1',
-      [req.userId]
+      [userId]
     );
 
     if (result.rows.length === 0 || !result.rows[0].is_admin) {
-      logger.warn(`Unauthorized admin access attempt by user ${req.userId}`);
+      logger.warn(`Unauthorized admin access attempt by user ${userId}`);
       return next(new AppError('Bu işlem için admin yetkisi gerekli', 403));
     }
 
