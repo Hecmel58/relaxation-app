@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const passwordResetController = require('../controllers/passwordResetController');
 const { authenticateToken } = require('../middleware/auth');
 const { validateRegister, validateLogin, validateForgotPassword } = require('../validators/authValidator');
 const pool = require('../config/database');
@@ -8,6 +9,7 @@ const pool = require('../config/database');
 router.post('/register', validateRegister, authController.register);
 router.post('/login', validateLogin, authController.login);
 router.post('/forgot-password', validateForgotPassword, authController.forgotPassword);
+router.post('/request-password-reset', passwordResetController.requestPasswordReset);
 
 router.get('/verify', authenticateToken, async (req, res) => {
   try {
