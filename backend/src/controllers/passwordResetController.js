@@ -1,5 +1,5 @@
 const pool = require('../config/database');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const logger = require('../utils/logger');
 
 class PasswordResetController {
