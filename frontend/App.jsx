@@ -17,6 +17,8 @@ import FormsPage from './components/features/FormsPage';
 import SupportPage from './components/features/SupportPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 
 function App() {
   const { isAuthenticated, token, user, setUser, logout } = useAuthStore();
@@ -36,17 +38,15 @@ function App() {
       });
 
       if (response.data.success && response.data.user) {
-        // Backend /auth/verify endpoint'i is_admin ve ab_group gönderiyor
         const userData = {
           userId: response.data.user.id,
           phone: response.data.user.phone,
           name: response.data.user.name,
           email: response.data.user.email || null,
-          isAdmin: Boolean(response.data.user.is_admin), // Dikkat: is_admin (snake_case)
-          abGroup: response.data.user.ab_group || 'control' // Dikkat: ab_group (snake_case)
+          isAdmin: Boolean(response.data.user.is_admin),
+          abGroup: response.data.user.ab_group || 'control'
         };
         
-        console.log('Verify - User data:', userData);
         setUser(userData);
       } else {
         logout();
@@ -71,6 +71,8 @@ function App() {
           path="/register" 
           element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" replace />} 
         />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
 
         {/* Protected Routes */}
         <Route element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>

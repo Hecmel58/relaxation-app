@@ -269,6 +269,17 @@ function LoginPage() {
                 <h4 className="font-semibold text-slate-900 mb-2">5. Sorumluluk Reddi</h4>
                 <p>FidBal tıbbi tavsiye vermez. Sağlık sorunları için mutlaka bir sağlık uzmanına danışınız.</p>
               </section>
+
+              <div className="mt-4 pt-4 border-t">
+                <Link
+                  to="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-600 hover:underline text-sm font-medium"
+                >
+                  📄 Detaylı Kullanıcı Sözleşmesini Görüntüle
+                </Link>
+              </div>
             </div>
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t">
               <Button
