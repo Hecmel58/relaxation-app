@@ -1,150 +1,130 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import api from '../../api/axios';
 import Card from '../ui/Card';
-import Button from '../ui/Button';
+import api from '../../api/axios';
 
 function FormsPage() {
   const { user } = useAuthStore();
-  const [availableForms, setAvailableForms] = useState([]);
+  const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedForm, setSelectedForm] = useState(null);
 
   useEffect(() => {
-    loadForms();
+    fetchForms();
   }, []);
 
-  const loadForms = async () => {
+  const fetchForms = async () => {
     try {
       const response = await api.get('/forms/types');
-      if (response.data.success) {
-        // Backend'den gelen formları frontend formatına çevir
-        const formattedForms = response.data.forms.map(form => ({
-          id: form.id,
-          title: form.title,
-          description: form.description,
-          googleFormUrl: form.url,
-          icon: getFormIcon(form.id),
-          status: 'active'
-        }));
-        setAvailableForms(formattedForms);
-      }
+      setForms(response.data);
     } catch (error) {
-      console.error('Formlar yüklenemedi:', error);
+      console.error('Form yükleme hatası:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getFormIcon = (formId) => {
-    const icons = {
-      'personal': '📋',
-      'stress': '📊',
-      'nursing': '🏥',
-      'psqi': '😴'
-    };
-    return icons[formId] || '📄';
-  };
-
-  const handleFormClick = (form) => {
-    setSelectedForm(form);
-  };
-
-  const handleCloseForm = () => {
-    setSelectedForm(null);
+  const handleRefillForm = (formId) => {
+    window.location.reload();
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-slate-600">Formlar yükleniyor...</div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
-  // İframe modunda
-  if (selectedForm) {
+  if (forms.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">{selectedForm.title}</h2>
-            <p className="text-slate-600">{selectedForm.description}</p>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-slate-900">Formlar</h1>
+        <Card>
+          <div className="text-center py-12">
+            <svg className="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-slate-900">Henüz form yok</h3>
+            <p className="mt-1 text-sm text-slate-500">Şu anda doldurulabilir form bulunmuyor.</p>
           </div>
-          <Button onClick={handleCloseForm} variant="outline">
-            ← Geri Dön
-          </Button>
-        </div>
-
-        <Card className="p-0 overflow-hidden">
-          <iframe
-            src={selectedForm.googleFormUrl}
-            width="100%"
-            height="800"
-            frameBorder="0"
-            marginHeight="0"
-            marginWidth="0"
-            className="w-full"
-          >
-            Yükleniyor...
-          </iframe>
         </Card>
       </div>
     );
   }
 
-  // Form listesi
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Değerlendirme Formları</h1>
-        <p className="text-slate-600 mt-1">Periyodik değerlendirme formlarınızı doldurun</p>
+        <h1 className="text-3xl font-bold text-slate-900">Formlar</h1>
+        <p className="text-slate-600 mt-1">Dolmanız gereken formlar aşağıda listelenmektedir</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {availableForms.map((form) => (
-          <Card key={form.id} className="hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="text-4xl">{form.icon}</div>
-              {form.status === 'active' && (
-                <span className="px-3 py-1 bg-primary-100 text-primary-800 text-xs font-medium rounded-full">
-                  Aktif
+      <div className="grid gap-6 md:grid-cols-2">
+        {forms.map((form) => (
+          <Card key={form.id} className="relative">
+            {form.is_filled && (
+              <div className="absolute top-4 right-4">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Dolduruldu
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+            <h3 className="text-xl font-semibold text-slate-900 mb-2 pr-32">
               {form.title}
             </h3>
-            <p className="text-sm text-slate-600 mb-4">
-              {form.description}
-            </p>
+            
+            {form.description && (
+              <p className="text-slate-600 mb-4">{form.description}</p>
+            )}
 
-            <Button 
-              className="w-full" 
-              onClick={() => handleFormClick(form)}
-              variant="primary"
-            >
-              Formu Doldur
-            </Button>
+            {form.is_filled && form.last_filled_at && (
+              <p className="text-sm text-slate-500 mb-4">
+                Son doldurulma: {new Date(form.last_filled_at).toLocaleDateString('tr-TR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            )}
+
+            <div className="flex gap-3 mt-4">
+              
+                href={form.google_form_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white transition-colors ${
+                  form.is_filled 
+                    ? 'bg-slate-400 hover:bg-slate-500' 
+                    : 'bg-primary-600 hover:bg-primary-700'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                {form.is_filled ? 'Formu Görüntüle' : 'Formu Doldur'}
+              </a>
+
+              {form.is_filled && (
+                <button
+                  onClick={() => handleRefillForm(form.id)}
+                  className="px-4 py-2 border-2 border-primary-600 text-primary-600 text-sm font-medium rounded-md hover:bg-primary-50 transition-colors"
+                  title="Yeniden doldur"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </Card>
         ))}
       </div>
-
-      <Card>
-        <div className="flex items-start space-x-3">
-          <span className="text-2xl">ℹ️</span>
-          <div>
-            <h4 className="text-lg font-semibold text-slate-900 mb-2">
-              Neden Form Dolduruyoruz?
-            </h4>
-            <p className="text-slate-600 text-sm">
-              Bu değerlendirme formları sayesinde uyku kaliteniz ve genel sağlık durumunuz hakkında daha detaylı bilgi topluyoruz. 
-              Bu veriler uzmanlarımızın size daha iyi öneriler bulunmasına yardımcı olur.
-            </p>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 }

@@ -1,42 +1,73 @@
-import React, { useState, useEffect } from 'react';
-import { useAuthStore } from '../../store/authStore';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import React, { useState } from 'react';
+import { useAuthStore } from '../store/authStore';
+import Card from '../components/ui/Card';
+import api from '../api/axios';
 
 function ProfilePage() {
   const { user } = useAuthStore();
-  const [profileData, setProfileData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
-  useEffect(() => {
-    // Store'dan kullanıcı verisini al
-    if (user) {
-      setProfileData({
-        name: user.name || 'Belirtilmemiş',
-        phone: user.phone || '',
-        email: user.email || '',
-        abGroup: user.abGroup || 'control',
-        isAdmin: user.isAdmin || false
+  const handleDownloadData = async () => {
+    try {
+      setDownloading(true);
+      
+      console.log('Download started...');
+      console.log('API URL:', import.meta.env.VITE_API_URL);
+      console.log('Token:', localStorage.getItem('fidbal_token') ? 'EXISTS' : 'MISSING');
+      
+      // ✅ DOĞRU: /api prefix yok çünkü axios.js'de baseURL'de var
+      const response = await api.get('/user/data/download', {
+        responseType: 'blob'
       });
+      
+      console.log('Download successful!');
+      
+      const blob = new Blob([response.data], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fidbal-verilerim-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      alert('✅ Verileriniz başarıyla indirildi!');
+    } catch (error) {
+      console.error('Download error:', error);
+      console.error('Error response:', error.response?.data);
+      alert('❌ Veri indirme sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setDownloading(false);
     }
-    setLoading(false);
-  }, [user]);
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  if (!profileData) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-slate-600">Profil bilgileri yüklenemedi</p>
-      </div>
-    );
-  }
+  const handleDeleteAccount = async () => {
+    if (!confirm('UYARI: Hesabınız ve TÜM verileriniz kalıcı olarak silinecektir. Bu işlem GERİ ALINAMAZ! Devam etmek istiyor musunuz?')) return;
+    if (!confirm('SON UYARI: Bu işlem geri alınamaz! Tüm verileriniz silinecek. Emin misiniz?')) return;
+    
+    const confirmText = prompt('Hesabınızı silmek için SİL yazın:');
+    if (confirmText !== 'SİL') { 
+      alert('İptal edildi'); 
+      return; 
+    }
+    
+    try {
+      // ✅ DOĞRU: /api prefix yok
+      const response = await api.delete('/user/account');
+      
+      if (response.data.success) {
+        alert('✅ Hesabınız başarıyla silindi. Güle güle!');
+        localStorage.clear();
+        window.location.href = '/login';
+      } else {
+        throw new Error(response.data.error || 'Hesap silme başarısız');
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      alert('❌ Hesap silme sırasında bir hata oluştu: ' + (error.response?.data?.error || error.message));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -46,58 +77,69 @@ function ProfilePage() {
       </div>
 
       <Card>
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Hesap Bilgileri</h3>
-        
-        <div className="space-y-4">
+        <h3 className="text-lg font-semibold mb-4">Hesap Bilgileri</h3>
+        <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Ad</label>
-            <div className="text-slate-900">{profileData.name}</div>
+            <label className="text-sm font-medium text-slate-700">Ad</label>
+            <p className="text-slate-900">{user?.name || 'Belirtilmemiş'}</p>
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
-            <div className="text-slate-900">{profileData.phone}</div>
+            <label className="text-sm font-medium text-slate-700">Telefon</label>
+            <p className="text-slate-900">{user?.phone}</p>
           </div>
-
-          {profileData.email && (
+          {user?.email && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">E-posta</label>
-              <div className="text-slate-900">{profileData.email}</div>
+              <label className="text-sm font-medium text-slate-700">E-posta</label>
+              <p className="text-slate-900">{user.email}</p>
             </div>
           )}
-
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">A/B Test Grubu</label>
-            <div className="flex items-center space-x-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                profileData.abGroup === 'experiment' 
-                  ? 'bg-warning-100 text-warning-800' 
-                  : 'bg-slate-100 text-slate-800'
-              }`}>
-                {profileData.abGroup === 'experiment' ? 'Deney Grubu' : 'Kontrol Grubu'}
-              </span>
-              {profileData.isAdmin && (
-                <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
-                  Admin
+            <label className="text-sm font-medium text-slate-700">A/B Test Grubu</label>
+            <p className="text-slate-900">
+              {user?.abGroup === 'experiment' ? 'Deney Grubu' : 'Kontrol Grubu'}
+              {user?.abGroup === 'experiment' && (
+                <span className="ml-2 px-2 py-1 bg-warning-100 text-warning-800 rounded text-xs font-medium">
+                  BETA
                 </span>
               )}
-            </div>
+            </p>
           </div>
         </div>
       </Card>
 
-      <Card className="bg-primary-50 border-primary-200">
-        <div className="flex items-start space-x-3">
-          <span className="text-2xl">ℹ️</span>
-          <div>
-            <h4 className="font-semibold text-primary-800 mb-2">
-              {profileData.abGroup === 'experiment' ? 'Deney Grubu Özellikleri' : 'Kontrol Grubu'}
-            </h4>
-            <p className="text-primary-700 text-sm">
-              {profileData.abGroup === 'experiment' 
-                ? 'Beta özelliklerine erişiminiz var: Rahatlama egzersizleri, Binaural sesler ve gelişmiş içerikler.'
-                : 'Temel özelliklere erişiminiz var. Beta özellikler için deney grubuna geçmeniz gerekiyor.'
-              }
+      <Card>
+        <h3 className="text-lg font-semibold mb-4">Kişisel Verilerim (KVKK)</h3>
+        <p className="text-sm text-slate-600 mb-4">
+          6698 sayılı KVKK kapsamında kişisel verilerinizi indirebilir veya hesabınızı silebilirsiniz.
+        </p>
+        <div className="space-y-3">
+          <button 
+            onClick={handleDownloadData} 
+            disabled={downloading} 
+            className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+          >
+            {downloading ? 'İndiriliyor...' : 'Verilerimi İndir (JSON)'}
+          </button>
+          
+          <button 
+            onClick={handleDeleteAccount} 
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+          >
+            Hesabımı Kalıcı Olarak Sil
+          </button>
+          
+          <a 
+            href="/privacy-policy" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="block text-center text-blue-600 hover:text-blue-700 hover:underline py-2"
+          >
+            Gizlilik Politikası ve KVKK Aydınlatma Metni
+          </a>
+          
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-xs text-amber-800">
+              <strong>Önemli:</strong> Hesabınızı sildiğinizde tüm verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.
             </p>
           </div>
         </div>
