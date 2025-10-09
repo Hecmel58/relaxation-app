@@ -19,7 +19,7 @@ class UserController {
       await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM heart_rate_sessions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM sleep_sessions WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM form_responses WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM form_submissions WHERE user_id = $1', [userId]); // ✅ DÜZELTİLDİ
       await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
       await client.query('DELETE FROM video_calls WHERE participant1_id = $1 OR participant2_id = $1', [userId]);
       await client.query('DELETE FROM users WHERE id = $1 AND is_admin = false', [userId]);
@@ -47,12 +47,9 @@ class UserController {
   async downloadData(req, res, next) {
     try {
       console.log('=== DOWNLOAD DATA DEBUG START ===');
-      console.log('req.user:', req.user);
-      console.log('req.userId:', req.userId);
-      console.log('Authorization header:', req.headers.authorization);
       
       const userId = req.user?.userId || req.userId;
-      console.log('Final userId:', userId);
+      console.log('userId:', userId);
       
       if (!userId) {
         console.error('ERROR: No user ID found!');
@@ -79,7 +76,7 @@ class UserController {
         });
       }
       
-      console.log('User found:', userData.rows[0]);
+      console.log('User found:', userData.rows[0].name);
       
       const sleepData = await pool.query(
         'SELECT * FROM sleep_sessions WHERE user_id = $1 ORDER BY sleep_date DESC', 
@@ -93,17 +90,18 @@ class UserController {
       );
       console.log('Heart rate sessions count:', heartRateData.rows.length);
       
+      // ✅ TABLO ADI DÜZELTİLDİ: form_responses -> form_submissions
       const formData = await pool.query(
-        'SELECT * FROM form_responses WHERE user_id = $1 ORDER BY created_at DESC', 
+        'SELECT * FROM form_submissions WHERE user_id = $1 ORDER BY created_at DESC', 
         [userId]
       );
-      console.log('Form responses count:', formData.rows.length);
+      console.log('Form submissions count:', formData.rows.length);
       
       const exportData = {
         user: userData.rows[0],
         sleepSessions: sleepData.rows,
         heartRateSessions: heartRateData.rows,
-        formResponses: formData.rows,
+        formSubmissions: formData.rows, // ✅ KEY ADI DÜZELTİLDİ
         exportDate: new Date().toISOString(),
         dataProtectionInfo: {
           law: 'KVKK 6698 sayılı Kişisel Verilerin Korunması Kanunu',
@@ -122,7 +120,7 @@ class UserController {
       logger.info(`User data downloaded successfully: ${userId}`);
     } catch (error) {
       console.error('=== DOWNLOAD DATA ERROR ===');
-      console.error('Error details:', error);
+      console.error('Error:', error.message);
       logger.error('Download data error:', error);
       res.status(500).json({ 
         success: false, 
