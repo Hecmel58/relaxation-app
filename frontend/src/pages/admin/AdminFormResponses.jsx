@@ -102,10 +102,8 @@ function AdminFormResponses() {
     const selectedFormData = forms.find(f => f.id === selectedForm);
     const csvRows = [];
     
-    // Header
     csvRows.push(['Kullanıcı ID', 'Ad', 'Telefon', 'E-posta', 'Tarih', 'Yanıtlar'].join(','));
     
-    // Data
     responses.forEach(response => {
       const row = [
         response.user_id,
@@ -152,16 +150,13 @@ function AdminFormResponses() {
         </button>
       </div>
 
-      {/* Form Ekleme Paneli */}
       {showAddForm && (
         <Card className="bg-blue-50 border-2 border-blue-200">
           <form onSubmit={handleAddForm} className="space-y-4">
             <h3 className="text-lg font-semibold text-slate-900">Google Form Ekle</h3>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Form Başlığı
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Form Başlığı</label>
               <input
                 type="text"
                 value={newFormData.title}
@@ -173,9 +168,7 @@ function AdminFormResponses() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Açıklama (Opsiyonel)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Açıklama (Opsiyonel)</label>
               <textarea
                 value={newFormData.description}
                 onChange={(e) => setNewFormData({ ...newFormData, description: e.target.value })}
@@ -186,9 +179,7 @@ function AdminFormResponses() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Google Form URL'si *
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Google Form URL'si *</label>
               <input
                 type="url"
                 value={newFormData.google_form_url}
@@ -203,17 +194,10 @@ function AdminFormResponses() {
             </div>
 
             <div className="flex gap-3">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
+              <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
                 Form Ekle
               </button>
-              <button
-                type="button"
-                onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
-              >
+              <button type="button" onClick={() => setShowAddForm(false)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors">
                 İptal
               </button>
             </div>
@@ -221,23 +205,16 @@ function AdminFormResponses() {
         </Card>
       )}
 
-      {/* Formlar Listesi */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {forms.map((form) => (
           <Card key={form.id} className="relative hover:shadow-lg transition-shadow">
             <div className="absolute top-4 right-4">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                form.is_active 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${form.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                 {form.is_active ? '● Aktif' : '○ Pasif'}
               </span>
             </div>
 
-            <h3 className="text-lg font-semibold text-slate-900 mb-2 pr-20">
-              {form.title}
-            </h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2 pr-20">{form.title}</h3>
             
             {form.description && (
               <p className="text-sm text-slate-600 mb-3">{form.description}</p>
@@ -249,30 +226,19 @@ function AdminFormResponses() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <button
-                onClick={() => fetchResponses(form.id)}
-                className="w-full px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
-              >
+              <button onClick={() => fetchResponses(form.id)} className="w-full px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm">
                 📊 Yanıtları Görüntüle
               </button>
               
               <div className="flex gap-2">
                 <button
                   onClick={() => handleToggleActive(form.id)}
-                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    form.is_active
-                      ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                      : 'bg-green-100 text-green-700 hover:bg-green-200'
-                  }`}
+                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${form.is_active ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
                 >
                   {form.is_active ? '⏸ Pasif Yap' : '▶ Aktif Yap'}
                 </button>
                 
-                <button
-                  onClick={() => handleDeleteForm(form.id)}
-                  className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm"
-                  title="Formu Sil"
-                >
+                <button onClick={() => handleDeleteForm(form.id)} className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm" title="Formu Sil">
                   🗑️
                 </button>
               </div>
@@ -293,7 +259,6 @@ function AdminFormResponses() {
         </Card>
       )}
 
-      {/* Yanıtlar Paneli */}
       {selectedForm && (
         <Card className="bg-slate-50">
           <div className="flex justify-between items-center mb-6">
@@ -301,22 +266,13 @@ function AdminFormResponses() {
               Form Yanıtları: {forms.find(f => f.id === selectedForm)?.title}
             </h2>
             <div className="flex gap-3">
-              <button
-                onClick={exportToCSV}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
-              >
+              <button onClick={exportToCSV} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 CSV İndir
               </button>
-              <button
-                onClick={() => {
-                  setSelectedForm(null);
-                  setResponses([]);
-                }}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
-              >
+              <button onClick={() => { setSelectedForm(null); setResponses([]); }} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors">
                 Kapat
               </button>
             </div>
@@ -347,14 +303,7 @@ function AdminFormResponses() {
                         </p>
                       </div>
                     </div>
-                    <svg 
-                      className={`w-5 h-5 text-slate-400 transition-transform ${
-                        expandedResponse === response.id ? 'rotate-180' : ''
-                      }`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
+                    <svg className={`w-5 h-5 text-slate-400 transition-transform ${expandedResponse === response.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
@@ -369,17 +318,11 @@ function AdminFormResponses() {
                       </div>
                       
                       <div className="mt-4 flex gap-2">
-                        
-                          href={`mailto:${response.user_email}`}
-                          className="text-sm text-primary-600 hover:text-primary-700"
-                        >
+                        <a href={`mailto:${response.user_email}`} className="text-sm text-primary-600 hover:text-primary-700">
                           📧 E-posta Gönder
                         </a>
                         <span className="text-slate-300">|</span>
-                        
-                          href={`tel:${response.user_phone}`}
-                          className="text-sm text-primary-600 hover:text-primary-700"
-                        >
+                        <a href={`tel:${response.user_phone}`} className="text-sm text-primary-600 hover:text-primary-700">
                           📞 Ara
                         </a>
                       </div>
