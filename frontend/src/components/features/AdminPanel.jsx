@@ -6,7 +6,7 @@ import Card from '../ui/Card';
 import Button from '../ui/Button';
 import AdminSleepData from './AdminSleepData';
 import AdminMessages from './AdminMessages';
-import AdminForms from './AdminForms';
+import AdminFormResponses from '../../pages/admin/AdminFormResponses';
 import AdminHeartRateData from './AdminHeartRateData';
 import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
@@ -40,7 +40,6 @@ function AdminPanel() {
         api.get('/admin/password-reset-requests')
       ]);
       
-      // Alfabetik sıralama (Türkçe karakter desteği ile)
       const sortedUsers = (usersRes.data.users || []).sort((a, b) => {
         const nameA = (a.name || '').toLowerCase();
         const nameB = (b.name || '').toLowerCase();
@@ -387,7 +386,7 @@ function AdminPanel() {
           
           {activeTab === 'heart-rate' && <AdminHeartRateData />}
           
-          {activeTab === 'forms' && <AdminForms />}
+          {activeTab === 'forms' && <AdminFormResponses />}
           
           {activeTab === 'messages' && <AdminMessages />}
         </div>
