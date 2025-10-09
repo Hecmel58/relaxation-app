@@ -9,14 +9,14 @@ router.get('/types', auth, async (req, res) => {
     const formsResult = await pool.query(
       'SELECT id, title, description, google_form_url, is_active, created_at FROM form_types WHERE is_active = true ORDER BY created_at DESC'
     );
-    const forms = formsResult.rows;
+    const forms = formsResult.rows || [];
     
     // Kullanıcının doldurduğu formları kontrol et
     const userResponsesResult = await pool.query(
       'SELECT form_type_id, created_at FROM form_responses WHERE user_id = $1 ORDER BY created_at DESC',
       [req.user.id]
     );
-    const userResponses = userResponsesResult.rows;
+    const userResponses = userResponsesResult.rows || [];
     
     const formsWithStatus = forms.map(form => ({
       ...form,
@@ -27,7 +27,7 @@ router.get('/types', auth, async (req, res) => {
     res.json(formsWithStatus);
   } catch (error) {
     console.error('Form tipleri getirme hatası:', error);
-    res.status(500).json({ error: 'Formlar getirilemedi' });
+    res.status(500).json({ error: 'Formlar getirilemedi', details: error.message });
   }
 });
 
@@ -69,11 +69,11 @@ router.get('/admin/all', auth, async (req, res) => {
         COUNT(DISTINCT fr.id) as total_responses
       FROM form_types ft
       LEFT JOIN form_responses fr ON ft.id = fr.form_type_id
-      GROUP BY ft.id
+      GROUP BY ft.id, ft.title, ft.description, ft.google_form_url, ft.is_active, ft.created_at
       ORDER BY ft.created_at DESC
     `);
     
-    res.json(formsResult.rows);
+    res.json(formsResult.rows || []);
   } catch (error) {
     console.error('Admin form listesi hatası:', error);
     res.status(500).json({ error: 'Formlar getirilemedi' });
@@ -160,7 +160,7 @@ router.get('/admin/responses/:formId', auth, async (req, res) => {
       ORDER BY fr.created_at DESC
     `, [formId]);
     
-    res.json(responsesResult.rows);
+    res.json(responsesResult.rows || []);
   } catch (error) {
     console.error('Form yanıtları getirme hatası:', error);
     res.status(500).json({ error: 'Yanıtlar getirilemedi' });
