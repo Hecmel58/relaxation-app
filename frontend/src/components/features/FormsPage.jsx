@@ -24,6 +24,7 @@ function FormsPage() {
   };
 
   const handleRefillForm = (formId) => {
+    // Formu yeniden doldur
     window.location.reload();
   };
 
