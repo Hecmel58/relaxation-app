@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: `${import.meta.env.VITE_API_URL}/api`, // ✅ /api eklendi
   headers: {
     'Content-Type': 'application/json'
   }
@@ -15,6 +15,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     console.log('API Request:', config.method.toUpperCase(), config.url);
+    console.log('Full URL:', config.baseURL + config.url);
     console.log('Token:', token ? 'EXISTS' : 'MISSING');
     return config;
   },
@@ -30,6 +31,7 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.error('API Error:', error.response?.status, error.response?.data);
     if (error.response?.status === 401 || error.response?.status === 403) {
       console.error('Auth error, redirecting to login...');
       localStorage.removeItem('fidbal_token');
