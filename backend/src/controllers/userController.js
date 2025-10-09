@@ -19,7 +19,7 @@ class UserController {
       await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM heart_rate_sessions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM sleep_sessions WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM form_submissions WHERE user_id = $1', [userId]); // ✅ DÜZELTİLDİ
+      await client.query('DELETE FROM form_submissions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
       await client.query('DELETE FROM video_calls WHERE participant1_id = $1 OR participant2_id = $1', [userId]);
       await client.query('DELETE FROM users WHERE id = $1 AND is_admin = false', [userId]);
@@ -62,6 +62,7 @@ class UserController {
       
       logger.info(`User data download started for userId: ${userId}`);
       
+      // USER DATA
       const userData = await pool.query(
         'SELECT id, name, phone, email, ab_group, is_admin, created_at FROM users WHERE id = $1', 
         [userId]
@@ -78,30 +79,58 @@ class UserController {
       
       console.log('User found:', userData.rows[0].name);
       
+      // SLEEP SESSIONS
       const sleepData = await pool.query(
         'SELECT * FROM sleep_sessions WHERE user_id = $1 ORDER BY sleep_date DESC', 
         [userId]
       );
       console.log('Sleep sessions count:', sleepData.rows.length);
       
+      // HEART RATE SESSIONS
       const heartRateData = await pool.query(
         'SELECT * FROM heart_rate_sessions WHERE user_id = $1 ORDER BY created_at DESC', 
         [userId]
       );
       console.log('Heart rate sessions count:', heartRateData.rows.length);
       
-      // ✅ TABLO ADI DÜZELTİLDİ: form_responses -> form_submissions
-      const formData = await pool.query(
-        'SELECT * FROM form_submissions WHERE user_id = $1 ORDER BY created_at DESC', 
-        [userId]
-      );
+      // FORM SUBMISSIONS - KOLON ADINI KONTROL ETMEDEN AL
+      let formData = { rows: [] };
+      try {
+        // Önce created_at ile dene
+        formData = await pool.query(
+          'SELECT * FROM form_submissions WHERE user_id = $1 ORDER BY created_at DESC', 
+          [userId]
+        );
+      } catch (formError) {
+        console.log('created_at column not found, trying submitted_at...');
+        try {
+          // submitted_at ile dene
+          formData = await pool.query(
+            'SELECT * FROM form_submissions WHERE user_id = $1 ORDER BY submitted_at DESC', 
+            [userId]
+          );
+        } catch (formError2) {
+          console.log('submitted_at column not found, trying without ORDER BY...');
+          try {
+            // Sıralama olmadan al
+            formData = await pool.query(
+              'SELECT * FROM form_submissions WHERE user_id = $1', 
+              [userId]
+            );
+          } catch (formError3) {
+            console.error('Form submissions query failed:', formError3.message);
+            // Form verisi yoksa boş array kullan
+            formData = { rows: [] };
+          }
+        }
+      }
       console.log('Form submissions count:', formData.rows.length);
       
       const exportData = {
         user: userData.rows[0],
         sleepSessions: sleepData.rows,
         heartRateSessions: heartRateData.rows,
-        formSubmissions: formData.rows, // ✅ KEY ADI DÜZELTİLDİ
+        formSubmissions: formData.rows,
         exportDate: new Date().toISOString(),
         dataProtectionInfo: {
           law: 'KVKK 6698 sayılı Kişisel Verilerin Korunması Kanunu',
