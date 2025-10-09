@@ -6,15 +6,17 @@ const auth = require('../middleware/auth');
 // Tüm form tiplerini getir (kullanıcı için)
 router.get('/types', auth, async (req, res) => {
   try {
-    const [forms] = await pool.query(
+    const formsResult = await pool.query(
       'SELECT id, title, description, google_form_url, is_active, created_at FROM form_types WHERE is_active = true ORDER BY created_at DESC'
     );
+    const forms = formsResult.rows;
     
     // Kullanıcının doldurduğu formları kontrol et
-    const [userResponses] = await pool.query(
-      'SELECT form_type_id, created_at FROM form_responses WHERE user_id = ? ORDER BY created_at DESC',
+    const userResponsesResult = await pool.query(
+      'SELECT form_type_id, created_at FROM form_responses WHERE user_id = $1 ORDER BY created_at DESC',
       [req.user.id]
     );
+    const userResponses = userResponsesResult.rows;
     
     const formsWithStatus = forms.map(form => ({
       ...form,
@@ -35,7 +37,7 @@ router.post('/responses', auth, async (req, res) => {
   
   try {
     await pool.query(
-      'INSERT INTO form_responses (user_id, form_type_id, responses) VALUES (?, ?, ?)',
+      'INSERT INTO form_responses (user_id, form_type_id, responses) VALUES ($1, $2, $3)',
       [req.user.id, form_type_id, JSON.stringify(responses)]
     );
     
@@ -50,12 +52,12 @@ router.post('/responses', auth, async (req, res) => {
 router.get('/admin/all', auth, async (req, res) => {
   try {
     // Admin kontrolü
-    const [adminCheck] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [req.user.id]);
-    if (!adminCheck[0]?.is_admin) {
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
     
-    const [forms] = await pool.query(`
+    const formsResult = await pool.query(`
       SELECT 
         ft.id, 
         ft.title, 
@@ -71,7 +73,7 @@ router.get('/admin/all', auth, async (req, res) => {
       ORDER BY ft.created_at DESC
     `);
     
-    res.json(forms);
+    res.json(formsResult.rows);
   } catch (error) {
     console.error('Admin form listesi hatası:', error);
     res.status(500).json({ error: 'Formlar getirilemedi' });
@@ -84,8 +86,8 @@ router.post('/admin/add', auth, async (req, res) => {
   
   try {
     // Admin kontrolü
-    const [adminCheck] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [req.user.id]);
-    if (!adminCheck[0]?.is_admin) {
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
     
@@ -93,15 +95,15 @@ router.post('/admin/add', auth, async (req, res) => {
       return res.status(400).json({ error: 'Geçerli bir Google Form URL\'si giriniz' });
     }
     
-    const [result] = await pool.query(
-      'INSERT INTO form_types (title, description, google_form_url, is_active) VALUES (?, ?, ?, true)',
+    const result = await pool.query(
+      'INSERT INTO form_types (title, description, google_form_url, is_active) VALUES ($1, $2, $3, true) RETURNING id',
       [title || 'Yeni Form', description || '', google_form_url]
     );
     
     res.json({ 
       success: true, 
       message: 'Form başarıyla eklendi',
-      form_id: result.insertId 
+      form_id: result.rows[0].id 
     });
   } catch (error) {
     console.error('Form ekleme hatası:', error);
@@ -115,13 +117,13 @@ router.patch('/admin/:id/toggle', auth, async (req, res) => {
   
   try {
     // Admin kontrolü
-    const [adminCheck] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [req.user.id]);
-    if (!adminCheck[0]?.is_admin) {
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
     
     await pool.query(
-      'UPDATE form_types SET is_active = NOT is_active WHERE id = ?',
+      'UPDATE form_types SET is_active = NOT is_active WHERE id = $1',
       [id]
     );
     
@@ -138,12 +140,12 @@ router.get('/admin/responses/:formId', auth, async (req, res) => {
   
   try {
     // Admin kontrolü
-    const [adminCheck] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [req.user.id]);
-    if (!adminCheck[0]?.is_admin) {
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
     
-    const [responses] = await pool.query(`
+    const responsesResult = await pool.query(`
       SELECT 
         fr.id,
         fr.responses,
@@ -154,11 +156,11 @@ router.get('/admin/responses/:formId', auth, async (req, res) => {
         u.email as user_email
       FROM form_responses fr
       JOIN users u ON fr.user_id = u.id
-      WHERE fr.form_type_id = ?
+      WHERE fr.form_type_id = $1
       ORDER BY fr.created_at DESC
     `, [formId]);
     
-    res.json(responses);
+    res.json(responsesResult.rows);
   } catch (error) {
     console.error('Form yanıtları getirme hatası:', error);
     res.status(500).json({ error: 'Yanıtlar getirilemedi' });
@@ -171,15 +173,15 @@ router.delete('/admin/:id', auth, async (req, res) => {
   
   try {
     // Admin kontrolü
-    const [adminCheck] = await pool.query('SELECT is_admin FROM users WHERE id = ?', [req.user.id]);
-    if (!adminCheck[0]?.is_admin) {
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
     
     // Önce yanıtları sil
-    await pool.query('DELETE FROM form_responses WHERE form_type_id = ?', [id]);
+    await pool.query('DELETE FROM form_responses WHERE form_type_id = $1', [id]);
     // Sonra formu sil
-    await pool.query('DELETE FROM form_types WHERE id = ?', [id]);
+    await pool.query('DELETE FROM form_types WHERE id = $1', [id]);
     
     res.json({ success: true, message: 'Form silindi' });
   } catch (error) {
