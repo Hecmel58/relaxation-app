@@ -41,7 +41,10 @@ const authenticateToken = (req, res, next) => {
     }
 
     // ✅ DOĞRU: req.user objesi oluştur
-    req.user = { userId: decoded.userId };
+    req.user = { 
+      id: decoded.userId,
+      userId: decoded.userId 
+    };
     req.userId = decoded.userId; // Geriye dönük uyumluluk için
     
     console.log('Auth successful. userId:', decoded.userId);
@@ -84,7 +87,7 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  authenticateToken,
-  requireAdmin
-};
+// Default export + named exports
+module.exports = authenticateToken;
+module.exports.authenticateToken = authenticateToken;
+module.exports.requireAdmin = requireAdmin;
