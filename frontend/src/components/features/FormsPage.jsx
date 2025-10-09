@@ -16,11 +16,13 @@ function FormsPage() {
   const fetchForms = async () => {
     try {
       const response = await api.get('/forms/types');
-      setForms(response.data);
-      const filledCount = response.data.filter(f => f.is_filled).length;
-      setStats({ total: response.data.length, filled: filledCount });
+      const formData = Array.isArray(response.data) ? response.data : [];
+      setForms(formData);
+      const filledCount = formData.filter(f => f.is_filled).length;
+      setStats({ total: formData.length, filled: filledCount });
     } catch (error) {
       console.error('Form yükleme hatası:', error);
+      setForms([]);
     } finally {
       setLoading(false);
     }
