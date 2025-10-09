@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import Card from '../ui/Card';
 import api from '../../api/axios';
@@ -7,6 +7,7 @@ function FormsPage() {
   const { user } = useAuthStore();
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, filled: 0 });
 
   useEffect(() => {
     fetchForms();
@@ -16,6 +17,8 @@ function FormsPage() {
     try {
       const response = await api.get('/forms/types');
       setForms(response.data);
+      const filledCount = response.data.filter(f => f.is_filled).length;
+      setStats({ total: response.data.length, filled: filledCount });
     } catch (error) {
       console.error('Form yükleme hatası:', error);
     } finally {
@@ -24,14 +27,13 @@ function FormsPage() {
   };
 
   const handleRefillForm = (formId) => {
-    // Formu yeniden doldur
     window.location.reload();
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
       </div>
     );
   }
@@ -55,14 +57,21 @@ function FormsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Formlar</h1>
-        <p className="text-slate-600 mt-1">Dolmanız gereken formlar aşağıda listelenmektedir</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Formlar</h1>
+          <p className="text-slate-600 mt-1">Dolmanız gereken formlar aşağıda listelenmektedir</p>
+        </div>
+        <div className="bg-primary-100 px-4 py-2 rounded-lg">
+          <p className="text-sm text-primary-600 font-semibold">
+            {stats.filled} / {stats.total} Form Dolduruldu
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {forms.map((form) => (
-          <Card key={form.id} className="relative">
+          <Card key={form.id} className="relative hover:shadow-lg transition-shadow">
             {form.is_filled && (
               <div className="absolute top-4 right-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
