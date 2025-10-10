@@ -3,15 +3,16 @@ import { useAuthStore } from '../../store/authStore';
 import { collection, addDoc, onSnapshot, orderBy, query, where, Timestamp, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import api from '../../api/axios';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import JitsiMeetModal from './JitsiMeetModal';
+import Card from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import JitsiMeetModal from '../features/JitsiMeetModal';
 
 function SupportPage() {
   const { user } = useAuthStore();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [showVideoCall, setShowVideoCall] = useState(false);
+  const [currentRoomId, setCurrentRoomId] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -49,7 +50,7 @@ function SupportPage() {
       });
       
       try {
-        await api.post('/chat/send-message', {
+        await api.post('/api/chat/send-message', {
           receiverId: 'admin',
           message: newMessage
         });
@@ -75,6 +76,39 @@ function SupportPage() {
     }
   };
 
+  const handleStartVideoCall = async () => {
+    const roomId = `FidBal-Support-${user?.userId}-${Date.now()}`;
+    setCurrentRoomId(roomId);
+    
+    try {
+      // Firebase'e video call isteği kaydet
+      await addDoc(collection(db, 'videoCalls'), {
+        userId: user?.userId,
+        userName: user?.name || 'Kullanıcı',
+        roomId: roomId,
+        status: 'waiting',
+        createdAt: Timestamp.now()
+      });
+      
+      // Backend'e bildirim gönder
+      try {
+        await api.post('/api/chat/video-call-request', {
+          userId: user?.userId,
+          userName: user?.name,
+          roomId: roomId
+        });
+      } catch (apiError) {
+        console.error('Backend bildirimi gönderilemedi:', apiError);
+      }
+      
+      // Jitsi modal aç
+      setShowVideoCall(true);
+    } catch (error) {
+      console.error('Video call başlatma hatası:', error);
+      alert('Video görüşme başlatılamadı: ' + error.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -82,7 +116,7 @@ function SupportPage() {
           <h1 className="text-3xl font-bold text-slate-900">Uzman Desteği</h1>
           <p className="text-slate-600 mt-1">Uyku uzmanlarımızla iletişime geçin</p>
         </div>
-        <Button onClick={() => setShowVideoCall(true)}>
+        <Button onClick={handleStartVideoCall}>
           🎥 Görüntülü Görüşme
         </Button>
       </div>
@@ -156,9 +190,13 @@ function SupportPage() {
 
       {showVideoCall && (
         <JitsiMeetModal
-          onClose={() => setShowVideoCall(false)}
+          onClose={() => {
+            setShowVideoCall(false);
+            setCurrentRoomId(null);
+          }}
           userName={user?.name || 'Kullanıcı'}
           userId={user?.userId}
+          roomId={currentRoomId}
         />
       )}
     </div>

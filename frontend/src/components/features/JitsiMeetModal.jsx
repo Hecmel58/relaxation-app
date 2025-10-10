@@ -8,11 +8,6 @@ function JitsiMeetModal({ onClose, userName, userId, roomId }) {
   const jitsiApiRef = useRef(null);
 
   useEffect(() => {
-    // Video call bildirimi gönder (sadece yeni call oluşturuluyorsa)
-    if (!roomId && userId) {
-      notifyAdmins();
-    }
-
     // Jitsi Meet API script'ini yükle
     const script = document.createElement('script');
     script.src = 'https://meet.jit.si/external_api.js';
@@ -31,32 +26,11 @@ function JitsiMeetModal({ onClose, userName, userId, roomId }) {
     };
   }, []);
 
-  const notifyAdmins = async () => {
-    try {
-      // Firestore'a video call kaydı ekle
-      await addDoc(collection(db, 'videoCalls'), {
-        userId,
-        userName,
-        roomId: `FidBal-Support-${userId}`,
-        status: 'waiting',
-        createdAt: Timestamp.now()
-      });
-
-      // Backend'e bildirim gönder (tüm adminlere)
-      await api.post('/chat/send-message', {
-        receiverId: 'admin',
-        message: `🎥 ${userName} görüntülü görüşme talebi gönderiyor`
-      });
-    } catch (error) {
-      console.error('Video call notification error:', error);
-    }
-  };
-
   const initializeJitsi = () => {
     if (!jitsiContainerRef.current) return;
 
     // Oda ID'si - roomId varsa onu kullan, yoksa userId ile oluştur
-    const roomName = roomId || `FidBal-Support-${userId}`;
+    const roomName = roomId || `FidBal-Support-${userId}-${Date.now()}`;
 
     const options = {
       roomName: roomName,
@@ -117,7 +91,7 @@ function JitsiMeetModal({ onClose, userName, userId, roomId }) {
           <div>
             <h3 className="text-lg font-semibold text-white">Görüntülü Görüşme</h3>
             <p className="text-sm text-slate-400">
-              {roomId ? 'Görüşme devam ediyor...' : 'Uzman bekleniyor...'}
+              Oda: {roomId || 'Bağlanıyor...'}
             </p>
           </div>
           <button
@@ -135,7 +109,7 @@ function JitsiMeetModal({ onClose, userName, userId, roomId }) {
         {/* Footer Info */}
         <div className="p-3 bg-slate-800 border-t border-slate-700">
           <p className="text-xs text-slate-400 text-center">
-            Güvenli bağlantı sağlanmaktadır. Oda kodu: {roomId || `FidBal-Support-${userId}`}
+            Güvenli bağlantı sağlanmaktadır. Uzman bağlandığında görüşme başlayacaktır.
           </p>
         </div>
       </div>
