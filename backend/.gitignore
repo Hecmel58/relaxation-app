@@ -7,3 +7,7 @@ dist/
 build/
 logs/
 *.log
+.env.local
+.env.development
+.env.production
+.env.test

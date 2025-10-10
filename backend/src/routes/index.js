@@ -15,6 +15,7 @@ router.use('/admin', adminRoutes);
 router.use('/heart-rate', heartRateRoutes);
 router.use('/user', userRoutes);
 
+// Chat endpoints
 router.get('/chat/unread-count', (req, res) => {
   res.json({ success: true, unreadCount: 0 });
 });
@@ -23,6 +24,14 @@ router.post('/chat/send-message', (req, res) => {
   res.json({ success: true, message: 'Mesaj gönderildi' });
 });
 
+router.post('/chat/video-call-request', (req, res) => {
+  // Video call bildirimi (opsiyonel - log tutma için)
+  const { userId, userName, roomId } = req.body;
+  console.log(`Video call request from ${userName} (${userId}) - Room: ${roomId}`);
+  res.json({ success: true, message: 'Video call request received' });
+});
+
+// Tracking endpoints
 router.post('/relaxation/track-usage', (req, res) => {
   res.json({ success: true, message: 'Usage tracked' });
 });
@@ -31,6 +40,7 @@ router.post('/binaural/track-usage', (req, res) => {
   res.json({ success: true, message: 'Usage tracked' });
 });
 
+// Health check
 router.get('/health', (req, res) => {
   res.json({ 
     success: true, 
@@ -39,6 +49,7 @@ router.get('/health', (req, res) => {
   });
 });
 
+// 404 handler
 router.use((req, res) => {
   res.status(404).json({
     success: false,
