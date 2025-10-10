@@ -49,13 +49,14 @@ function SupportPage() {
         timestamp: Timestamp.now()
       });
       
+      // Backend'e bildirim gönder (opsiyonel)
       try {
-        await api.post('/api/chat/send-message', {
+        await api.post('/chat/send-message', {
           receiverId: 'admin',
           message: newMessage
         });
       } catch (apiError) {
-        console.error('Bildirim gönderilemedi:', apiError);
+        console.error('Backend bildirimi:', apiError);
       }
       
       setNewMessage('');
@@ -90,15 +91,15 @@ function SupportPage() {
         createdAt: Timestamp.now()
       });
       
-      // Backend'e bildirim gönder
+      // Backend'e bildirim gönder (opsiyonel - hata verse bile devam et)
       try {
-        await api.post('/api/chat/video-call-request', {
+        await api.post('/chat/video-call-request', {
           userId: user?.userId,
           userName: user?.name,
           roomId: roomId
         });
       } catch (apiError) {
-        console.error('Backend bildirimi gönderilemedi:', apiError);
+        console.log('Backend notification skipped');
       }
       
       // Jitsi modal aç
@@ -127,6 +128,9 @@ function SupportPage() {
             <div className="text-center py-12">
               <div className="text-4xl mb-4">💬</div>
               <p className="text-slate-600">Henüz mesaj yok</p>
+              <p className="text-slate-500 text-sm mt-2">
+                Uyku uzmanlarımıza sorularınızı sorabilirsiniz
+              </p>
             </div>
           ) : (
             messages.map((msg) => (
@@ -136,12 +140,21 @@ function SupportPage() {
                     msg.sender === 'user' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-900'
                   }`}>
                     {msg.sender === 'expert' && (
-                      <div className="text-xs font-medium mb-1">Uzman</div>
+                      <div className="text-xs font-medium mb-1 opacity-80">Uzman</div>
                     )}
                     <div className="text-sm">{msg.text}</div>
                     {msg.timestamp && (
                       <div className="text-xs opacity-70 mt-1">
-                        {msg.timestamp.toDate().toLocaleTimeString('tr-TR')}
+                        {msg.timestamp.toDate ? 
+                          msg.timestamp.toDate().toLocaleTimeString('tr-TR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 
+                          new Date(msg.timestamp).toLocaleTimeString('tr-TR', {
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                          })
+                        }
                       </div>
                     )}
                   </div>
@@ -170,23 +183,38 @@ function SupportPage() {
               placeholder="Mesajınızı yazın..."
               className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
-            <Button type="submit">Gönder</Button>
+            <Button type="submit" disabled={!newMessage.trim()}>
+              Gönder
+            </Button>
           </div>
         </form>
       </Card>
 
-      <Card className="bg-wellness-50 border-wellness-200">
-        <div className="flex items-start space-x-3">
-          <span className="text-2xl">💡</span>
-          <div>
-            <h4 className="font-semibold text-wellness-800 mb-2">İpucu</h4>
-            <p className="text-wellness-700 text-sm">
-              Uzmanlarımız 09:00-18:00 saatleri arasında çevrimiçidir.
-              Görüntülü görüşme için güvenli Jitsi Meet platformunu kullanıyoruz.
-            </p>
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card className="bg-wellness-50 border-wellness-200">
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">💡</span>
+            <div>
+              <h4 className="font-semibold text-wellness-800 mb-2">İpucu</h4>
+              <p className="text-wellness-700 text-sm">
+                Uzmanlarımız hafta içi 09:00-18:00 saatleri arasında çevrimiçidir.
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+
+        <Card className="bg-info-50 border-info-200">
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">🎥</span>
+            <div>
+              <h4 className="font-semibold text-info-800 mb-2">Görüntülü Görüşme</h4>
+              <p className="text-info-700 text-sm">
+                Güvenli Jitsi Meet platformu üzerinden görüntülü destek alabilirsiniz.
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {showVideoCall && (
         <JitsiMeetModal
