@@ -13,7 +13,7 @@ const Navbar = () => {
     if (user) {
       fetchUnreadMessages();
       // Her 30 saniyede bir güncelle
-      const interval = setInterval(fetchUnreadMessages, 30000);
+      const interval = setInterval(fetchUnreadMessages, 60000);
       return () => clearInterval(interval);
     }
   }, [user]);
