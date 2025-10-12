@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../config/database');
 const auth = require('../middleware/auth');
 
-// Tüm form tiplerini getir (kullanıcı için)
+// ✅ KULLANICI: Aktif formları getir
 router.get('/types', auth, async (req, res) => {
   try {
     const formsResult = await pool.query(
@@ -31,15 +31,30 @@ router.get('/types', auth, async (req, res) => {
   }
 });
 
-// Form yanıtı kaydet
+// ✅ KULLANICI: Form yanıtı kaydet
 router.post('/responses', auth, async (req, res) => {
   const { form_type_id, responses } = req.body;
   
   try {
-    await pool.query(
-      'INSERT INTO form_responses (user_id, form_type_id, responses) VALUES ($1, $2, $3)',
-      [req.user.id, form_type_id, JSON.stringify(responses)]
+    // Önce aynı formun daha önce doldurulup doldurulmadığını kontrol et
+    const existingResponse = await pool.query(
+      'SELECT id FROM form_responses WHERE user_id = $1 AND form_type_id = $2',
+      [req.user.id, form_type_id]
     );
+
+    if (existingResponse.rows.length > 0) {
+      // Güncelle
+      await pool.query(
+        'UPDATE form_responses SET responses = $1, created_at = NOW() WHERE user_id = $2 AND form_type_id = $3',
+        [JSON.stringify(responses), req.user.id, form_type_id]
+      );
+    } else {
+      // Yeni kayıt
+      await pool.query(
+        'INSERT INTO form_responses (user_id, form_type_id, responses, created_at) VALUES ($1, $2, $3, NOW())',
+        [req.user.id, form_type_id, JSON.stringify(responses)]
+      );
+    }
     
     res.json({ success: true, message: 'Form yanıtı kaydedildi' });
   } catch (error) {
@@ -48,7 +63,7 @@ router.post('/responses', auth, async (req, res) => {
   }
 });
 
-// ADMIN: Tüm formları getir (aktif/pasif dahil)
+// ✅ ADMIN: Tüm formları getir (aktif/pasif dahil)
 router.get('/admin/all', auth, async (req, res) => {
   try {
     // Admin kontrolü
@@ -80,7 +95,7 @@ router.get('/admin/all', auth, async (req, res) => {
   }
 });
 
-// ADMIN: Yeni form ekle (Google Form URL'den)
+// ✅ ADMIN: Yeni form ekle (Google Form URL'den)
 router.post('/admin/add', auth, async (req, res) => {
   const { title, description, google_form_url } = req.body;
   
@@ -96,7 +111,7 @@ router.post('/admin/add', auth, async (req, res) => {
     }
     
     const result = await pool.query(
-      'INSERT INTO form_types (title, description, google_form_url, is_active) VALUES ($1, $2, $3, true) RETURNING id',
+      'INSERT INTO form_types (title, description, google_form_url, is_active, created_at) VALUES ($1, $2, $3, true, NOW()) RETURNING id',
       [title || 'Yeni Form', description || '', google_form_url]
     );
     
@@ -111,7 +126,7 @@ router.post('/admin/add', auth, async (req, res) => {
   }
 });
 
-// ADMIN: Form aktif/pasif yap
+// ✅ ADMIN: Form aktif/pasif yap
 router.patch('/admin/:id/toggle', auth, async (req, res) => {
   const { id } = req.params;
   
@@ -134,7 +149,7 @@ router.patch('/admin/:id/toggle', auth, async (req, res) => {
   }
 });
 
-// ADMIN: Form yanıtlarını getir (detaylı)
+// ✅ ADMIN: Form yanıtlarını getir (detaylı)
 router.get('/admin/responses/:formId', auth, async (req, res) => {
   const { formId } = req.params;
   
@@ -167,7 +182,7 @@ router.get('/admin/responses/:formId', auth, async (req, res) => {
   }
 });
 
-// ADMIN: Form sil
+// ✅ ADMIN: Form sil
 router.delete('/admin/:id', auth, async (req, res) => {
   const { id } = req.params;
   

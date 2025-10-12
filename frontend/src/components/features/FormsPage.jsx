@@ -29,8 +29,26 @@ function FormsPage() {
     }
   };
 
-  const handleRefillForm = () => {
-    window.location.reload();
+  const handleFormFilled = async (formId) => {
+    try {
+      await api.post('/forms/responses', {
+        form_type_id: formId,
+        responses: { 
+          filled: true, 
+          timestamp: new Date().toISOString(),
+          user_name: user?.name,
+          user_phone: user?.phone
+        }
+      });
+      
+      // Formu yeniden yükle
+      await fetchForms();
+      setSelectedForm(null);
+      alert('✅ Form başarıyla kaydedildi!');
+    } catch (error) {
+      console.error('Form kayıt hatası:', error);
+      alert('⚠️ Form kaydedilemedi, ancak yanıtlarınız Google Form\'a gönderildi.');
+    }
   };
 
   const handleOpenForm = (form) => {
@@ -38,8 +56,15 @@ function FormsPage() {
   };
 
   const handleCloseForm = () => {
-    setSelectedForm(null);
-    fetchForms(); // Formu kapattıktan sonra yenile
+    if (selectedForm && !selectedForm.is_filled) {
+      if (confirm('Formu doldurdunuz mu? Google Form\'da "Gönder" butonuna bastıysanız "Tamam" deyin.')) {
+        handleFormFilled(selectedForm.id);
+      } else {
+        setSelectedForm(null);
+      }
+    } else {
+      setSelectedForm(null);
+    }
   };
 
   if (loading) {
@@ -105,29 +130,15 @@ function FormsPage() {
               </p>
             )}
 
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={() => handleOpenForm(form)}
-                className={`flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white transition-colors ${form.is_filled ? 'bg-slate-400 hover:bg-slate-500' : 'bg-primary-600 hover:bg-primary-700'}`}
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                {form.is_filled ? 'Formu Görüntüle' : 'Formu Doldur'}
-              </button>
-
-              {form.is_filled && (
-                <button
-                  onClick={handleRefillForm}
-                  className="px-4 py-2 border-2 border-primary-600 text-primary-600 text-sm font-medium rounded-md hover:bg-primary-50 transition-colors"
-                  title="Yeniden doldur"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => handleOpenForm(form)}
+              className={`w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white transition-colors ${form.is_filled ? 'bg-slate-400 hover:bg-slate-500' : 'bg-primary-600 hover:bg-primary-700'}`}
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {form.is_filled ? 'Formu Tekrar Görüntüle' : 'Formu Doldur'}
+            </button>
           </Card>
         ))}
       </div>
@@ -160,13 +171,23 @@ function FormsPage() {
 
             {/* Footer */}
             <div className="p-4 border-t bg-slate-50 flex justify-between items-center">
-              <p className="text-sm text-slate-600">Form tamamlandıktan sonra bu pencereyi kapatabilirsiniz</p>
-              <button
-                onClick={handleCloseForm}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                Kapat
-              </button>
+              <p className="text-sm text-slate-600">
+                ✅ Google Form'da "Gönder" butonuna bastıktan sonra aşağıdaki "Doldurdum" butonuna tıklayın
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSelectedForm(null)}
+                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={() => handleFormFilled(selectedForm.id)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                >
+                  ✅ Doldurdum
+                </button>
+              </div>
             </div>
           </div>
         </div>

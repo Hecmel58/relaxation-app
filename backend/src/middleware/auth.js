@@ -40,14 +40,12 @@ const authenticateToken = (req, res, next) => {
       });
     }
 
-    // ✅ DOĞRU: req.user objesi oluştur
+    // ✅ SADECE req.user.id kullan (standardize edildi)
     req.user = { 
-      id: decoded.userId,
-      userId: decoded.userId 
+      id: decoded.userId
     };
-    req.userId = decoded.userId; // Geriye dönük uyumluluk için
     
-    console.log('Auth successful. userId:', decoded.userId);
+    console.log('Auth successful. user.id:', req.user.id);
     console.log('=== AUTH MIDDLEWARE END ===');
     next();
   });
@@ -55,7 +53,7 @@ const authenticateToken = (req, res, next) => {
 
 const requireAdmin = async (req, res, next) => {
   try {
-    const userId = req.user?.userId || req.userId;
+    const userId = req.user?.id;
     
     if (!userId) {
       return res.status(401).json({ 
