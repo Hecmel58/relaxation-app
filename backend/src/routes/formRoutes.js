@@ -36,6 +36,22 @@ router.post('/responses', authenticateToken, async (req, res) => {
   const userId = req.userId || req.user?.userId || req.user?.id;
   
   try {
+    // Kullanıcı bilgilerini al
+    const userResult = await pool.query(
+      'SELECT name, phone FROM users WHERE id = $1',
+      [userId]
+    );
+    const user = userResult.rows[0];
+
+    // ✅ responses nesnesine user bilgilerini EKLEME - sadece KAYDET
+    const fullResponses = {
+      ...responses,
+      filled: true,
+      timestamp: new Date().toISOString(),
+      user_name: user.name,
+      user_phone: user.phone
+    };
+
     const existingResponse = await pool.query(
       'SELECT id FROM form_responses WHERE user_id = $1 AND form_type_id = $2',
       [userId, form_type_id]
@@ -44,12 +60,12 @@ router.post('/responses', authenticateToken, async (req, res) => {
     if (existingResponse.rows.length > 0) {
       await pool.query(
         'UPDATE form_responses SET responses = $1, created_at = NOW() WHERE user_id = $2 AND form_type_id = $3',
-        [JSON.stringify(responses), userId, form_type_id]
+        [JSON.stringify(fullResponses), userId, form_type_id]
       );
     } else {
       await pool.query(
         'INSERT INTO form_responses (user_id, form_type_id, responses, created_at) VALUES ($1, $2, $3, NOW())',
-        [userId, form_type_id, JSON.stringify(responses)]
+        [userId, form_type_id, JSON.stringify(fullResponses)]
       );
     }
     
@@ -168,7 +184,20 @@ router.get('/admin/responses/:formId', authenticateToken, async (req, res) => {
       ORDER BY fr.created_at DESC
     `, [formId]);
     
-    res.json(responsesResult.rows || []);
+    // ✅ responses JSON'dan sadece form cevaplarını al (user bilgilerini çıkar)
+    const cleanedResponses = responsesResult.rows.map(row => {
+      const responses = typeof row.responses === 'string' ? JSON.parse(row.responses) : row.responses;
+      
+      // filled, timestamp, user_name, user_phone'u çıkar
+      const { filled, timestamp, user_name, user_phone, ...actualResponses } = responses;
+      
+      return {
+        ...row,
+        responses: actualResponses // ← Sadece form cevapları
+      };
+    });
+    
+    res.json(cleanedResponses);
   } catch (error) {
     console.error('Form yanıtları getirme hatası:', error);
     res.status(500).json({ error: 'Yanıtlar getirilemedi' });

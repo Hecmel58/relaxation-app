@@ -79,16 +79,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const generalLimiter = rateLimit({
   windowMs: RATE_LIMIT.WINDOW_MS,
-  max: RATE_LIMIT.MAX_REQUESTS,
+  max: 1000,
   message: { success: false, error: 'Çok fazla istek gönderdiniz. Lütfen biraz bekleyin.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path.includes('/health')
+  skip: (req) => req.path.includes('/health') || req.path.includes('/chat/unread-count')
 });
 
 const authLimiter = rateLimit({
   windowMs: RATE_LIMIT.WINDOW_MS,
-  max: RATE_LIMIT.AUTH_MAX || 5,
+  max: 50,
   skipSuccessfulRequests: true,
   message: { success: false, error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
   standardHeaders: true,
