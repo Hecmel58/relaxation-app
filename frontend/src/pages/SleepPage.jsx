@@ -52,7 +52,7 @@ function SleepPage() {
   const formatSleepDuration = (minutes) => {
     if (!minutes || minutes === 0) return '0sa 0dk';
     const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    const mins = Math.round(minutes % 60); // ✅ Math.round ile yuvarla
     return `${hours}sa ${mins}dk`;
   };
 

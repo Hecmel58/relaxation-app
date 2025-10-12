@@ -43,7 +43,7 @@ router.post('/responses', authenticateToken, async (req, res) => {
     );
     const user = userResult.rows[0];
 
-    // ✅ responses nesnesine user bilgilerini EKLEME - sadece KAYDET
+    // ✅ responses nesnesine user bilgilerini EKLE
     const fullResponses = {
       ...responses,
       filled: true,

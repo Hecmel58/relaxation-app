@@ -16,13 +16,31 @@ class UserController {
         return res.status(401).json({ success: false, error: 'User ID bulunamadı' });
       }
       
+      // ✅ SADECE VAR OLAN TABLOLARI SİL
       await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM heart_rate_sessions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM sleep_sessions WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM form_submissions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM form_responses WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
-      await client.query('DELETE FROM video_calls WHERE participant1_id = $1 OR participant2_id = $1', [userId]);
+      
+      // ✅ OLMAYAN TABLOLARI TRY-CATCH İLE GÜVENLİ SİL
+      try {
+        await client.query('DELETE FROM form_submissions WHERE user_id = $1', [userId]);
+      } catch (e) {
+        console.log('form_submissions table not exists, skipping...');
+      }
+      
+      try {
+        await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
+      } catch (e) {
+        console.log('messages table not exists, skipping...');
+      }
+      
+      try {
+        await client.query('DELETE FROM video_calls WHERE participant1_id = $1 OR participant2_id = $1', [userId]);
+      } catch (e) {
+        console.log('video_calls table not exists, skipping...');
+      }
+      
       await client.query('DELETE FROM users WHERE id = $1 AND is_admin = false', [userId]);
       
       await client.query('COMMIT');
@@ -63,7 +81,6 @@ class UserController {
       
       logger.info(`User data download started for userId: ${userId}`);
       
-      // USER DATA
       const userData = await pool.query(
         'SELECT id, name, phone, email, ab_group, is_admin, created_at FROM users WHERE id = $1', 
         [userId]
@@ -80,28 +97,24 @@ class UserController {
       
       console.log('User found:', userData.rows[0].name);
       
-      // SLEEP SESSIONS
       const sleepData = await pool.query(
         'SELECT * FROM sleep_sessions WHERE user_id = $1 ORDER BY sleep_date DESC', 
         [userId]
       );
       console.log('Sleep sessions count:', sleepData.rows.length);
       
-      // HEART RATE SESSIONS
       const heartRateData = await pool.query(
         'SELECT * FROM heart_rate_sessions WHERE user_id = $1 ORDER BY created_at DESC', 
         [userId]
       );
       console.log('Heart rate sessions count:', heartRateData.rows.length);
       
-      // FORM RESPONSES
       const formResponsesData = await pool.query(
         'SELECT * FROM form_responses WHERE user_id = $1 ORDER BY created_at DESC', 
         [userId]
       );
       console.log('Form responses count:', formResponsesData.rows.length);
       
-      // FORM SUBMISSIONS (LEGACY)
       let formSubmissionsData = { rows: [] };
       try {
         formSubmissionsData = await pool.query(
