@@ -20,6 +20,7 @@ class UserController {
       await client.query('DELETE FROM heart_rate_sessions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM sleep_sessions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM form_submissions WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM form_responses WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
       await client.query('DELETE FROM video_calls WHERE participant1_id = $1 OR participant2_id = $1', [userId]);
       await client.query('DELETE FROM users WHERE id = $1 AND is_admin = false', [userId]);
@@ -93,44 +94,31 @@ class UserController {
       );
       console.log('Heart rate sessions count:', heartRateData.rows.length);
       
-      // FORM SUBMISSIONS - KOLON ADINI KONTROL ETMEDEN AL
-      let formData = { rows: [] };
+      // FORM RESPONSES
+      const formResponsesData = await pool.query(
+        'SELECT * FROM form_responses WHERE user_id = $1 ORDER BY created_at DESC', 
+        [userId]
+      );
+      console.log('Form responses count:', formResponsesData.rows.length);
+      
+      // FORM SUBMISSIONS (LEGACY)
+      let formSubmissionsData = { rows: [] };
       try {
-        // Önce created_at ile dene
-        formData = await pool.query(
+        formSubmissionsData = await pool.query(
           'SELECT * FROM form_submissions WHERE user_id = $1 ORDER BY created_at DESC', 
           [userId]
         );
       } catch (formError) {
-        console.log('created_at column not found, trying submitted_at...');
-        try {
-          // submitted_at ile dene
-          formData = await pool.query(
-            'SELECT * FROM form_submissions WHERE user_id = $1 ORDER BY submitted_at DESC', 
-            [userId]
-          );
-        } catch (formError2) {
-          console.log('submitted_at column not found, trying without ORDER BY...');
-          try {
-            // Sıralama olmadan al
-            formData = await pool.query(
-              'SELECT * FROM form_submissions WHERE user_id = $1', 
-              [userId]
-            );
-          } catch (formError3) {
-            console.error('Form submissions query failed:', formError3.message);
-            // Form verisi yoksa boş array kullan
-            formData = { rows: [] };
-          }
-        }
+        console.log('form_submissions table not found or error, skipping...');
       }
-      console.log('Form submissions count:', formData.rows.length);
+      console.log('Form submissions count:', formSubmissionsData.rows.length);
       
       const exportData = {
         user: userData.rows[0],
         sleepSessions: sleepData.rows,
         heartRateSessions: heartRateData.rows,
-        formSubmissions: formData.rows,
+        formResponses: formResponsesData.rows,
+        formSubmissions: formSubmissionsData.rows,
         exportDate: new Date().toISOString(),
         dataProtectionInfo: {
           law: 'KVKK 6698 sayılı Kişisel Verilerin Korunması Kanunu',
