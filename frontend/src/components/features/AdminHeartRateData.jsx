@@ -62,6 +62,49 @@ function AdminHeartRateData() {
     setSelectedUser(userGroup);
   };
 
+  // ✅ YENİ: CSV İNDİRME FONKSİYONU
+  const handleDownloadUserData = async (userGroup) => {
+    try {
+      const headers = [
+        'Kullanıcı Adı',
+        'Telefon',
+        'İçerik Türü',
+        'İçerik Adı',
+        'Önceki Kalp Atımı',
+        'Sonraki Kalp Atımı',
+        'Değişim',
+        'Süre (dk)',
+        'Kayıt Tarihi'
+      ];
+
+      const rows = userGroup.sessions.map(session => [
+        userGroup.user_name || '',
+        userGroup.user_phone || '',
+        session.content_type || '',
+        session.content_name || '',
+        session.heart_rate_before || 0,
+        session.heart_rate_after || 0,
+        (session.heart_rate_after || 0) - (session.heart_rate_before || 0),
+        session.duration || 0,
+        formatDate(session.created_at)
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `kalp-atim-verileri-${userGroup.user_name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    } catch (error) {
+      console.error('İndirme hatası:', error);
+      alert('Veriler indirilemedi');
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -148,13 +191,24 @@ function AdminHeartRateData() {
                     </div>
                   </div>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewDetails(userGroup)}
-                  >
-                    Detay
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(userGroup)}
+                    >
+                      Detay
+                    </Button>
+                    {/* ✅ YENİ: İNDİR BUTONU */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadUserData(userGroup)}
+                      className="bg-green-500 text-white hover:bg-green-600"
+                    >
+                      📥 İndir
+                    </Button>
+                  </div>
                 </div>
               </Card>
             );

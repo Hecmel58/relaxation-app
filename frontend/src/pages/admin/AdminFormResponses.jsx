@@ -311,10 +311,24 @@ function AdminFormResponses() {
                   {expandedResponse === response.id && (
                     <div className="px-4 py-4 bg-slate-50 border-t border-slate-200">
                       <h4 className="font-semibold text-slate-900 mb-3">Yanıt Detayları:</h4>
-                      <div className="bg-white rounded-lg p-4 border border-slate-200">
-                        <pre className="text-sm text-slate-700 whitespace-pre-wrap font-mono">
-                          {JSON.stringify(response.responses, null, 2)}
-                        </pre>
+                      <div className="bg-white rounded-lg p-4 border border-slate-200 space-y-3">
+                        {/* ✅ YENİ: SORU-CEVAP FORMATINDA GÖSTER */}
+                        {Object.entries(response.responses || {}).map(([key, value], index) => {
+                          if (key === 'filled' || key === 'timestamp' || key === 'user_name' || key === 'user_phone') {
+                            return null;
+                          }
+
+                          return (
+                            <div key={index} className="border-b pb-2 last:border-b-0">
+                              <p className="text-sm text-slate-600 font-semibold">
+                                {index + 1}. Soru: {key}
+                              </p>
+                              <p className="text-base mt-1">
+                                Cevap: <strong>{typeof value === 'object' ? JSON.stringify(value) : value}</strong>
+                              </p>
+                            </div>
+                          );
+                        })}
                       </div>
                       
                       <div className="mt-4 flex gap-2">
