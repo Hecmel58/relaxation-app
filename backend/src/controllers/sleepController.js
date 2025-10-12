@@ -5,9 +5,10 @@ const logger = require('../utils/logger');
 class SleepController {
   async createSession(req, res, next) {
     try {
-      const session = await sleepService.createSession(req.userId, req.body);
+      const userId = req.userId || req.user?.userId || req.user?.id;
+      const session = await sleepService.createSession(userId, req.body);
       
-      logger.info(`Sleep session created by user ${req.userId}`);
+      logger.info(`Sleep session created by user ${userId}`);
       
       res.status(201).json({
         success: true,
@@ -23,12 +24,13 @@ class SleepController {
   async getSessions(req, res, next) {
     try {
       const limit = parseInt(req.query.limit) || 50;
+      const userId = req.userId || req.user?.userId || req.user?.id;
       
       if (limit < 1 || limit > 100) {
         return next(new AppError('Limit 1-100 arasında olmalıdır', 400));
       }
       
-      const sessions = await sleepService.getUserSessions(req.userId, limit);
+      const sessions = await sleepService.getUserSessions(userId, limit);
       
       res.json({
         success: true,
@@ -42,7 +44,8 @@ class SleepController {
 
   async getSession(req, res, next) {
     try {
-      const session = await sleepService.getSessionById(req.params.id, req.userId);
+      const userId = req.userId || req.user?.userId || req.user?.id;
+      const session = await sleepService.getSessionById(req.params.id, userId);
       
       if (!session) {
         return next(new AppError('Uyku kaydı bulunamadı', 404));
@@ -60,13 +63,14 @@ class SleepController {
 
   async deleteSession(req, res, next) {
     try {
-      const deleted = await sleepService.deleteSession(req.params.id, req.userId);
+      const userId = req.userId || req.user?.userId || req.user?.id;
+      const deleted = await sleepService.deleteSession(req.params.id, userId);
       
       if (!deleted) {
         return next(new AppError('Uyku kaydı bulunamadı', 404));
       }
       
-      logger.info(`Sleep session ${req.params.id} deleted by user ${req.userId}`);
+      logger.info(`Sleep session ${req.params.id} deleted by user ${userId}`);
       
       res.json({
         success: true,
@@ -80,13 +84,14 @@ class SleepController {
 
   async getAnalytics(req, res, next) {
     try {
+      const userId = req.userId || req.user?.userId || req.user?.id;
       const period = req.query.period || 'week';
       
       if (!['week', 'month', 'year'].includes(period)) {
         return next(new AppError('Geçersiz periyod. week, month veya year olmalıdır', 400));
       }
       
-      const analytics = await sleepService.getAnalytics(req.userId, period);
+      const analytics = await sleepService.getAnalytics(userId, period);
       
       res.json({
         success: true,

@@ -1,20 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
-// ✅ KULLANICI: Aktif formları getir
-router.get('/types', auth, async (req, res) => {
+router.get('/types', authenticateToken, async (req, res) => {
   try {
+    const userId = req.userId || req.user?.userId || req.user?.id;
+    
     const formsResult = await pool.query(
       'SELECT id, title, description, google_form_url, is_active, created_at FROM form_types WHERE is_active = true ORDER BY created_at DESC'
     );
     const forms = formsResult.rows || [];
     
-    // Kullanıcının doldurduğu formları kontrol et
     const userResponsesResult = await pool.query(
       'SELECT form_type_id, created_at FROM form_responses WHERE user_id = $1 ORDER BY created_at DESC',
-      [req.user.id]
+      [userId]
     );
     const userResponses = userResponsesResult.rows || [];
     
@@ -31,28 +31,25 @@ router.get('/types', auth, async (req, res) => {
   }
 });
 
-// ✅ KULLANICI: Form yanıtı kaydet
-router.post('/responses', auth, async (req, res) => {
+router.post('/responses', authenticateToken, async (req, res) => {
   const { form_type_id, responses } = req.body;
+  const userId = req.userId || req.user?.userId || req.user?.id;
   
   try {
-    // Önce aynı formun daha önce doldurulup doldurulmadığını kontrol et
     const existingResponse = await pool.query(
       'SELECT id FROM form_responses WHERE user_id = $1 AND form_type_id = $2',
-      [req.user.id, form_type_id]
+      [userId, form_type_id]
     );
 
     if (existingResponse.rows.length > 0) {
-      // Güncelle
       await pool.query(
         'UPDATE form_responses SET responses = $1, created_at = NOW() WHERE user_id = $2 AND form_type_id = $3',
-        [JSON.stringify(responses), req.user.id, form_type_id]
+        [JSON.stringify(responses), userId, form_type_id]
       );
     } else {
-      // Yeni kayıt
       await pool.query(
         'INSERT INTO form_responses (user_id, form_type_id, responses, created_at) VALUES ($1, $2, $3, NOW())',
-        [req.user.id, form_type_id, JSON.stringify(responses)]
+        [userId, form_type_id, JSON.stringify(responses)]
       );
     }
     
@@ -63,11 +60,10 @@ router.post('/responses', auth, async (req, res) => {
   }
 });
 
-// ✅ ADMIN: Tüm formları getir (aktif/pasif dahil)
-router.get('/admin/all', auth, async (req, res) => {
+router.get('/admin/all', authenticateToken, async (req, res) => {
   try {
-    // Admin kontrolü
-    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    const userId = req.userId || req.user?.userId || req.user?.id;
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
     if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
@@ -95,13 +91,12 @@ router.get('/admin/all', auth, async (req, res) => {
   }
 });
 
-// ✅ ADMIN: Yeni form ekle (Google Form URL'den)
-router.post('/admin/add', auth, async (req, res) => {
+router.post('/admin/add', authenticateToken, async (req, res) => {
   const { title, description, google_form_url } = req.body;
   
   try {
-    // Admin kontrolü
-    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    const userId = req.userId || req.user?.userId || req.user?.id;
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
     if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
@@ -126,13 +121,12 @@ router.post('/admin/add', auth, async (req, res) => {
   }
 });
 
-// ✅ ADMIN: Form aktif/pasif yap
-router.patch('/admin/:id/toggle', auth, async (req, res) => {
+router.patch('/admin/:id/toggle', authenticateToken, async (req, res) => {
   const { id } = req.params;
   
   try {
-    // Admin kontrolü
-    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    const userId = req.userId || req.user?.userId || req.user?.id;
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
     if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
@@ -149,13 +143,12 @@ router.patch('/admin/:id/toggle', auth, async (req, res) => {
   }
 });
 
-// ✅ ADMIN: Form yanıtlarını getir (detaylı)
-router.get('/admin/responses/:formId', auth, async (req, res) => {
+router.get('/admin/responses/:formId', authenticateToken, async (req, res) => {
   const { formId } = req.params;
   
   try {
-    // Admin kontrolü
-    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    const userId = req.userId || req.user?.userId || req.user?.id;
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
     if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
@@ -182,20 +175,17 @@ router.get('/admin/responses/:formId', auth, async (req, res) => {
   }
 });
 
-// ✅ ADMIN: Form sil
-router.delete('/admin/:id', auth, async (req, res) => {
+router.delete('/admin/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   
   try {
-    // Admin kontrolü
-    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+    const userId = req.userId || req.user?.userId || req.user?.id;
+    const adminCheckResult = await pool.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
     if (!adminCheckResult.rows[0]?.is_admin) {
       return res.status(403).json({ error: 'Yetkiniz yok' });
     }
     
-    // Önce yanıtları sil
     await pool.query('DELETE FROM form_responses WHERE form_type_id = $1', [id]);
-    // Sonra formu sil
     await pool.query('DELETE FROM form_types WHERE id = $1', [id]);
     
     res.json({ success: true, message: 'Form silindi' });
