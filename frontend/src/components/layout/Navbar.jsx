@@ -12,8 +12,8 @@ const Navbar = () => {
   useEffect(() => {
     if (user) {
       fetchUnreadMessages();
-      // Her 30 saniyede bir güncelle
-      const interval = setInterval(fetchUnreadMessages, 60000);
+      // ✅ 60 saniyeden 120 saniyeye çıkarıldı (2 dakika)
+      const interval = setInterval(fetchUnreadMessages, 120000);
       return () => clearInterval(interval);
     }
   }, [user]);
