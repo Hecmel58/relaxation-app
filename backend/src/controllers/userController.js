@@ -4,44 +4,72 @@ const logger = require('../utils/logger');
 
 class UserController {
   async deleteAccount(req, res, next) {
-    const client = await pool.connect();
+    let client;
     
     try {
-      await client.query('BEGIN');
-      
       const userId = req.user?.userId || req.userId;
       
       if (!userId) {
         logger.error('Delete account: No user ID found');
         return res.status(401).json({ success: false, error: 'User ID bulunamadı' });
       }
+
+      client = await pool.connect();
+      await client.query('BEGIN');
       
-      // ✅ SADECE VAR OLAN TABLOLARI SİL
-      await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM heart_rate_sessions WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM sleep_sessions WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM form_responses WHERE user_id = $1', [userId]);
+      // ✅ HER TABLOYU TRY-CATCH İÇİNDE TEK TEK SİL
+      try {
+        await client.query('DELETE FROM password_reset_requests WHERE user_id = $1', [userId]);
+      } catch (e) {
+        console.log('password_reset_requests silme hatası:', e.message);
+      }
       
-      // ✅ OLMAYAN TABLOLARI TRY-CATCH İLE GÜVENLİ SİL
+      try {
+        await client.query('DELETE FROM heart_rate_sessions WHERE user_id = $1', [userId]);
+      } catch (e) {
+        console.log('heart_rate_sessions silme hatası:', e.message);
+      }
+      
+      try {
+        await client.query('DELETE FROM sleep_sessions WHERE user_id = $1', [userId]);
+      } catch (e) {
+        console.log('sleep_sessions silme hatası:', e.message);
+      }
+      
+      try {
+        await client.query('DELETE FROM form_responses WHERE user_id = $1', [userId]);
+      } catch (e) {
+        console.log('form_responses silme hatası:', e.message);
+      }
+      
       try {
         await client.query('DELETE FROM form_submissions WHERE user_id = $1', [userId]);
       } catch (e) {
-        console.log('form_submissions table not exists, skipping...');
+        console.log('form_submissions tablo yok, atlanıyor');
       }
       
       try {
         await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
       } catch (e) {
-        console.log('messages table not exists, skipping...');
+        console.log('messages tablo yok, atlanıyor');
       }
       
       try {
         await client.query('DELETE FROM video_calls WHERE participant1_id = $1 OR participant2_id = $1', [userId]);
       } catch (e) {
-        console.log('video_calls table not exists, skipping...');
+        console.log('video_calls tablo yok, atlanıyor');
       }
       
-      await client.query('DELETE FROM users WHERE id = $1 AND is_admin = false', [userId]);
+      // ✅ EN SON KULLANICIYI SİL
+      const deleteResult = await client.query('DELETE FROM users WHERE id = $1 AND is_admin = false RETURNING id', [userId]);
+      
+      if (deleteResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ 
+          success: false, 
+          error: 'Admin hesabı silinemez veya kullanıcı bulunamadı' 
+        });
+      }
       
       await client.query('COMMIT');
       
@@ -52,14 +80,18 @@ class UserController {
         message: 'Hesabınız ve tüm verileriniz kalıcı olarak silindi'
       });
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (client) {
+        await client.query('ROLLBACK');
+      }
       logger.error('Delete account error:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Hesap silme hatası: ' + error.message 
       });
     } finally {
-      client.release();
+      if (client) {
+        client.release();
+      }
     }
   }
 
