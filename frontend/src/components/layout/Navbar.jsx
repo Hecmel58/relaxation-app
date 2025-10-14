@@ -12,7 +12,7 @@ const Navbar = () => {
   useEffect(() => {
     if (user) {
       fetchUnreadMessages();
-      // ✅ 60 saniyeden 120 saniyeye çıkarıldı (2 dakika)
+      // Her 2 dakikada bir güncelle
       const interval = setInterval(fetchUnreadMessages, 120000);
       return () => clearInterval(interval);
     }
@@ -21,6 +21,7 @@ const Navbar = () => {
   const fetchUnreadMessages = async () => {
     try {
       const response = await api.get('/chat/unread-count');
+      console.log('📬 Unread count response:', response.data); // ✅ Debug log
       if (response.data.success) {
         setUnreadCount(response.data.unreadCount || 0);
       }
@@ -33,6 +34,11 @@ const Navbar = () => {
     localStorage.removeItem('fidbal_token');
     logout();
     navigate('/login');
+  };
+
+  // ✅ YENİ: Mesaj ikonuna tıklandığında unread count'u sıfırla
+  const handleMessageClick = () => {
+    setUnreadCount(0);
   };
 
   return (
@@ -57,7 +63,7 @@ const Navbar = () => {
             <Link 
               to="/support" 
               className="relative p-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-lg transition-colors"
-              onClick={() => setUnreadCount(0)}
+              onClick={handleMessageClick} // ✅ DÜZELT: Fonksiyon çağrısı
             >
               <svg 
                 className="w-6 h-6" 
