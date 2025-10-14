@@ -3,17 +3,9 @@ const bcrypt = require('bcrypt');
 const logger = require('../utils/logger');
 
 class PasswordResetController {
-  // ✅ MOBİL UYGULAMA İÇİN ŞİFRE SIFIRLAMA İSTEĞİ
   async requestPasswordReset(req, res, next) {
     try {
       const { phone } = req.body;
-
-      if (!phone) {
-        return res.status(400).json({
-          success: false,
-          error: 'Telefon numarası gerekli'
-        });
-      }
       
       const userResult = await pool.query(
         'SELECT id, name FROM users WHERE phone = $1',
@@ -23,8 +15,7 @@ class PasswordResetController {
       if (userResult.rows.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Bu telefon numarası ile kayıtlı kullanıcı bulunamadı',
-          error: 'Kullanıcı bulunamadı'
+          message: 'Bu telefon numarası ile kayıtlı kullanıcı bulunamadı'
         });
       }
       
@@ -43,7 +34,7 @@ class PasswordResetController {
       }
       
       await pool.query(
-        'INSERT INTO password_reset_requests (user_id, phone, status, requested_at) VALUES ($1, $2, $3, NOW())',
+        'INSERT INTO password_reset_requests (user_id, phone, status, created_at) VALUES ($1, $2, $3, NOW())',
         [user.id, phone, 'pending']
       );
       
@@ -59,7 +50,6 @@ class PasswordResetController {
     }
   }
 
-  // ✅ ADMİN PANELİ İÇİN BEKLEYEN İSTEKLER
   async getPendingRequests(req, res, next) {
     try {
       const result = await pool.query(`
@@ -68,13 +58,13 @@ class PasswordResetController {
           pr.user_id,
           pr.phone,
           pr.status,
-          pr.requested_at,
+          pr.created_at,
           u.name as user_name,
           u.email
         FROM password_reset_requests pr
         JOIN users u ON pr.user_id = u.id
         WHERE pr.status = 'pending'
-        ORDER BY pr.requested_at DESC
+        ORDER BY pr.created_at DESC
       `);
       
       res.json({
@@ -87,7 +77,6 @@ class PasswordResetController {
     }
   }
 
-  // ✅ ADMİN ŞİFRE SIFIRLAMA ONAYI
   async approvePasswordReset(req, res, next) {
     try {
       const { requestId, newPassword } = req.body;
@@ -120,7 +109,7 @@ class PasswordResetController {
       );
       
       await pool.query(
-        'UPDATE password_reset_requests SET status = $1, approved_at = NOW() WHERE id = $2',
+        'UPDATE password_reset_requests SET status = $1, updated_at = NOW() WHERE id = $2',
         ['approved', requestId]
       );
       
@@ -138,13 +127,12 @@ class PasswordResetController {
     }
   }
 
-  // ✅ ADMİN ŞİFRE SIFIRLAMA REDDİ
   async rejectPasswordReset(req, res, next) {
     try {
       const { requestId } = req.body;
       
       await pool.query(
-        'UPDATE password_reset_requests SET status = $1, approved_at = NOW() WHERE id = $2',
+        'UPDATE password_reset_requests SET status = $1, updated_at = NOW() WHERE id = $2',
         ['rejected', requestId]
       );
       
