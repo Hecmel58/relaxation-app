@@ -3,9 +3,11 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import api from './api';
 
+// ✅ DÜZELTİLDİ: shouldShowBanner ve shouldShowList
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -50,23 +52,23 @@ export async function registerForPushNotifications() {
   if (Device.isDevice) {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-    
+
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-    
+
     if (finalStatus !== 'granted') {
       console.log('❌ Push bildirim izni verilmedi!');
       return;
     }
-    
+
     token = (await Notifications.getExpoPushTokenAsync()).data;
     console.log('📱 Push Token:', token);
-    
+
     // ✅ Token'ı backend'e kaydet
     try {
-      await api.post('/users/push-token', { pushToken: token });
+      await api.post('/user/push-token', { pushToken: token });
       console.log('✅ Push token backend\'e kaydedildi');
     } catch (error) {
       console.error('❌ Push token kayıt hatası:', error);
@@ -84,7 +86,7 @@ export async function scheduleSleepReminder() {
     // Mevcut uyku hatırlatmasını iptal et
     const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
     const sleepNotifications = allNotifications.filter(n => n.content.data?.type === 'sleep_reminder');
-    
+
     for (const notif of sleepNotifications) {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
@@ -116,7 +118,7 @@ export async function scheduleWeeklyRelaxationReminders() {
     // Mevcut rahatlama bildirimlerini iptal et
     const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
     const relaxNotifications = allNotifications.filter(n => n.content.data?.type === 'relaxation_reminder');
-    
+
     for (const notif of relaxNotifications) {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
@@ -139,8 +141,8 @@ export async function scheduleWeeklyRelaxationReminders() {
         content: {
           title: `${program.icon} ${program.name} - Rahatlama Zamanı`,
           body: `Bugün "${program.title}" tekniğini deneme zamanı! Saat 19:00'da başlayalım.`,
-          data: { 
-            type: 'relaxation_reminder', 
+          data: {
+            type: 'relaxation_reminder',
             category: program.category,
             binauralType: program.type,
             screen: program.category === 'binaural' ? 'Binaural' : 'Relaxation',
@@ -171,10 +173,10 @@ export async function sendNewMessageNotification(senderName: string, messagePrev
       content: {
         title: `💬 ${senderName}`,
         body: messagePreview,
-        data: { 
-          type: 'new_message', 
+        data: {
+          type: 'new_message',
           screen: 'Support',
-          sender: senderName 
+          sender: senderName
         },
         sound: true,
         categoryIdentifier: 'messages',
@@ -190,23 +192,23 @@ export async function sendNewMessageNotification(senderName: string, messagePrev
 
 // ✅ 4. VIDEO ARAMA TALEBİ BİLDİRİMİ (TÜM KULLANICILAR)
 export async function sendVideoCallRequestNotification(
-  expertName: string, 
+  expertName: string,
   roomName: string,
   scheduledTime?: string
 ) {
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '📹 Görüntülü Arama Talebi',
-        body: scheduledTime 
+        title: '🔹 Görüntülü Arama Talebi',
+        body: scheduledTime
           ? `${expertName} ile ${scheduledTime} tarihinde görüşme talebiniz var.`
           : `${expertName} ile görüşme talebi geldi. Hemen katılabilirsiniz!`,
-        data: { 
-          type: 'video_call_request', 
+        data: {
+          type: 'video_call_request',
           screen: 'VideoCall',
           roomName,
           expertName,
-          scheduledTime 
+          scheduledTime
         },
         sound: true,
         categoryIdentifier: 'video_calls',
@@ -227,10 +229,10 @@ export async function sendFormReminderNotification(formTitle: string) {
       content: {
         title: '📋 Form Hatırlatması',
         body: `"${formTitle}" formunu doldurmayı unutmayın!`,
-        data: { 
-          type: 'form_reminder', 
+        data: {
+          type: 'form_reminder',
           screen: 'Forms',
-          formTitle 
+          formTitle
         },
         sound: true,
       },
@@ -257,11 +259,11 @@ export async function cancelSleepReminders() {
   try {
     const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
     const sleepNotifications = allNotifications.filter(n => n.content.data?.type === 'sleep_reminder');
-    
+
     for (const notif of sleepNotifications) {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
-    
+
     console.log('✅ Uyku hatırlatmaları iptal edildi');
   } catch (error) {
     console.error('❌ Uyku hatırlatma iptal hatası:', error);
@@ -272,11 +274,11 @@ export async function cancelRelaxationReminders() {
   try {
     const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
     const relaxNotifications = allNotifications.filter(n => n.content.data?.type === 'relaxation_reminder');
-    
+
     for (const notif of relaxNotifications) {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
-    
+
     console.log('✅ Rahatlama hatırlatmaları iptal edildi');
   } catch (error) {
     console.error('❌ Rahatlama hatırlatma iptal hatası:', error);
@@ -295,7 +297,7 @@ export async function sendTestNotification() {
       },
       trigger: { seconds: 2 },
     });
-    
+
     console.log('✅ Test bildirimi gönderildi');
   } catch (error) {
     console.error('❌ Test bildirimi hatası:', error);
@@ -304,8 +306,8 @@ export async function sendTestNotification() {
 
 // ✅ 8. GENEL BİLDİRİM GÖNDER
 export async function sendLocalNotification(
-  title: string, 
-  body: string, 
+  title: string,
+  body: string,
   data?: any,
   delaySeconds?: number
 ) {
@@ -319,7 +321,7 @@ export async function sendLocalNotification(
       },
       trigger: delaySeconds ? { seconds: delaySeconds } : null,
     });
-    
+
     console.log('✅ Özel bildirim gönderildi');
   } catch (error) {
     console.error('❌ Özel bildirim hatası:', error);
@@ -331,13 +333,13 @@ export async function listScheduledNotifications() {
   try {
     const notifications = await Notifications.getAllScheduledNotificationsAsync();
     console.log('📋 Zamanlanmış Bildirimler:', notifications.length);
-    
+
     notifications.forEach((notif, index) => {
       console.log(`${index + 1}. ${notif.content.title}`);
       console.log(`   Type: ${notif.content.data?.type}`);
       console.log(`   Trigger:`, notif.trigger);
     });
-    
+
     return notifications;
   } catch (error) {
     console.error('❌ Bildirim listeleme hatası:', error);

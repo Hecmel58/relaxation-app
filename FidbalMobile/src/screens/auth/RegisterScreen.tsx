@@ -124,7 +124,7 @@ export default function RegisterScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -460,7 +460,7 @@ export default function RegisterScreen({ navigation }: any) {
         presentationStyle="fullScreen"
         onRequestClose={() => setShowTermsModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
+        <SafeAreaView style={styles.modalContainer} edges={[]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Kullanıcı Sözleşmesi ve Kullanım Koşulları</Text>
             <TouchableOpacity onPress={() => setShowTermsModal(false)} style={styles.closeButton}>

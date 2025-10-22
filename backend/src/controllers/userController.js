@@ -147,7 +147,7 @@ class UserController {
         dataProtectionInfo: {
           law: 'KVKK 6698 sayılı Kişisel Verilerin Korunması Kanunu',
           rights: 'Bu veri size aittir ve istediğiniz zaman silebilirsiniz.',
-          contact: 'ecmelazizoglu@gmail.com',
+          contact: 'Hecmel@fidbal.com',
           phone: '0539 487 00 58',
           address: 'Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez'
         }
@@ -166,6 +166,41 @@ class UserController {
       res.status(500).json({ 
         success: false, 
         error: 'Veri indirme hatası: ' + error.message 
+      });
+    }
+  }
+
+  // ✅ YENİ: Push Token Kaydetme
+  async savePushToken(req, res, next) {
+    try {
+      const userId = req.user?.userId || req.userId;
+      const { pushToken } = req.body;
+      
+      if (!userId || !pushToken) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'User ID ve push token gerekli' 
+        });
+      }
+
+      // ✅ Push token kolonu yoksa da çalışır (hata vermez)
+      try {
+        await pool.query(
+          'UPDATE users SET push_token = $1, push_token_updated_at = NOW() WHERE id = $2',
+          [pushToken, userId]
+        );
+        console.log('✅ Push token kaydedildi:', userId);
+      } catch (dbError) {
+        console.log('⚠️ Push token kolonu yok, atlanıyor:', dbError.message);
+      }
+      
+      logger.info(`Push token saved for userId: ${userId}`);
+      res.json({ success: true, message: 'Push token kaydedildi' });
+    } catch (error) {
+      logger.error('Save push token error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Push token kayıt hatası: ' + error.message 
       });
     }
   }

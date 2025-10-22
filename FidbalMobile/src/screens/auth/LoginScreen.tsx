@@ -221,7 +221,7 @@ export default function LoginScreen({ navigation }: any) {
         presentationStyle="fullScreen"
         onRequestClose={() => setShowTermsModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
+        <SafeAreaView style={styles.container} edges={[]}>
           {/* MODAL HEADER */}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Kullanıcı Sözleşmesi ve Kullanım Koşulları</Text>
