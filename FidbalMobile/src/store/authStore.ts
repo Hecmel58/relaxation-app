@@ -2,20 +2,21 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
-  userId: string;
-  phone: string;
+  userId: number;
   name: string;
-  isAdmin: boolean;
+  phone: string;
+  email?: string;
   abGroup: string;
+  isAdmin: boolean;
 }
 
 interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (userData: User, token: string) => Promise<void>;
+  login: (userData: User, authToken: string) => Promise<void>; // ✅ Parametre değişti
   logout: () => Promise<void>;
-  restoreSession: () => Promise<void>;
+  loadAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -23,29 +24,58 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   isAuthenticated: false,
 
-  login: async (userData: User, token: string) => {
-    await AsyncStorage.setItem('fidbal_token', token);
-    await AsyncStorage.setItem('fidbal_user', JSON.stringify(userData));
-    set({ user: userData, token, isAuthenticated: true });
+  // ✅ SADECE STORAGE'A KAYDET - API ÇAĞRISI YOK!
+  login: async (userData: User, authToken: string) => {
+    try {
+      // ✅ AsyncStorage'a kaydet
+      await AsyncStorage.setItem('fidbal_token', authToken);
+      await AsyncStorage.setItem('fidbal_user', JSON.stringify(userData));
+
+      // ✅ State'i güncelle
+      set({
+        token: authToken,
+        user: userData,
+        isAuthenticated: true,
+      });
+
+      console.log('✅ Login successful - Storage updated');
+    } catch (error) {
+      console.error('❌ Login storage error:', error);
+      throw error;
+    }
   },
 
   logout: async () => {
-    await AsyncStorage.removeItem('fidbal_token');
-    await AsyncStorage.removeItem('fidbal_user');
-    set({ user: null, token: null, isAuthenticated: false });
+    try {
+      await AsyncStorage.removeItem('fidbal_token');
+      await AsyncStorage.removeItem('fidbal_user');
+      set({
+        token: null,
+        user: null,
+        isAuthenticated: false,
+      });
+      console.log('✅ Logout successful');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    }
   },
 
-  restoreSession: async () => {
+  loadAuth: async () => {
     try {
       const token = await AsyncStorage.getItem('fidbal_token');
       const userStr = await AsyncStorage.getItem('fidbal_user');
-      
+
       if (token && userStr) {
         const user = JSON.parse(userStr);
-        set({ user, token, isAuthenticated: true });
+        set({
+          token,
+          user,
+          isAuthenticated: true,
+        });
+        console.log('✅ Auth loaded from storage');
       }
     } catch (error) {
-      console.error('Session restore error:', error);
+      console.error('❌ Load auth error:', error);
     }
   },
 }));

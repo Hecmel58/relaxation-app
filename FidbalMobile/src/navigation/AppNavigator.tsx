@@ -1,20 +1,22 @@
 import React, { useEffect } from 'react';
-import { Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
+import { Text, View, StyleSheet, Alert, Platform } from 'react-native';
 import { useAuthStore } from '../store/authStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 
 // Main Screens
 import DashboardScreen from '../screens/main/DashboardScreen';
 import SleepScreen from '../screens/main/SleepScreen';
+import FormsScreen from '../screens/main/FormsScreen';
 import RelaxationScreen from '../screens/main/RelaxationScreen';
 import BinauralScreen from '../screens/main/BinauralScreen';
-import FormsScreen from '../screens/main/FormsScreen';
 import SupportScreen from '../screens/main/SupportScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import VideoCallScreen from '../screens/main/VideoCallScreen';
@@ -22,28 +24,49 @@ import VideoCallScreen from '../screens/main/VideoCallScreen';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// ✅ ÇIKIŞ EKRANI COMPONENT
+function LogoutScreen() {
+  const logout = useAuthStore((state) => state.logout);
+
+  useEffect(() => {
+    Alert.alert(
+      'Çıkış Yap',
+      'Çıkış yapmak istediğinize emin misiniz?',
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Çıkış Yap',
+          style: 'destructive',
+          onPress: () => logout()
+        },
+      ]
+    );
+  }, []);
+
+  return <View style={{ flex: 1, backgroundColor: '#f8fafc' }} />;
+}
+
 function MainTabs() {
   const user = useAuthStore((state) => state.user);
-  const hasExperimentalAccess = user?.isAdmin || user?.abGroup === 'experiment';
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: '#3b82f6',
         tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: {
-          display: 'none',
-        },
-        headerStyle: {
           backgroundColor: '#fff',
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: '#e2e8f0',
+          borderTopWidth: 1,
+          borderTopColor: '#e2e8f0',
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 8,
         },
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          fontSize: 18,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
         },
       }}
     >
@@ -51,50 +74,89 @@ function MainTabs() {
         name="Dashboard"
         component={DashboardScreen}
         options={{
-          title: 'Ana Sayfa',
-          headerShown: false,
+          tabBarLabel: 'Ana Sayfa',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>🏠</Text>
+          ),
         }}
       />
       <Tab.Screen
         name="Sleep"
         component={SleepScreen}
         options={{
-          title: 'Uyku Takibi',
+          tabBarLabel: 'Uyku',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>😴</Text>
+          ),
         }}
       />
       <Tab.Screen
         name="Forms"
         component={FormsScreen}
         options={{
-          title: 'Formlar',
+          tabBarLabel: 'Formlar',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>📋</Text>
+          ),
         }}
       />
-      <Tab.Screen
-        name="Relaxation"
-        component={RelaxationScreen}
-        options={{
-          title: 'Rahatlama',
-        }}
-      />
-      <Tab.Screen
-        name="Binaural"
-        component={BinauralScreen}
-        options={{
-          title: 'Binaural',
-        }}
-      />
+
+      {/* ✅ BETA ÖZELLİKLER - SADECE DENEY GRUBU */}
+      {(user?.isAdmin || user?.is_admin || user?.abGroup === 'experiment' || user?.ab_group === 'experiment') && (
+        <>
+          <Tab.Screen
+            name="Relaxation"
+            component={RelaxationScreen}
+            options={{
+              tabBarLabel: 'Rahatlama',
+              tabBarIcon: ({ color }) => (
+                <Text style={{ fontSize: 24 }}>🧘</Text>
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Binaural"
+            component={BinauralScreen}
+            options={{
+              tabBarLabel: 'Binaural',
+              tabBarIcon: ({ color }) => (
+                <Text style={{ fontSize: 24 }}>🎵</Text>
+              ),
+            }}
+          />
+        </>
+      )}
+
       <Tab.Screen
         name="Support"
         component={SupportScreen}
         options={{
-          title: 'Destek',
+          tabBarLabel: 'Destek',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>💬</Text>
+          ),
         }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          title: 'Profil',
+          tabBarLabel: 'Profil',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>👤</Text>
+          ),
+        }}
+      />
+
+      {/* ✅ ÇIKIŞ BUTONU EN ALTTA */}
+      <Tab.Screen
+        name="Logout"
+        component={LogoutScreen}
+        options={{
+          tabBarLabel: 'Çıkış',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>🚪</Text>
+          ),
         }}
       />
     </Tab.Navigator>
@@ -103,48 +165,25 @@ function MainTabs() {
 
 function MainStack() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen 
-        name="MainTabs" 
-        component={MainTabs} 
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen 
-        name="VideoCall" 
-        component={VideoCallScreen}
-        options={{ 
-          title: 'Görüntülü Görüşme',
-          headerShown: true,
-          presentation: 'fullScreenModal',
-          headerStyle: {
-            backgroundColor: '#0f172a',
-          },
-          headerTintColor: '#fff',
-        }}
-      />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="VideoCall" component={VideoCallScreen} />
     </Stack.Navigator>
   );
 }
 
 function AuthStack() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </Stack.Navigator>
   );
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, restoreSession } = useAuthStore();
-
-  useEffect(() => {
-    restoreSession();
-  }, []);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <NavigationContainer>
