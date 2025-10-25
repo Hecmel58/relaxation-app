@@ -133,34 +133,34 @@ export default function DashboardScreen() {
   const totalRecords = sleepSessions.length;
 
   const stats = [
-    {
-      title: 'Son Uyku Kalitesi',
-      value: lastSleep ? `${lastSleep.sleep_quality}/10` : '—',
-      subtitle: lastSleep ? formatDate(lastSleep.sleep_date) : 'Henüz kayıt yok',
-      icon: '😴',
-      color: currentColors.info,
-      bgColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe',
-    },
-    {
-      title: 'Ortalama Kalite',
-      value: avgQuality !== '0' ? `${avgQuality}/10` : '—',
-      subtitle: `${totalRecords} kayıt`,
-      icon: '📊',
-      color: currentColors.success,
-      bgColor: isDark ? 'rgba(16, 185, 129, 0.1)' : '#d1fae5',
-    },
-    {
-      title: 'A/B Test Grubu',
-      value: user?.abGroup === 'experiment' || user?.ab_group === 'experiment' ? 'Deney' : 'Kontrol',
-      subtitle:
-        user?.abGroup === 'experiment' || user?.ab_group === 'experiment'
-          ? 'Beta özellikler'
-          : 'Temel özellikler',
-      icon: user?.abGroup === 'experiment' || user?.ab_group === 'experiment' ? '🧪' : '🔬',
-      color: currentColors.warning,
-      bgColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7',
-    },
-  ];
+      {
+        title: 'Son Uyku\nKalitesi',
+        value: lastSleep ? `${lastSleep.sleep_quality}/10` : '—',
+        subtitle: lastSleep ? formatDate(lastSleep.sleep_date) : 'Henüz kayıt yok',
+        icon: '😴',
+        color: currentColors.info,
+        bgColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe',
+      },
+      {
+        title: 'Ortalama\nKalite',
+        value: avgQuality !== '0' ? `${avgQuality}/10` : '—',
+        subtitle: `${totalRecords} kayıt`,
+        icon: '📊',
+        color: currentColors.success,
+        bgColor: isDark ? 'rgba(16, 185, 129, 0.1)' : '#d1fae5',
+      },
+      {
+        title: 'A/B Test\nGrubu',
+        value: user?.abGroup === 'experiment' || user?.ab_group === 'experiment' ? 'Deney' : 'Kontrol',
+        subtitle:
+          user?.abGroup === 'experiment' || user?.ab_group === 'experiment'
+            ? 'Beta'
+            : 'Temel',
+        icon: user?.abGroup === 'experiment' || user?.ab_group === 'experiment' ? '🧪' : '🔬',
+        color: currentColors.warning,
+        bgColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7',
+      },
+    ];
 
   const quickActions = [
     {
@@ -377,11 +377,24 @@ const styles = StyleSheet.create({
   profileButton: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 },
   profileButtonText: { fontSize: 20, color: '#fff', fontWeight: 'bold' },
   statsContainer: { flexDirection: 'row', padding: 16, gap: 12 },
-  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', minHeight: 140, justifyContent: 'center' },
-  statIcon: { fontSize: 32, marginBottom: 8 },
-  statValue: { fontSize: 24, fontWeight: 'bold', marginBottom: 4 },
-  statTitle: { fontSize: 12, fontWeight: '600', textAlign: 'center', marginBottom: 2 },
-  statSubtitle: { fontSize: 10, textAlign: 'center' },
+  statCard: {
+      flex: 1,
+      borderRadius: 16,
+      padding: 12,
+      alignItems: 'center',
+      minHeight: 140,
+      justifyContent: 'center'
+    },
+    statIcon: { fontSize: 32, marginBottom: 8 },
+    statValue: { fontSize: 22, fontWeight: 'bold', marginBottom: 4 },
+    statTitle: {
+      fontSize: 11,
+      fontWeight: '600',
+      textAlign: 'center',
+      marginBottom: 2,
+      lineHeight: 14,
+    },
+    statSubtitle: { fontSize: 9, textAlign: 'center' },
   section: { padding: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },

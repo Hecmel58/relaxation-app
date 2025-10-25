@@ -15,10 +15,11 @@ import { useOfflineStore } from './src/store/offlineStore';
 // ✅ Tüm log'ları kapat
 LogBox.ignoreAllLogs(true);
 
-// ✅ Notification handler
+// ✅ Notification handler - DÜZELTİLDİ
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,  // ✅ DEĞİŞTİ: shouldShowAlert yerine
+    shouldShowList: true,     // ✅ DEĞİŞTİ: Yeni eklendi
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -33,8 +34,9 @@ export default function App() {
   const appState = useRef(AppState.currentState);
   const inactiveTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const loadAuth = useAuthStore((state) => state.loadAuth);
+  const loadStoredAuth = useAuthStore((state) => state.loadStoredAuth);
   const logout = useAuthStore((state) => state.logout);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated); // ✅ YENİ: Login kontrolü için
   const loadTheme = useThemeStore((state) => state.loadTheme);
   const loadPendingRequests = useOfflineStore((state) => state.loadPendingRequests);
 
@@ -77,10 +79,22 @@ export default function App() {
     };
   }, []);
 
+  // ✅ YENİ: Login sonrası push token kaydet
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Kullanıcı giriş yaptıktan sonra push token kaydet
+      setTimeout(() => {
+        registerForPushNotifications().catch(err => {
+          console.log('⚠️ Push token kaydedilemedi:', err.message);
+        });
+      }, 1000);
+    }
+  }, [isAuthenticated]);
+
   const initializeApp = async () => {
     try {
       // ✅ 1. Auth yükle
-      await loadAuth();
+      await loadStoredAuth();
 
       // ✅ 2. Tema yükle
       await loadTheme();
@@ -97,7 +111,7 @@ export default function App() {
         playThroughEarpieceAndroid: false,
       });
 
-      // ✅ 5. Push notification setup
+      // ✅ 5. Push notification setup (SADECE UYKU HATIRLATMASI)
       await setupNotifications();
 
       // ✅ 6. Splash animasyonu
@@ -126,7 +140,10 @@ export default function App() {
 
   const setupNotifications = async () => {
     try {
-      await registerForPushNotifications();
+      // ✅ DEĞİŞTİ: Push token kaydını buradan KALDIRDIK (login sonrasına taşındı)
+      // await registerForPushNotifications(); // ❌ KALDIRILDI
+
+      // ✅ Uyku hatırlatması (giriş olmadan da çalışır)
       await scheduleSleepReminder();
       console.log('✅ Günlük uyku hatırlatması aktif (22:00)');
 

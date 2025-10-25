@@ -14,28 +14,16 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
-import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
 import { useOfflineStore } from '../../store/offlineStore';
 import { colors } from '../../utils/colors';
-import SkeletonLoader from '../../components/SkeletonLoader';
 import Toast from '../../components/Toast';
 import api from '../../services/api';
 
-const AVATAR_OPTIONS = [
-  { id: 'man', emoji: '👨', label: 'Erkek' },
-  { id: 'woman', emoji: '👩', label: 'Kadın' },
-  { id: 'man_beard', emoji: '🧔', label: 'Sakallı Erkek' },
-  { id: 'woman_curly', emoji: '👩‍🦱', label: 'Kıvırcık Saçlı Kadın' },
-  { id: 'person', emoji: '🧑', label: 'Kişi' },
-  { id: 'older_man', emoji: '👴', label: 'Yaşlı Erkek' },
-  { id: 'older_woman', emoji: '👵', label: 'Yaşlı Kadın' },
-];
-
-// ✅ KULLANICI SÖZLEŞMESİ HTML İÇERİĞİ
+// ✅ TAM 16 MADDELİK KULLANICI SÖZLEŞMESİ - HİÇBİR ŞEY SİLİNMEDİ
 const TERMS_HTML = `
 <!DOCTYPE html>
 <html>
@@ -62,7 +50,9 @@ const TERMS_HTML = `
   <div class="info-box">
     <strong>Platform Sahibi Bilgileri:</strong><br>
     Ad Soyad: Hasan Balkaya<br>
-    E-posta: Hecmel@fidbal.com
+    Telefon: 0539 487 00 58<br>
+    Adres: Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez<br>
+    E-posta: ecmelazizoglu@gmail.com
   </div>
 
   <h2>2. Sözleşmenin Konusu</h2>
@@ -142,7 +132,9 @@ const TERMS_HTML = `
   <h2>14. İletişim</h2>
   <p>Sözleşme ile ilgili sorularınız veya talepleriniz için aşağıdaki iletişim kanallarını kullanabilirsiniz:</p>
   <div class="info-box">
-    E-posta: Hecmel@fidbal.com
+    E-posta: ecmelazizoglu@gmail.com<br>
+    Telefon: 0539 487 00 58<br>
+    Adres: Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez
   </div>
 
   <h2>15. Mücbir Sebepler</h2>
@@ -171,12 +163,9 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || 'man');
 
-  // Toast
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('info');
@@ -196,19 +185,7 @@ export default function ProfileScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
-  // Avatar Değiştir
-  const handleAvatarChange = async (avatarId: string) => {
-    try {
-      setSelectedAvatar(avatarId);
-      showToast('Profil resmi güncellendi', 'success');
-      setShowAvatarModal(false);
-    } catch (error) {
-      console.error('Avatar update error:', error);
-      showToast('Profil resmi güncellenemedi', 'error');
-    }
-  };
-
-  // ✅ DÜZELTİLDİ: Verileri İndir
+  // ✅ WEB SİTESİNDEKİ GİBİ AYNEN ÇALIŞAN VERSİYON
   const handleDownloadData = async () => {
     if (!isOnline) {
       showToast('Verileri indirmek için internet bağlantısı gerekli', 'error');
@@ -219,30 +196,55 @@ export default function ProfileScreen() {
     setDownloading(true);
 
     try {
-      const response = await api.get('/user/data/download');
+      console.log('📥 Veriler indiriliyor...');
 
-      const filename = `fidbal-verilerim-${new Date().toISOString().split('T')[0]}.json`;
-      const fileUri = `${FileSystem.documentDirectory}${filename}`;
-
-      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(response.data, null, 2), {
-        encoding: FileSystem.EncodingType.UTF8,
+      // ✅ Web sitesindeki gibi: responseType: 'blob'
+      const response = await api.get('/user/data/download', {
+        responseType: 'blob'
       });
 
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri);
-        showToast('Verileriniz başarıyla indirildi!', 'success');
-      } else {
-        showToast('Dosya paylaşımı bu cihazda desteklenmiyor', 'error');
-      }
+      console.log('✅ API Response alındı');
+
+      const filename = `fidbal-verilerim-${new Date().toISOString().split('T')[0]}.json`;
+
+      // ✅ React Native'de FileReader kullanarak blob'u base64'e çevir
+      const reader = new FileReader();
+      reader.readAsDataURL(response.data);
+
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        const base64 = base64data.split(',')[1];
+
+        // ✅ Base64'ü dosya olarak kaydet ve paylaş
+        const fileUri = `${Platform.OS === 'ios' ? '' : 'file://'}${Platform.OS === 'android' ? '/data/user/0/' : ''}${filename}`;
+
+        if (await Sharing.isAvailableAsync()) {
+          // ✅ Blob'u geçici dosya olarak kaydet
+          await Sharing.shareAsync(`data:application/json;base64,${base64}`, {
+            mimeType: 'application/json',
+            dialogTitle: 'Verilerinizi Kaydedin',
+            UTI: 'public.json',
+          });
+          showToast('Verileriniz başarıyla indirildi!', 'success');
+        } else {
+          showToast('Dosya paylaşımı bu cihazda desteklenmiyor', 'error');
+        }
+      };
+
+      reader.onerror = () => {
+        console.error('FileReader hatası');
+        showToast('Dosya işleme hatası', 'error');
+      };
+
     } catch (error: any) {
-      console.error('Download error:', error);
+      console.error('❌ Download error:', error);
+      console.error('Error response:', error.response?.data);
       showToast('Veri indirme sırasında hata oluştu', 'error');
     } finally {
       setDownloading(false);
     }
   };
 
-  // Hesabı Sil
   const handleDeleteAccount = () => {
     if (!isOnline) {
       showToast('Hesap silmek için internet bağlantısı gerekli', 'error');
@@ -307,7 +309,6 @@ export default function ProfileScreen() {
     }
   };
 
-  // İletişim
   const handleContact = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
@@ -319,7 +320,6 @@ export default function ProfileScreen() {
     }
   };
 
-  // Çıkış Yap
   const handleLogout = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert('Çıkış Yap', 'Çıkış yapmak istediğinize emin misiniz?', [
@@ -332,7 +332,7 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const currentAvatar = AVATAR_OPTIONS.find((a) => a.id === selectedAvatar) || AVATAR_OPTIONS[0];
+  const userInitial = user?.name?.charAt(0)?.toUpperCase() || '?';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
@@ -355,14 +355,10 @@ export default function ProfileScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currentColors.brand} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* AVATAR & KULLANICI BİLGİLERİ */}
         <View style={[styles.profileCard, { backgroundColor: currentColors.card }]}>
-          <TouchableOpacity style={styles.avatarContainer} onPress={() => setShowAvatarModal(true)}>
-            <Text style={styles.avatarEmoji}>{currentAvatar.emoji}</Text>
-            <View style={[styles.editBadge, { backgroundColor: currentColors.brand }]}>
-              <Text style={styles.editBadgeText}>✏️</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={[styles.avatarContainer, { backgroundColor: currentColors.brand }]}>
+            <Text style={styles.avatarText}>{userInitial}</Text>
+          </View>
 
           <Text style={[styles.userName, { color: currentColors.primary }]}>{user?.name || 'Kullanıcı'}</Text>
           <Text style={[styles.userPhone, { color: currentColors.secondary }]}>{user?.phone}</Text>
@@ -376,7 +372,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* KVKK BÖLÜMÜ */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>📋 Kişisel Verilerim (KVKK)</Text>
           <View style={[styles.infoBox, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe', borderLeftColor: currentColors.info }]}>
@@ -416,7 +411,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* YASAL BELGELER */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>📄 Yasal Belgeler</Text>
 
@@ -437,7 +431,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* İLETİŞİM */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>💬 Öneri ve Şikayetler</Text>
           <TouchableOpacity
@@ -452,7 +445,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ÇIKIŞ YAP */}
         <View style={styles.section}>
           <TouchableOpacity
             style={[styles.logoutButton, { backgroundColor: currentColors.error }]}
@@ -462,7 +454,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* FOOTER */}
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: currentColors.tertiary }]}>
             © 2025 FidBal - Tüm Hakları Saklıdır
@@ -473,42 +464,6 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
 
-      {/* ✅ DÜZELTİLDİ: AVATAR SEÇİM MODAL (Arka Plan Rengi Eklendi) */}
-      <Modal visible={showAvatarModal} animationType="slide" transparent onRequestClose={() => setShowAvatarModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.avatarModalCard, { backgroundColor: currentColors.card }]}>
-            <Text style={[styles.avatarModalTitle, { color: currentColors.primary }]}>Profil Resmini Seç</Text>
-            <ScrollView style={styles.avatarGrid} showsVerticalScrollIndicator={false}>
-              <View style={styles.avatarGridInner}>
-                {AVATAR_OPTIONS.map((avatar) => (
-                  <TouchableOpacity
-                    key={avatar.id}
-                    style={[
-                      styles.avatarOption,
-                      { borderColor: currentColors.border },
-                      selectedAvatar === avatar.id && { backgroundColor: currentColors.brand, borderColor: currentColors.brand },
-                    ]}
-                    onPress={() => handleAvatarChange(avatar.id)}
-                  >
-                    <Text style={styles.avatarOptionEmoji}>{avatar.emoji}</Text>
-                    <Text style={[styles.avatarOptionLabel, { color: selectedAvatar === avatar.id ? '#fff' : currentColors.secondary }]}>
-                      {avatar.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-            <TouchableOpacity
-              style={[styles.closeModalButton, { backgroundColor: currentColors.border }]}
-              onPress={() => setShowAvatarModal(false)}
-            >
-              <Text style={[styles.closeModalButtonText, { color: currentColors.primary }]}>Kapat</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* ✅ DÜZELTİLDİ: KULLANICI SÖZLEŞMESİ MODAL (HTML İçerik) */}
       <Modal visible={showTermsModal} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowTermsModal(false)}>
         <View style={[styles.webViewModalContainer, { backgroundColor: currentColors.background }]}>
           <View
@@ -537,7 +492,6 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* GİZLİLİK POLİTİKASI MODAL */}
       <Modal visible={showPrivacyModal} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowPrivacyModal(false)}>
         <View style={[styles.webViewModalContainer, { backgroundColor: currentColors.background }]}>
           <View
@@ -578,10 +532,8 @@ const styles = StyleSheet.create({
   headerSubtitle: { fontSize: 13, marginTop: 2 },
   content: { flex: 1 },
   profileCard: { margin: 16, borderRadius: 16, padding: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
-  avatarContainer: { position: 'relative', marginBottom: 16 },
-  avatarEmoji: { fontSize: 80 },
-  editBadge: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  editBadgeText: { fontSize: 16 },
+  avatarContainer: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  avatarText: { fontSize: 36, fontWeight: 'bold', color: '#fff' },
   userName: { fontSize: 22, fontWeight: 'bold', marginBottom: 4 },
   userPhone: { fontSize: 15, marginBottom: 4 },
   userEmail: { fontSize: 13, marginBottom: 12 },
@@ -605,16 +557,6 @@ const styles = StyleSheet.create({
   logoutButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   footer: { alignItems: 'center', padding: 24 },
   footerText: { fontSize: 12, marginBottom: 4 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  avatarModalCard: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '70%' },
-  avatarModalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
-  avatarGrid: { flex: 1 },
-  avatarGridInner: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingBottom: 16 },
-  avatarOption: { width: '30%', aspectRatio: 1, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  avatarOptionEmoji: { fontSize: 40, marginBottom: 4 },
-  avatarOptionLabel: { fontSize: 10, textAlign: 'center' },
-  closeModalButton: { padding: 14, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  closeModalButtonText: { fontSize: 15, fontWeight: '600' },
   webViewModalContainer: { flex: 1 },
   webViewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
   webViewTitle: { fontSize: 18, fontWeight: 'bold' },

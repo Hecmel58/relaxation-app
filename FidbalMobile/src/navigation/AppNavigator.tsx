@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
-import { Text, View, StyleSheet, Alert, Platform } from 'react-native';
+import { Text } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,28 +23,6 @@ import VideoCallScreen from '../screens/main/VideoCallScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-
-// ✅ ÇIKIŞ EKRANI COMPONENT
-function LogoutScreen() {
-  const logout = useAuthStore((state) => state.logout);
-
-  useEffect(() => {
-    Alert.alert(
-      'Çıkış Yap',
-      'Çıkış yapmak istediğinize emin misiniz?',
-      [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Çıkış Yap',
-          style: 'destructive',
-          onPress: () => logout()
-        },
-      ]
-    );
-  }, []);
-
-  return <View style={{ flex: 1, backgroundColor: '#f8fafc' }} />;
-}
 
 function MainTabs() {
   const user = useAuthStore((state) => state.user);
@@ -101,7 +79,6 @@ function MainTabs() {
         }}
       />
 
-      {/* ✅ BETA ÖZELLİKLER - SADECE DENEY GRUBU */}
       {(user?.isAdmin || user?.is_admin || user?.abGroup === 'experiment' || user?.ab_group === 'experiment') && (
         <>
           <Tab.Screen
@@ -144,18 +121,6 @@ function MainTabs() {
           tabBarLabel: 'Profil',
           tabBarIcon: ({ color }) => (
             <Text style={{ fontSize: 24 }}>👤</Text>
-          ),
-        }}
-      />
-
-      {/* ✅ ÇIKIŞ BUTONU EN ALTTA */}
-      <Tab.Screen
-        name="Logout"
-        component={LogoutScreen}
-        options={{
-          tabBarLabel: 'Çıkış',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 24 }}>🚪</Text>
           ),
         }}
       />

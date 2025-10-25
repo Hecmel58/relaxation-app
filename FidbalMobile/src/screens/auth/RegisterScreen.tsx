@@ -197,61 +197,61 @@ export default function RegisterScreen({ navigation }: any) {
 
             {/* GRUP SEÇİMİ */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Grup Seçimi</Text>
-              <View style={styles.groupButtonsContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.groupButton,
-                    formData.abGroup === 'control' && styles.groupButtonActive,
-                  ]}
-                  onPress={() => setFormData({ ...formData, abGroup: 'control' })}
-                  disabled={loading}
-                >
-                  <Text
-                    style={[
-                      styles.groupButtonTitle,
-                      formData.abGroup === 'control' && styles.groupButtonTitleActive,
-                    ]}
-                  >
-                    Kontrol Grubu
-                  </Text>
-                  <Text
-                    style={[
-                      styles.groupButtonSubtitle,
-                      formData.abGroup === 'control' && styles.groupButtonSubtitleActive,
-                    ]}
-                  >
-                    Standart deneyim
-                  </Text>
-                </TouchableOpacity>
+                          <Text style={styles.label}>Grup Seçimi</Text>
+                          <View style={styles.groupButtonsContainer}>
+                            <TouchableOpacity
+                              style={[
+                                styles.groupButton,
+                                formData.abGroup === 'control' && styles.groupButtonActive,
+                              ]}
+                              onPress={() => setFormData({ ...formData, abGroup: 'control' })}
+                              disabled={loading}
+                            >
+                              <Text
+                                style={[
+                                  styles.groupButtonTitle,
+                                  formData.abGroup === 'control' && styles.groupButtonTitleActive,
+                                ]}
+                              >
+                                {'Kontrol\nGrubu'}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.groupButtonSubtitle,
+                                  formData.abGroup === 'control' && styles.groupButtonSubtitleActive,
+                                ]}
+                              >
+                                Standart
+                              </Text>
+                            </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[
-                    styles.groupButton,
-                    formData.abGroup === 'experiment' && styles.groupButtonActiveExperiment,
-                  ]}
-                  onPress={() => setFormData({ ...formData, abGroup: 'experiment' })}
-                  disabled={loading}
-                >
-                  <Text
-                    style={[
-                      styles.groupButtonTitle,
-                      formData.abGroup === 'experiment' && styles.groupButtonTitleActive,
-                    ]}
-                  >
-                    Deney Grubu
-                  </Text>
-                  <Text
-                    style={[
-                      styles.groupButtonSubtitle,
-                      formData.abGroup === 'experiment' && styles.groupButtonSubtitleActive,
-                    ]}
-                  >
-                    Gelişmiş özellikler
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+                            <TouchableOpacity
+                              style={[
+                                styles.groupButton,
+                                formData.abGroup === 'experiment' && styles.groupButtonActiveExperiment,
+                              ]}
+                              onPress={() => setFormData({ ...formData, abGroup: 'experiment' })}
+                              disabled={loading}
+                            >
+                              <Text
+                                style={[
+                                  styles.groupButtonTitle,
+                                  formData.abGroup === 'experiment' && styles.groupButtonTitleActive,
+                                ]}
+                              >
+                                {'Deney\nGrubu'}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.groupButtonSubtitle,
+                                  formData.abGroup === 'experiment' && styles.groupButtonSubtitleActive,
+                                ]}
+                              >
+                                Gelişmiş
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
 
             {/* ŞİFRE */}
             <View style={styles.inputGroup}>
@@ -780,39 +780,40 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   groupButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#ffffff',
-  },
-  groupButtonActive: {
-    borderColor: '#6b93f4',
-    backgroundColor: '#dbeafe',
-  },
-  groupButtonActiveExperiment: {
-    borderColor: '#a855f7',
-    backgroundColor: '#f3e8ff',
-  },
-  groupButtonTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#64748b',
-    textAlign: 'center',
-  },
-  groupButtonTitleActive: {
-    color: '#1e293b',
-  },
-  groupButtonSubtitle: {
-    fontSize: 11,
-    color: '#94a3b8',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  groupButtonSubtitleActive: {
-    color: '#334155',
-  },
+      flex: 1,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: '#cbd5e1',
+      backgroundColor: '#ffffff',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 80,
+    },
+    groupButtonActive: {
+      borderColor: '#6b93f4',
+      backgroundColor: '#dbeafe',
+    },
+    groupButtonActiveExperiment: {
+      borderColor: '#a855f7',
+      backgroundColor: '#f3e8ff',
+    },
+    groupButtonTitle: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: '#64748b',
+      textAlign: 'center',
+      lineHeight: 16,
+    },
+    groupButtonTitleActive: {
+      color: '#1e293b',
+    },
+    groupButtonSubtitle: {
+      fontSize: 10,
+      color: '#94a3b8',
+      textAlign: 'center',
+      marginTop: 4,
+    },
 
   // ŞİFRE GEREKSİNİMLERİ
   passwordRequirements: {
