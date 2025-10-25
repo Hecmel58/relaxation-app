@@ -23,6 +23,7 @@ import {
   deleteDoc,
   doc,
   QuerySnapshot,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuthStore } from '../../store/authStore';
@@ -117,6 +118,14 @@ export default function SupportScreen() {
       async (snapshot: QuerySnapshot) => {
         console.log('📞 Video calls güncellendi, docs sayısı:', snapshot.docs.length);
 
+        // Hiç doküman yoksa state'leri temizle
+        if (snapshot.docs.length === 0 && videoCallStatus === 'idle') {
+          setShowVideoCall(false);
+          setRoomId('');
+          setCurrentCallId(null);
+          return;
+        }
+
         for (const docSnapshot of snapshot.docs) {
           const call = docSnapshot.data() as VideoCall;
           const callId = docSnapshot.id;
@@ -124,45 +133,56 @@ export default function SupportScreen() {
           console.log('📞 Video call durumu:', {
             id: callId,
             status: call.status,
-            roomId: call.roomId,
-            currentCallId: currentCallId
+            roomId: call.roomId
           });
 
-          // ✅ ADMIN KABUL ETTİ
-          if (call.status === 'accepted') {
-            console.log('✅ ADMIN KABUL ETTİ! Video call başlatılıyor...');
+          // ✅ ADMIN KABUL ETTİ - Admin aynı odaya katılacak
+          if (call.status === 'accepted' && call.roomId) {
+            console.log('✅ ADMIN KABUL ETTİ! Admin odaya katılıyor...');
             setVideoCallStatus('connected');
-            setShowVideoCall(true);
-            setRoomId(call.roomId);
-            setCurrentCallId(callId);
 
-            Alert.alert(
-              '✅ Görüşme Başlıyor',
-              'Uzman kabul etti! Görüntülü görüşme başlatılıyor...'
-            );
-            return;
+            // Overlay'i kaldır, admin katıldı
+            // Jitsi zaten açık, sadece status güncellendi
+
+            // Birkaç saniye sonra Firebase'den temizle (görüşme başladıktan sonra)
+            setTimeout(async () => {
+              try {
+                await deleteDoc(doc(db, 'videoCalls', callId));
+                console.log('✅ Görüşme başladı, Firebase kaydı temizlendi');
+              } catch (e) {
+                console.error('Cleanup error:', e);
+              }
+            }, 5000); // 5 saniye sonra temizle
+
+            break;
           }
 
           // ❌ ADMIN REDDETTİ
           if (call.status === 'rejected') {
             console.log('❌ Admin reddetti');
             Alert.alert('Reddedildi', 'Uzman görüşmeyi reddetti');
+
+            // Jitsi'yi kapat
+            setShowVideoCall(false);
             setVideoCallStatus('idle');
             setCurrentCallId(null);
+            setRoomId('');
+
+            // Firebase'den sil
             try {
               await deleteDoc(doc(db, 'videoCalls', callId));
             } catch (e) {
               console.error('Delete error:', e);
             }
-            return;
+            break;
           }
 
-          // ⏳ BEKLEME DURUMU
-          if (call.status === 'waiting') {
-            console.log('⏳ Hala bekleniyor...');
+          // ⏳ BEKLEME DURUMU - Jitsi açık, admin bekleniyor
+          if (call.status === 'waiting' && showVideoCall) {
+            console.log('⏳ Admin bekleniyor, Jitsi açık...');
             setCurrentCallId(callId);
             setVideoCallStatus('waiting');
-            setRoomId(call.roomId);
+            // Jitsi zaten açık, kullanıcı bekliyor
           }
         }
       },
@@ -178,7 +198,7 @@ export default function SupportScreen() {
         unsubVideoCallsRef.current();
       }
     };
-  }, [user?.userId, currentCallId]);
+  }, [user?.userId, showVideoCall, videoCallStatus]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user?.userId) return;
@@ -218,14 +238,13 @@ export default function SupportScreen() {
     const newRoomId = `FidBal-Support-${user.userId}-${Date.now()}`;
 
     try {
-      setVideoCallStatus('waiting');
-
       console.log('📞 Video call talebi gönderiliyor...', {
         userId: user.userId,
         userName: user.name,
         roomId: newRoomId
       });
 
+      // Firebase'e video call talebi kaydet
       const docRef = await addDoc(collection(db, 'videoCalls'), {
         userId: user.userId,
         userName: user.name || 'Kullanıcı',
@@ -238,16 +257,19 @@ export default function SupportScreen() {
 
       setCurrentCallId(docRef.id);
       setRoomId(newRoomId);
+      setVideoCallStatus('waiting');
 
-      Alert.alert(
-        '📞 Talep Gönderildi',
-        'Video call talebiniz uzmana iletildi. Uzman kabul ettiğinde görüşme otomatik başlayacak.',
-        [{ text: 'Tamam' }]
-      );
+      // HEMEN Jitsi Meet'i aç! Kullanıcı orada bekleyecek
+      setShowVideoCall(true);
+
+      // Alert gösterme, çünkü Jitsi açılıyor zaten
     } catch (error) {
       console.error('❌ Video call start error:', error);
       Alert.alert('Hata', 'Görüntülü görüşme başlatılamadı: ' + error);
       setVideoCallStatus('idle');
+      setCurrentCallId(null);
+      setRoomId('');
+      setShowVideoCall(false);
     }
   };
 
@@ -256,7 +278,11 @@ export default function SupportScreen() {
 
     try {
       console.log('❌ Video call iptal ediliyor:', currentCallId);
+
+      // Önce Firebase'den sil
       await deleteDoc(doc(db, 'videoCalls', currentCallId));
+
+      // Sonra state'leri sıfırla
       setVideoCallStatus('idle');
       setCurrentCallId(null);
       setRoomId('');
@@ -302,35 +328,17 @@ export default function SupportScreen() {
         </View>
 
         {/* VİDEO CALL BUTONU */}
-        {videoCallStatus === 'idle' ? (
+        {!showVideoCall && (
           <TouchableOpacity
             style={styles.videoButton}
             onPress={handleStartVideoCall}
             activeOpacity={0.7}
+            disabled={videoCallStatus === 'waiting'}
           >
             <Text style={styles.videoButtonText}>🎥</Text>
           </TouchableOpacity>
-        ) : videoCallStatus === 'waiting' ? (
-          <TouchableOpacity
-            style={styles.videoButtonWaiting}
-            onPress={handleCancelVideoCall}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.videoButtonWaitingText}>⏳ İptal</Text>
-          </TouchableOpacity>
-        ) : null}
+        )}
       </View>
-
-      {/* BEKLEYEN TALEP BANNER */}
-      {videoCallStatus === 'waiting' && (
-        <View style={styles.waitingBanner}>
-          <Text style={styles.waitingIcon}>⏳</Text>
-          <View style={styles.waitingTextContainer}>
-            <Text style={styles.waitingTitle}>Video Call Talebi Gönderildi</Text>
-            <Text style={styles.waitingText}>Uzman kabul ettiğinde görüşme otomatik başlayacak</Text>
-          </View>
-        </View>
-      )}
 
       <KeyboardAvoidingView
         style={styles.content}
@@ -433,22 +441,38 @@ export default function SupportScreen() {
           </View>
 
           {roomId ? (
-            <WebView
-              source={{
-                uri: `https://meet.jit.si/${roomId}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&userInfo.displayName=${encodeURIComponent(user?.name || 'Kullanıcı')}`
-              }}
-              style={styles.webview}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-              mediaPlaybackRequiresUserAction={false}
-              allowsInlineMediaPlayback={true}
-              onError={(error) => {
-                console.error('WebView error:', error);
-                Alert.alert('Hata', 'Video görüşme yüklenemedi');
-              }}
-              onLoadStart={() => console.log('🎥 Jitsi yükleniyor...')}
-              onLoadEnd={() => console.log('✅ Jitsi yüklendi')}
-            />
+            <>
+              {/* BEKLEME OVERLAY - Admin henüz katılmadıysa göster */}
+              {videoCallStatus === 'waiting' && (
+                <View style={styles.waitingOverlay}>
+                  <Text style={styles.waitingIcon}>⏳</Text>
+                  <Text style={styles.waitingOverlayTitle}>Uzman Bekleniyor</Text>
+                  <Text style={styles.waitingOverlayText}>
+                    Uzman görüşmeye katıldığında otomatik olarak bağlanacaksınız
+                  </Text>
+                  <Text style={styles.waitingOverlaySubtext}>
+                    Lütfen bu ekranda bekleyiniz...
+                  </Text>
+                </View>
+              )}
+
+              <WebView
+                source={{
+                  uri: `https://meet.jit.si/${roomId}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&userInfo.displayName=${encodeURIComponent(user?.name || 'Kullanıcı')}`
+                }}
+                style={styles.webview}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                mediaPlaybackRequiresUserAction={false}
+                allowsInlineMediaPlayback={true}
+                onError={(error) => {
+                  console.error('WebView error:', error);
+                  Alert.alert('Hata', 'Video görüşme yüklenemedi');
+                }}
+                onLoadStart={() => console.log('🎥 Jitsi yükleniyor...')}
+                onLoadEnd={() => console.log('✅ Jitsi yüklendi')}
+              />
+            </>
           ) : (
             <View style={styles.loadingContainer}>
               <Text style={styles.loadingText}>Bağlanıyor...</Text>
@@ -509,4 +533,20 @@ const styles = StyleSheet.create({
   webview: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { fontSize: 18, color: '#fff' },
+  waitingOverlay: {
+    position: 'absolute',
+    top: 80,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    padding: 20
+  },
+  waitingIcon: { fontSize: 64, marginBottom: 20 },
+  waitingOverlayTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
+  waitingOverlayText: { fontSize: 16, color: '#cbd5e1', textAlign: 'center', marginBottom: 8 },
+  waitingOverlaySubtext: { fontSize: 14, color: '#94a3b8', textAlign: 'center', fontStyle: 'italic' },
 });

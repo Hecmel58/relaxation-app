@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, Timestamp, deleteDoc, doc, writeBatch, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, Timestamp, deleteDoc, doc, writeBatch, where, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import api from '../../api/axios';
 import Card from '../ui/Card';
@@ -139,19 +139,48 @@ function AdminMessages() {
 
   const handleJoinVideoCall = async (call) => {
     try {
-      // Call'u accepted olarak işaretle
-      await deleteDoc(doc(db, 'videoCalls', call.id));
+      console.log('Admin video call\'a katılıyor:', call.roomId);
       
-      // Video call modal'ı aç
-      setActiveVideoCall(call);
+      // Status'u accepted olarak güncelle (SİLME!)
+      await updateDoc(doc(db, 'videoCalls', call.id), {
+        status: 'accepted'
+      });
+      
+      console.log('Video call status güncellendi: accepted');
+      
+      // Jitsi Modal'ı aç - AYNI roomId ile
+      setActiveVideoCall({
+        ...call,
+        roomId: call.roomId // Kullanıcının oluşturduğu oda
+      });
+      
+      // 10 saniye sonra Firebase'den temizle (görüşme başladıktan sonra)
+      setTimeout(async () => {
+        try {
+          await deleteDoc(doc(db, 'videoCalls', call.id));
+          console.log('Video call kaydı temizlendi');
+        } catch (error) {
+          console.error('Cleanup error:', error);
+        }
+      }, 10000);
+      
     } catch (error) {
       console.error('Video call join error:', error);
+      alert('Video görüşmeye katılınamadı');
     }
   };
 
-  const handleRejectVideoCall = async (callId) => {
+  const handleRejectVideoCall = async (call) => {
     try {
-      await deleteDoc(doc(db, 'videoCalls', callId));
+      // Status'u rejected olarak güncelle
+      await updateDoc(doc(db, 'videoCalls', call.id), {
+        status: 'rejected'
+      });
+      
+      // 2 saniye sonra sil
+      setTimeout(async () => {
+        await deleteDoc(doc(db, 'videoCalls', call.id));
+      }, 2000);
     } catch (error) {
       console.error('Video call reject error:', error);
     }
@@ -266,6 +295,9 @@ function AdminMessages() {
                     <div className="text-sm text-slate-600">
                       Görüntülü görüşme talebi - {call.createdAt?.toDate?.()?.toLocaleTimeString('tr-TR')}
                     </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      Oda: {call.roomId}
+                    </div>
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -277,7 +309,7 @@ function AdminMessages() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => handleRejectVideoCall(call.id)}
+                    onClick={() => handleRejectVideoCall(call)}
                   >
                     Reddet
                   </Button>

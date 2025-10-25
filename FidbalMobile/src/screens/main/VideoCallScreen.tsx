@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
-import { collection, addDoc, query, where, onSnapshot, Timestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, onSnapshot, Timestamp, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuthStore } from '../../store/authStore';
 

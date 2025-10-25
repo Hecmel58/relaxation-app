@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as Haptics from 'expo-haptics';
 import { useThemeStore } from '../../store/themeStore';
 import { useOfflineStore } from '../../store/offlineStore';
@@ -390,7 +391,13 @@ export default function SleepScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.formContent} showsVerticalScrollIndicator={false}>
+            <KeyboardAwareScrollView
+              style={styles.formContent}
+              showsVerticalScrollIndicator={false}
+              enableOnAndroid={true}
+              extraScrollHeight={100}
+              keyboardShouldPersistTaps="handled"
+            >
               <View style={styles.formGroup}>
                 <Text style={[styles.formLabel, { color: currentColors.primary }]}>📅 Tarih</Text>
                 <TouchableOpacity
@@ -740,7 +747,7 @@ export default function SleepScreen() {
                   maxLength={500}
                 />
               </View>
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             <View style={[styles.modalFooter, { backgroundColor: currentColors.surface, borderTopColor: currentColors.border }]}>
               <TouchableOpacity
