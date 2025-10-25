@@ -49,8 +49,8 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır');
+    if (password.length < 8) {
+      Alert.alert('Hata', 'Şifre en az 8 karakter olmalıdır');
       return;
     }
 

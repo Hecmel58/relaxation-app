@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated, LogBox, Platform, AppState } from 're
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import {
   registerForPushNotifications,
   scheduleSleepReminder,
@@ -15,11 +16,11 @@ import { useOfflineStore } from './src/store/offlineStore';
 // ✅ Tüm log'ları kapat
 LogBox.ignoreAllLogs(true);
 
-// ✅ Notification handler - DÜZELTİLDİ
+// ✅ Notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true,  // ✅ DEĞİŞTİ: shouldShowAlert yerine
-    shouldShowList: true,     // ✅ DEĞİŞTİ: Yeni eklendi
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -27,6 +28,7 @@ Notifications.setNotificationHandler({
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
   const notificationListener = useRef<any>();
@@ -36,9 +38,11 @@ export default function App() {
 
   const loadStoredAuth = useAuthStore((state) => state.loadStoredAuth);
   const logout = useAuthStore((state) => state.logout);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated); // ✅ YENİ: Login kontrolü için
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const loadTheme = useThemeStore((state) => state.loadTheme);
   const loadPendingRequests = useOfflineStore((state) => state.loadPendingRequests);
+  const syncPendingRequests = useOfflineStore((state) => state.syncPendingRequests);
+  const isOnline = useOfflineStore((state) => state.isOnline);
 
   useEffect(() => {
     initializeApp();
@@ -58,6 +62,13 @@ export default function App() {
         if (inactiveTimer.current) {
           clearTimeout(inactiveTimer.current);
           inactiveTimer.current = null;
+        }
+
+        // Online ise pending requests'leri senkronize et
+        if (isOnline) {
+          syncPendingRequests().catch(err => {
+            console.error('❌ Auto-sync failed:', err);
+          });
         }
       }
 
@@ -79,10 +90,9 @@ export default function App() {
     };
   }, []);
 
-  // ✅ YENİ: Login sonrası push token kaydet
+  // ✅ Login sonrası push token kaydet
   useEffect(() => {
     if (isAuthenticated) {
-      // Kullanıcı giriş yaptıktan sonra push token kaydet
       setTimeout(() => {
         registerForPushNotifications().catch(err => {
           console.log('⚠️ Push token kaydedilemedi:', err.message);
@@ -93,16 +103,22 @@ export default function App() {
 
   const initializeApp = async () => {
     try {
+      console.log('🚀 App initialization started...');
+
       // ✅ 1. Auth yükle
+      console.log('📝 Loading stored auth...');
       await loadStoredAuth();
 
       // ✅ 2. Tema yükle
+      console.log('🎨 Loading theme...');
       await loadTheme();
 
       // ✅ 3. Offline queue yükle
+      console.log('💾 Loading offline queue...');
       await loadPendingRequests();
 
       // ✅ 4. Audio ayarları
+      console.log('🔊 Setting up audio...');
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         staysActiveInBackground: true,
@@ -112,9 +128,11 @@ export default function App() {
       });
 
       // ✅ 5. Push notification setup (SADECE UYKU HATIRLATMASI)
+      console.log('🔔 Setting up notifications...');
       await setupNotifications();
 
       // ✅ 6. Splash animasyonu
+      console.log('✨ Starting splash animation...');
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -130,19 +148,18 @@ export default function App() {
 
       // ✅ 7. Splash ekranını kapat
       setTimeout(() => {
+        console.log('✅ App initialization completed');
         setIsReady(true);
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ App initialization error:', error);
-      setIsReady(true);
+      setInitError(error.message || 'Başlatma hatası');
+      setIsReady(true); // Hata olsa bile devam et
     }
   };
 
   const setupNotifications = async () => {
     try {
-      // ✅ DEĞİŞTİ: Push token kaydını buradan KALDIRDIK (login sonrasına taşındı)
-      // await registerForPushNotifications(); // ❌ KALDIRILDI
-
       // ✅ Uyku hatırlatması (giriş olmadan da çalışır)
       await scheduleSleepReminder();
       console.log('✅ Günlük uyku hatırlatması aktif (22:00)');
@@ -156,6 +173,7 @@ export default function App() {
       });
     } catch (error) {
       console.error('❌ Notification setup error:', error);
+      // Notification hatası app'i crashlemesin
     }
   };
 
@@ -175,15 +193,20 @@ export default function App() {
           <Text style={styles.splashTitle}>FidBal</Text>
           <Text style={styles.splashSubtitle}>Uyku ve Stres Yönetimi</Text>
           <Text style={styles.splashVersion}>v1.0.0</Text>
+          {initError && (
+            <Text style={styles.splashError}>⚠️ {initError}</Text>
+          )}
         </Animated.View>
       </View>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <AppNavigator />
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <AppNavigator />
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -215,5 +238,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748b',
     marginTop: 16,
+  },
+  splashError: {
+    fontSize: 12,
+    color: '#ef4444',
+    marginTop: 16,
+    paddingHorizontal: 20,
+    textAlign: 'center',
   },
 });
