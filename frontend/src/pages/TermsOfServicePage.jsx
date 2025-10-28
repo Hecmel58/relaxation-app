@@ -24,8 +24,10 @@ function TermsOfServicePage() {
               <div className="bg-blue-50 p-4 rounded-lg mt-3">
                 <p className="font-semibold mb-2">Platform Sahibi Bilgileri:</p>
                 <ul className="text-sm space-y-1">
-                  
-                  <li><strong>E-posta:</strong> Hecmel@fidbal.com</li>
+                  <li><strong>Ad Soyad:</strong> Hasan Balkaya</li>
+                  <li><strong>Telefon:</strong> 0539 487 00 58</li>
+                  <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
+                  <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
                 </ul>
               </div>
               <p className="mt-3 text-sm">
@@ -289,8 +291,10 @@ function TermsOfServicePage() {
               </p>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <ul className="space-y-2">
-                  <li><strong>E-posta:</strong> Hecmel@fidbal.com</li>
-                                  </ul>
+                  <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
+                  <li><strong>Telefon:</strong> 0539 487 00 58</li>
+                  <li><strong>Posta Adresi:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez / Sivas</li>
+                </ul>
               </div>
               <p className="mt-3 text-sm">
                 Talepleriniz en geç 30 gün içinde değerlendirilir ve size geri dönüş yapılır. KVKK kapsamındaki başvurularınız için kimlik tespiti gerekebilir.
@@ -385,7 +389,8 @@ function TermsOfServicePage() {
                   <strong>Son Güncelleme Tarihi:</strong> 8 Ekim 2025<br/>
                   <strong>Yürürlük Tarihi:</strong> 8 Ekim 2025<br/>
                   <strong>Sözleşme Versiyonu:</strong> 1.0<br/>
-                  <strong>E-posta:</strong> Hecmel@fidbal.com
+                  <strong>Platform Sahibi:</strong> Hasan Balkaya<br/>
+                  <strong>E-posta:</strong> ecmelazizoglu@gmail.com
                 </p>
               </div>
 

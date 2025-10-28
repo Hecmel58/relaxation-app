@@ -132,25 +132,14 @@ function ProfilePage() {
             Hesabımı Kalıcı Olarak Sil
           </button>
           
-          {/* ✅ DEĞİŞTİ: İki ayrı link eklendi */}
-          <div className="space-y-2">
-            <a 
-              href="/terms" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="block text-center text-blue-600 hover:text-blue-700 hover:underline py-2 border border-blue-200 rounded-lg bg-blue-50"
-            >
-              📄 Kullanıcı Sözleşmesi
-            </a>
-            <a 
-              href="/privacy-policy" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="block text-center text-blue-600 hover:text-blue-700 hover:underline py-2 border border-blue-200 rounded-lg bg-blue-50"
-            >
-              🔒 Gizlilik Politikası & KVKK Aydınlatma Metni
-            </a>
-          </div>
+          <a 
+            href="/privacy-policy" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="block text-center text-blue-600 hover:text-blue-700 hover:underline py-2"
+          >
+            Gizlilik Politikası ve KVKK Aydınlatma Metni
+          </a>
           
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-xs text-amber-800">
