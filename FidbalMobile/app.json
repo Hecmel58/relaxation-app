@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "FidBal",
+    "slug": "FidbalMobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hecmel.fidbal",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FidBal uygulaması görüntülü görüşme özelliği için kamera erişimine ihtiyaç duyar.",
+        "NSMicrophoneUsageDescription": "FidBal uygulaması görüntülü görüşme ve ses kaydı özellikleri için mikrofon erişimine ihtiyaç duyar.",
+        "NSUserTrackingUsageDescription": "Bu bilgi, uygulama deneyiminizi iyileştirmek ve size daha iyi hizmet sunmak için kullanılacaktır.",
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.hecmel.fidbal",
+      "versionCode": 1,
+      "permissions": [
+        "NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "RECORD_AUDIO",
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "61f6b7c6-54a2-4315-81a7-6f8fc7095f0a"
+      },
+      "privacyPolicyUrl": "https://fidbal.com/privacy-policy",
+      "termsOfServiceUrl": "https://fidbal.com/terms-of-service"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#3b82f6",
+          "sounds": ["./assets/notification.wav"]
+        }
+      ]
+    ]
+  }
+}

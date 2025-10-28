@@ -1,0 +1,46 @@
+{
+  "cli": {
+    "version": ">= 5.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "buildNumber": "auto"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "ios": {
+        "buildNumber": "auto"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "versionCode": "auto"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "ecmelazizoglu@gmail.com",
+        "ascAppId": "BURAYA_APP_STORE_ID_GELECEK",
+        "appleTeamId": "BURAYA_APPLE_TEAM_ID_GELECEK"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-services-key.json",
+        "track": "production"
+      }
+    }
+  }
+}
