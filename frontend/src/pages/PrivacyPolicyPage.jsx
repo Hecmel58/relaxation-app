@@ -22,10 +22,7 @@ function PrivacyPolicyPage() {
               <div className="bg-blue-50 p-4 rounded-lg mt-3">
                 <p className="font-semibold mb-2">Veri Sorumlusu Bilgileri:</p>
                 <ul className="text-sm space-y-1">
-                  <li><strong>Ad Soyad:</strong> Hasan Balkaya</li>
-                  <li><strong>Telefon:</strong> 0539 487 00 58</li>
-                  <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
-                  <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
+                  <li><strong>E-posta:</strong> Hecmel@fidbal.com</li>
                 </ul>
               </div>
             </section>
@@ -60,10 +57,11 @@ function PrivacyPolicyPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-3">4. Verilerin İşlenme Hukuki Sebepleri</h2>
               <p className="mb-2">Kişisel verileriniz KVKK m.5 ve m.6 kapsamında aşağıdaki hukuki sebeplerle işlenmektedir:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li>Açık rızanızın bulunması</li>
-                <li>Sözleşmenin kurulması veya ifası için gerekli olması</li>
-                <li>Hukuki yükümlülüğün yerine getirilmesi</li>
-                <li>Meşru menfaatlerimiz için veri işlemenin zorunlu olması</li>
+                <li>Açık rızanızın bulunması (KVKK m.5/1)</li>
+                <li>Sözleşmenin kurulması veya ifası için gerekli olması (KVKK m.5/2-c)</li>
+                <li>Hukuki yükümlülüğün yerine getirilmesi (KVKK m.5/2-ç)</li>
+                <li>Bilimsel araştırma amacıyla işlenmesi (KVKK m.6/3)</li>
+                <li>Kamu sağlığının korunması amacıyla işlenmesi (KVKK m.6/3)</li>
               </ul>
             </section>
 
@@ -130,9 +128,8 @@ function PrivacyPolicyPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-3">10. Haklarınızı Kullanma Yolları</h2>
               <p className="mb-2">KVKK kapsamındaki haklarınızı kullanmak için:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
+                <li><strong>E-posta:</strong> Hecmel@fidbal.com</li>
                 <li><strong>Platform Üzerinden:</strong> Profil → Hesap Ayarları → "Verilerimi İndir" veya "Hesabımı Sil"</li>
-                <li><strong>Yazılı Başvuru:</strong> Kimlik belgesi fotokopisi ile birlikte posta adresimize gönderebilirsiniz</li>
               </ul>
               <p className="mt-2">Başvurularınız en geç 30 gün içinde ücretsiz olarak yanıtlanacaktır. Başvurunun ayrıca bir maliyet gerektirmesi halinde, Kişisel Verileri Koruma Kurulu tarafından belirlenen tarifedeki ücret alınacaktır.</p>
             </section>
@@ -152,19 +149,16 @@ function PrivacyPolicyPage() {
               <p className="mb-2">Kişisel verilerinizin işlenmesi hakkında sorularınız için:</p>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <ul className="list-none space-y-2">
-                  <li><strong>Ad Soyad:</strong> Hasan Balkaya</li>
-                  <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
-                  <li><strong>Telefon:</strong> 0539 487 00 58</li>
-                  <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
+                  <li><strong>E-posta:</strong> Hecmel@fidbal.com</li>
                 </ul>
               </div>
             </section>
 
             <section className="border-t pt-6">
               <p className="text-sm text-gray-600">
-                <strong>Son Güncelleme Tarihi:</strong> 8 Ekim 2025<br/>
-                <strong>Yürürlük Tarihi:</strong> 8 Ekim 2025<br/>
-                <strong>Versiyon:</strong> 1.0<br/><br/>
+                <strong>Son Güncelleme Tarihi:</strong> 15 Aralık 2023<br/>
+                <strong>Yürürlük Tarihi:</strong> 15 Aralık 2023<br/>
+                <strong>Versiyon:</strong> 2.0<br/><br/>
                 Bu metin 6698 sayılı Kişisel Verilerin Korunması Kanunu ve ilgili mevzuat uyarınca hazırlanmıştır.
               </p>
             </section>
