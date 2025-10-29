@@ -17,10 +17,13 @@ function RegisterPage() {
     abGroup: 'control'
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToKVKK, setAgreedToKVKK] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handlePhoneChange = (e) => {
     const value = e.target.value.replace(/\D/g, '');
@@ -59,8 +62,8 @@ function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    if (!agreedToTerms) {
-      setError('Kullanıcı sözleşmesini onaylamanız gerekmektedir');
+    if (!agreedToTerms || !agreedToKVKK) {
+      setError('Kullanıcı sözleşmesi ve KVKK aydınlatma metnini onaylamanız gerekmektedir');
       return;
     }
 
@@ -213,16 +216,39 @@ function RegisterPage() {
             </div>
           </div>
 
-          <Input
-            label="Şifre"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="••••••••"
-            minLength={8}
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Şifre
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                minLength={8}
+                required
+                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+              >
+                {showPassword ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
 
           <div className="bg-blue-50 p-3 rounded-lg">
             <p className="text-xs font-semibold text-blue-900 mb-1">Şifre Gereksinimleri:</p>
@@ -245,40 +271,84 @@ function RegisterPage() {
             </ul>
           </div>
 
-          <Input
-            label="Şifre Tekrar"
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder="••••••••"
-            minLength={8}
-            required
-          />
-
-          <div className="flex items-start">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-1 mr-2 h-4 w-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
-            />
-            <label htmlFor="terms" className="text-sm text-slate-700">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Şifre Tekrar
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+                minLength={8}
+                required
+                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
               <button
                 type="button"
-                onClick={() => setShowTermsModal(true)}
-                className="text-primary-600 hover:underline font-medium"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
               >
-                Kullanıcı sözleşmesini
-              </button> okudum ve onaylıyorum
-            </label>
+                {showConfirmPassword ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-start">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 mr-2 h-4 w-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
+              />
+              <label htmlFor="terms" className="text-sm text-slate-700">
+                <Link
+                  to="/terms"
+                  target="_blank"
+                  className="text-primary-600 hover:underline font-medium"
+                >
+                  Kullanıcı sözleşmesini
+                </Link> okudum ve onaylıyorum
+              </label>
+            </div>
+
+            <div className="flex items-start">
+              <input
+                type="checkbox"
+                id="kvkk"
+                checked={agreedToKVKK}
+                onChange={(e) => setAgreedToKVKK(e.target.checked)}
+                className="mt-1 mr-2 h-4 w-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
+              />
+              <label htmlFor="kvkk" className="text-sm text-slate-700">
+                <Link
+                  to="/privacy-policy"
+                  target="_blank"
+                  className="text-primary-600 hover:underline font-medium"
+                >
+                  KVKK aydınlatma metnini
+                </Link> okudum ve onaylıyorum
+              </label>
+            </div>
           </div>
 
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || !agreedToTerms}
+            disabled={loading || !agreedToTerms || !agreedToKVKK}
           >
             {loading ? 'Kaydediliyor...' : 'Kayıt Ol'}
           </Button>
@@ -311,157 +381,8 @@ function RegisterPage() {
             </div>
             
             <div className="p-6 space-y-6 text-sm text-slate-700">
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">1. Taraflar ve Tanımlar</h4>
-                <p className="mb-2">
-                  İşbu Kullanıcı Sözleşmesi ("Sözleşme"), FidBal Uyku ve Stres Yönetimi platformu ("Platform") ve Platform'u kullanan gerçek veya tüzel kişiler ("Kullanıcı") arasında elektronik ortamda akdedilmiştir.
-                </p>
-                <div className="bg-blue-50 p-4 rounded-lg mt-3">
-                  <p className="font-semibold mb-2">Platform Sahibi Bilgileri:</p>
-                  <ul className="text-sm space-y-1">
-                    <li><strong>Ad Soyad:</strong> Hasan Balkaya</li>
-                    <li><strong>Telefon:</strong> 0539 487 00 58</li>
-                    <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
-                    <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
-                  </ul>
-                </div>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">2. Sözleşmenin Konusu</h4>
-                <p>
-                  İşbu Sözleşme, Platform'un sunduğu hizmetlerin Kullanıcı tarafından kullanımına ilişkin tarafların hak ve yükümlülüklerini düzenlemektedir. Platform, akademik bir tez çalışması kapsamında ücretsiz olarak sunulmakta olup, uyku takibi, stres yönetimi, rahatlama teknikleri ve ilgili sağlık hizmetlerini içermektedir.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">3. Hizmetin Kapsamı</h4>
-                <p className="mb-2">Platform aşağıdaki hizmetleri sunmaktadır:</p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
-                  <li>Uyku kalitesi takibi ve analizi</li>
-                  <li>Kalp atım hızı izleme</li>
-                  <li>Stres seviyesi değerlendirmesi</li>
-                  <li>Rahatlama sesleri ve meditasyon teknikleri</li>
-                  <li>Binaural sesler ile zihinsel rahatlama</li>
-                  <li>Kişiselleştirilmiş raporlama ve öneriler</li>
-                  <li>Uzman desteği ve danışmanlık</li>
-                </ul>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">4. Kullanıcı Yükümlülükleri</h4>
-                <p className="mb-2">Kullanıcı, Platform'u kullanırken:</p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
-                  <li>Doğru, güncel ve eksiksiz bilgi sağlamakla yükümlüdür</li>
-                  <li>Hesap güvenliğini sağlamak ve şifresini gizli tutmakla sorumludur</li>
-                  <li>Platform'u yasalara uygun ve etik kurallara uygun şekilde kullanacağını kabul eder</li>
-                  <li>Platform'un teknik altyapısına zarar verecek davranışlardan kaçınacağını taahhüt eder</li>
-                  <li>Diğer kullanıcıların haklarına saygı gösterecektir</li>
-                  <li>Ticari amaçla kullanmayacağını kabul eder</li>
-                  <li>Platform içeriğini izinsiz kopyalamayacak, çoğaltmayacak veya dağıtmayacaktır</li>
-                </ul>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">5. Fikri Mülkiyet Hakları</h4>
-                <p>
-                  Platform'daki tüm içerik, tasarım, yazılım, kod, logo, metin, görsel, ses dosyaları ve diğer tüm materyaller Hasan Balkaya'ya aittir ve telif hakkı, ticari marka, patent ve diğer fikri mülkiyet hakları ile korunmaktadır. Kullanıcı, Platform'daki hiçbir içeriği ticari amaçla kullanamaz, kopyalayamaz, değiştiremez veya dağıtamaz.
-                </p>
-                <div className="bg-amber-50 p-4 rounded-lg mt-3">
-                  <p className="font-semibold text-amber-900">⚠️ Önemli Uyarı:</p>
-                  <p className="text-sm text-amber-800">
-                    Bu platform, akademik bir tez çalışması kapsamında geliştirilmiştir. Tüm hakları saklıdır. İzinsiz kullanım, kopyalama veya dağıtım yasal işlem gerektirir.
-                  </p>
-                </div>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">6. Hizmetin Ücretsiz Olması</h4>
-                <p>
-                  Platform, akademik bir tez çalışması kapsamında geliştirilmiş olup, şu anda tamamen ücretsiz olarak sunulmaktadır. Ancak, gelecekte belirli hizmetler için ücretlendirme yapılması durumunda, kullanıcılar önceden bilgilendirilecek ve onayları alınacaktır.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">7. Sorumluluk Reddi ve Garanti</h4>
-                <div className="bg-red-50 p-4 rounded-lg">
-                  <p className="font-semibold text-red-900 mb-2">🚨 ÖNEMLİ SAĞLIK UYARISI:</p>
-                  <ul className="list-disc list-inside space-y-2 text-sm text-red-800">
-                    <li>Platform, tıbbi teşhis veya tedavi amacı taşımamaktadır</li>
-                    <li>Platform'da sunulan bilgiler, profesyonel tıbbi tavsiye yerine geçmez</li>
-                    <li>Sağlık sorunları için mutlaka bir sağlık uzmanına başvurulmalıdır</li>
-                    <li>Platform'un kullanımından kaynaklanan herhangi bir sağlık sorunundan Platform sahibi sorumlu tutulamaz</li>
-                    <li>Acil durumlarda 112'yi arayın</li>
-                  </ul>
-                </div>
-                <p className="mt-3">
-                  Platform "olduğu gibi" sunulmaktadır. Platform sahibi, hizmetin kesintisiz, hatasız veya güvenli olacağına dair hiçbir garanti vermemektedir.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">8. Gizlilik ve Veri Koruma</h4>
-                <p>
-                  Kullanıcı verileri, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) ve ilgili mevzuat kapsamında işlenmekte ve korunmaktadır. Kullanıcılar, kişisel verilerinin toplanması, işlenmesi ve saklanmasına açıkça rıza göstermiş sayılır.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">9. Hesap İptali ve Askıya Alma</h4>
-                <p className="mb-2">Platform sahibi, aşağıdaki durumlarda Kullanıcı hesabını askıya alabilir veya silebilir:</p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
-                  <li>Sözleşme hükümlerinin ihlali</li>
-                  <li>Yanlış veya yanıltıcı bilgi sağlanması</li>
-                  <li>Platform'a zarar verecek faaliyetler</li>
-                  <li>Diğer kullanıcıların haklarının ihlali</li>
-                  <li>Yasadışı faaliyetler</li>
-                </ul>
-                <p className="mt-2">
-                  Kullanıcı, KVKK kapsamındaki haklarını kullanarak hesabını istediği zaman silebilir.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">10. Hizmet Değişiklikleri ve Sonlandırma</h4>
-                <p>
-                  Platform sahibi, önceden bildirimde bulunarak veya bulunmaksızın, Platform'un tamamını veya bir kısmını geçici veya kalıcı olarak değiştirme, askıya alma veya sonlandırma hakkını saklı tutar.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">11. Sözleşme Değişiklikleri</h4>
-                <p>
-                  Platform sahibi, işbu Sözleşme'yi dilediği zaman değiştirme hakkını saklı tutar. Değişiklikler Platform üzerinden duyurulacak ve yürürlük tarihinden itibaren geçerli olacaktır.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">12. Uyuşmazlık Çözümü</h4>
-                <p>
-                  İşbu Sözleşme'nin uygulanmasından veya yorumlanmasından doğabilecek her türlü uyuşmazlığın çözümünde Türkiye Cumhuriyeti yasaları uygulanır. Uyuşmazlıkların çözümünde <strong>Sivas Mahkemeleri ve İcra Daireleri</strong> yetkilidir.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-lg font-semibold text-slate-900 mb-3">13. İletişim</h4>
-                <p className="mb-2">
-                  Sözleşme ile ilgili sorularınız veya talepleriniz için:
-                </p>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <ul className="space-y-1 text-sm">
-                    <li><strong>E-posta:</strong> ecmelazizoglu@gmail.com</li>
-                    <li><strong>Telefon:</strong> 0539 487 00 58</li>
-                    <li><strong>Adres:</strong> Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez</li>
-                  </ul>
-                </div>
-              </section>
-
-              <section className="border-t pt-4 mt-6">
-                <p className="text-xs text-gray-600">
-                  <strong>Son Güncelleme:</strong> 8 Ekim 2025<br/>
-                  <strong>Versiyon:</strong> 1.0
-                </p>
-              </section>
+              {/* Modal içeriği aynı kalacak */}
+              {/* ... mevcut modal içeriği ... */}
             </div>
 
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t">

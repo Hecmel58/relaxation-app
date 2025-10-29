@@ -17,6 +17,7 @@ import FormsPage from './components/features/FormsPage';
 import SupportPage from './components/features/SupportPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import AdminFormResponses from './pages/admin/AdminFormResponses';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 
@@ -84,6 +85,7 @@ function App() {
           <Route path="/support" element={<SupportPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/forms" element={<AdminFormResponses />} />
         </Route>
 
         {/* Default Redirect */}

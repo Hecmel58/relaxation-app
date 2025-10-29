@@ -14,6 +14,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import api from '../../services/api';
 
 export default function RegisterScreen({ navigation }: any) {
@@ -28,8 +29,10 @@ export default function RegisterScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToKVKK, setAgreedToKVKK] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showKVKKModal, setShowKVKKModal] = useState(false);
 
   const handlePhoneChange = (text: string) => {
     const value = text.replace(/\D/g, '');
@@ -79,8 +82,8 @@ export default function RegisterScreen({ navigation }: any) {
       return;
     }
 
-    if (!agreedToTerms) {
-      Alert.alert('Hata', 'Kullanıcı sözleşmesini kabul etmelisiniz');
+    if (!agreedToTerms || !agreedToKVKK) {
+      Alert.alert('Hata', 'Kullanıcı sözleşmesi ve KVKK aydınlatma metnini onaylamanız gerekmektedir');
       return;
     }
 
@@ -197,61 +200,61 @@ export default function RegisterScreen({ navigation }: any) {
 
             {/* GRUP SEÇİMİ */}
             <View style={styles.inputGroup}>
-                          <Text style={styles.label}>Grup Seçimi</Text>
-                          <View style={styles.groupButtonsContainer}>
-                            <TouchableOpacity
-                              style={[
-                                styles.groupButton,
-                                formData.abGroup === 'control' && styles.groupButtonActive,
-                              ]}
-                              onPress={() => setFormData({ ...formData, abGroup: 'control' })}
-                              disabled={loading}
-                            >
-                              <Text
-                                style={[
-                                  styles.groupButtonTitle,
-                                  formData.abGroup === 'control' && styles.groupButtonTitleActive,
-                                ]}
-                              >
-                                {'Kontrol\nGrubu'}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.groupButtonSubtitle,
-                                  formData.abGroup === 'control' && styles.groupButtonSubtitleActive,
-                                ]}
-                              >
-                                Standart
-                              </Text>
-                            </TouchableOpacity>
+              <Text style={styles.label}>Grup Seçimi</Text>
+              <View style={styles.groupButtonsContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.groupButton,
+                    formData.abGroup === 'control' && styles.groupButtonActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, abGroup: 'control' })}
+                  disabled={loading}
+                >
+                  <Text
+                    style={[
+                      styles.groupButtonTitle,
+                      formData.abGroup === 'control' && styles.groupButtonTitleActive,
+                    ]}
+                  >
+                    {'Kontrol\nGrubu'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.groupButtonSubtitle,
+                      formData.abGroup === 'control' && styles.groupButtonSubtitleActive,
+                    ]}
+                  >
+                    Standart
+                  </Text>
+                </TouchableOpacity>
 
-                            <TouchableOpacity
-                              style={[
-                                styles.groupButton,
-                                formData.abGroup === 'experiment' && styles.groupButtonActiveExperiment,
-                              ]}
-                              onPress={() => setFormData({ ...formData, abGroup: 'experiment' })}
-                              disabled={loading}
-                            >
-                              <Text
-                                style={[
-                                  styles.groupButtonTitle,
-                                  formData.abGroup === 'experiment' && styles.groupButtonTitleActive,
-                                ]}
-                              >
-                                {'Deney\nGrubu'}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.groupButtonSubtitle,
-                                  formData.abGroup === 'experiment' && styles.groupButtonSubtitleActive,
-                                ]}
-                              >
-                                Gelişmiş
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
+                <TouchableOpacity
+                  style={[
+                    styles.groupButton,
+                    formData.abGroup === 'experiment' && styles.groupButtonActiveExperiment,
+                  ]}
+                  onPress={() => setFormData({ ...formData, abGroup: 'experiment' })}
+                  disabled={loading}
+                >
+                  <Text
+                    style={[
+                      styles.groupButtonTitle,
+                      formData.abGroup === 'experiment' && styles.groupButtonTitleActive,
+                    ]}
+                  >
+                    {'Deney\nGrubu'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.groupButtonSubtitle,
+                      formData.abGroup === 'experiment' && styles.groupButtonSubtitleActive,
+                    ]}
+                  >
+                    Gelişmiş
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
             {/* ŞİFRE */}
             <View style={styles.inputGroup}>
@@ -283,23 +286,30 @@ export default function RegisterScreen({ navigation }: any) {
               <View style={styles.requirementItem}>
                 <Text
                   style={
-                    formData.password.length >= 8 ? styles.requirementMet : styles.requirementUnmet
+                    formData.password.length >= 8
+                      ? styles.requirementMet
+                      : styles.requirementUnmet
                   }
                 >
                   {formData.password.length >= 8 ? '✓' : '○'}
                 </Text>
                 <Text
                   style={
-                    formData.password.length >= 8 ? styles.requirementTextMet : styles.requirementText
+                    formData.password.length >= 8
+                      ? styles.requirementTextMet
+                      : styles.requirementText
                   }
                 >
                   En az 8 karakter
                 </Text>
               </View>
+
               <View style={styles.requirementItem}>
                 <Text
                   style={
-                    /[a-z]/.test(formData.password) ? styles.requirementMet : styles.requirementUnmet
+                    /[a-z]/.test(formData.password)
+                      ? styles.requirementMet
+                      : styles.requirementUnmet
                   }
                 >
                   {/[a-z]/.test(formData.password) ? '✓' : '○'}
@@ -311,13 +321,16 @@ export default function RegisterScreen({ navigation }: any) {
                       : styles.requirementText
                   }
                 >
-                  En az 1 küçük harf (a-z)
+                  En az bir küçük harf
                 </Text>
               </View>
+
               <View style={styles.requirementItem}>
                 <Text
                   style={
-                    /[A-Z]/.test(formData.password) ? styles.requirementMet : styles.requirementUnmet
+                    /[A-Z]/.test(formData.password)
+                      ? styles.requirementMet
+                      : styles.requirementUnmet
                   }
                 >
                   {/[A-Z]/.test(formData.password) ? '✓' : '○'}
@@ -329,9 +342,10 @@ export default function RegisterScreen({ navigation }: any) {
                       : styles.requirementText
                   }
                 >
-                  En az 1 büyük harf (A-Z)
+                  En az bir büyük harf
                 </Text>
               </View>
+
               <View style={styles.requirementItem}>
                 <Text
                   style={
@@ -342,12 +356,15 @@ export default function RegisterScreen({ navigation }: any) {
                 </Text>
                 <Text
                   style={
-                    /\d/.test(formData.password) ? styles.requirementTextMet : styles.requirementText
+                    /\d/.test(formData.password)
+                      ? styles.requirementTextMet
+                      : styles.requirementText
                   }
                 >
-                  En az 1 rakam (0-9)
+                  En az bir rakam
                 </Text>
               </View>
+
               <View style={styles.requirementItem}>
                 <Text
                   style={
@@ -365,7 +382,7 @@ export default function RegisterScreen({ navigation }: any) {
                       : styles.requirementText
                   }
                 >
-                  En az 1 özel karakter (@$!%*?&)
+                  En az bir özel karakter (@$!%*?&)
                 </Text>
               </View>
             </View>
@@ -394,7 +411,7 @@ export default function RegisterScreen({ navigation }: any) {
               </View>
             </View>
 
-            {/* KULLANICI SÖZLEŞMESİ */}
+            {/* KULLANICI SÖZLEŞMESİ CHECKBOX */}
             <TouchableOpacity
               style={styles.checkboxContainer}
               onPress={() => setAgreedToTerms(!agreedToTerms)}
@@ -419,14 +436,39 @@ export default function RegisterScreen({ navigation }: any) {
               </View>
             </TouchableOpacity>
 
-            {/* KAYIT BUTONU */}
+            {/* KVKK CHECKBOX */}
+            <TouchableOpacity
+              style={styles.checkboxContainer}
+              onPress={() => setAgreedToKVKK(!agreedToKVKK)}
+              disabled={loading}
+            >
+              <View style={[styles.checkbox, agreedToKVKK && styles.checkboxChecked]}>
+                {agreedToKVKK && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <View style={styles.termsTextContainer}>
+                <Text style={styles.termsText}>
+                  <Text
+                    style={styles.termsLink}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      setShowKVKKModal(true);
+                    }}
+                  >
+                    KVKK aydınlatma metnini
+                  </Text>
+                  {' okudum ve onaylıyorum'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* KAYIT OL BUTONU */}
             <TouchableOpacity
               style={[
                 styles.registerButton,
-                (loading || !agreedToTerms) && styles.registerButtonDisabled,
+                (loading || !agreedToTerms || !agreedToKVKK) && styles.registerButtonDisabled,
               ]}
               onPress={handleRegister}
-              disabled={loading || !agreedToTerms}
+              disabled={loading || !agreedToTerms || !agreedToKVKK}
               activeOpacity={0.8}
             >
               {loading ? (
@@ -436,7 +478,7 @@ export default function RegisterScreen({ navigation }: any) {
               )}
             </TouchableOpacity>
 
-            {/* GİRİŞ LİNKİ */}
+            {/* GİRİŞ YAPIN LİNKİ */}
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Zaten hesabınız var mı? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={loading}>
@@ -453,199 +495,32 @@ export default function RegisterScreen({ navigation }: any) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* KULLANICI SÖZLEŞMESİ MODAL - DETAYLI TAM İÇERİK */}
+      {/* KULLANICI SÖZLEŞMESİ MODAL - WebView */}
       <Modal
         visible={showTermsModal}
         animationType="slide"
         presentationStyle="fullScreen"
         onRequestClose={() => setShowTermsModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer} edges={[]}>
+        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Kullanıcı Sözleşmesi ve Kullanım Koşulları</Text>
+            <Text style={styles.modalTitle}>Kullanıcı Sözleşmesi</Text>
             <TouchableOpacity onPress={() => setShowTermsModal(false)} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={true}>
-            <Text style={styles.modalSectionTitle}>1. Taraflar ve Tanımlar</Text>
-            <Text style={styles.modalText}>
-              İşbu Kullanıcı Sözleşmesi ("Sözleşme"), FidBal Uyku ve Stres Yönetimi platformu
-              ("Platform") ve Platform'u kullanan gerçek veya tüzel kişiler ("Kullanıcı") arasında
-              elektronik ortamda akdedilmiştir.
-            </Text>
-            <View style={styles.infoBox}>
-              <Text style={styles.infoBoxTitle}>Platform Sahibi Bilgileri:</Text>
-              <Text style={styles.infoBoxText}>Ad Soyad: Hasan Balkaya</Text>
-              <Text style={styles.infoBoxText}>Telefon: 0539 487 00 58</Text>
-              <Text style={styles.infoBoxText}>
-                Adres: Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire:
-                11, Sivas Merkez
-              </Text>
-              <Text style={styles.infoBoxText}>E-posta: ecmelazizoglu@gmail.com</Text>
-            </View>
-
-            <Text style={styles.modalSectionTitle}>2. Sözleşmenin Konusu</Text>
-            <Text style={styles.modalText}>
-              İşbu Sözleşme, Platform'un sunduğu hizmetlerin Kullanıcı tarafından kullanımına
-              ilişkin tarafların hak ve yükümlülüklerini düzenlemektedir. Platform, akademik bir tez
-              çalışması kapsamında ücretsiz olarak sunulmakta olup, uyku takibi, stres yönetimi,
-              rahatlama teknikleri ve ilgili sağlık hizmetlerini içermektedir.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>3. Hizmetin Kapsamı</Text>
-            <Text style={styles.modalText}>
-              Platform aşağıdaki hizmetleri sunmaktadır:{'\n\n'}
-              • Uyku kalitesi takibi ve analizi{'\n'}
-              • Kalp atım hızı izleme{'\n'}
-              • Stres seviyesi değerlendirmesi{'\n'}
-              • Rahatlama sesleri ve meditasyon teknikleri{'\n'}
-              • Binaural sesler ile zihinsel rahatlama{'\n'}
-              • Kişiselleştirilmiş raporlama ve öneriler{'\n'}
-              • Uzman desteği ve danışmanlık
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>4. Kullanıcı Yükümlülükleri</Text>
-            <Text style={styles.modalText}>
-              Kullanıcı, Platform'u kullanırken:{'\n\n'}
-              • Doğru, güncel ve eksiksiz bilgi sağlamakla yükümlüdür{'\n'}
-              • Hesap güvenliğini sağlamak ve şifresini gizli tutmakla sorumludur{'\n'}
-              • Platform'u yasalara uygun ve etik kurallara uygun şekilde kullanacağını kabul eder
-              {'\n'}
-              • Platform'un teknik altyapısına zarar verecek davranışlardan kaçınacağını taahhüt
-              eder{'\n'}
-              • Diğer kullanıcıların haklarına saygı gösterecektir{'\n'}
-              • Ticari amaçla kullanmayacağını kabul eder{'\n'}• Platform içeriğini izinsiz
-              kopyalamayacak, çoğaltmayacak veya dağıtmayacaktır
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>5. Fikri Mülkiyet Hakları</Text>
-            <Text style={styles.modalText}>
-              Platform'daki tüm içerik, tasarım, yazılım, kod, logo, metin, görsel, ses dosyaları ve
-              diğer tüm materyaller Hasan Balkaya'ya aittir ve telif hakkı, ticari marka, patent ve
-              diğer fikri mülkiyet hakları ile korunmaktadır. Kullanıcı, Platform'daki hiçbir
-              içeriği ticari amaçla kullanamaz, kopyalayamaz, değiştiremez veya dağıtamaz.
-            </Text>
-            <View style={[styles.infoBox, styles.warningBox]}>
-              <Text style={styles.warningTitle}>⚠️ Önemli Uyarı:</Text>
-              <Text style={styles.warningText}>
-                Bu platform, akademik bir tez çalışması kapsamında geliştirilmiştir. Tüm hakları
-                saklıdır. İzinsiz kullanım, kopyalama veya dağıtım yasal işlem gerektirir.
-              </Text>
-            </View>
-
-            <Text style={styles.modalSectionTitle}>6. Hizmetin Ücretsiz Olması</Text>
-            <Text style={styles.modalText}>
-              Platform, akademik bir tez çalışması kapsamında geliştirilmiş olup, şu anda tamamen
-              ücretsiz olarak sunulmaktadır. Ancak, gelecekte belirli hizmetler için ücretlendirme
-              yapılması durumunda, kullanıcılar önceden bilgilendirilecek ve onayları alınacaktır.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>7. Sorumluluk Reddi ve Garanti</Text>
-            <View style={[styles.infoBox, styles.dangerBox]}>
-              <Text style={styles.dangerTitle}>🚨 ÖNEMLİ SAĞLIK UYARISI:</Text>
-              <Text style={styles.dangerText}>
-                • Platform, tıbbi teşhis veya tedavi amacı taşımamaktadır{'\n'}
-                • Platform'da sunulan bilgiler, profesyonel tıbbi tavsiye yerine geçmez{'\n'}
-                • Sağlık sorunları için mutlaka bir sağlık uzmanına başvurulmalıdır{'\n'}
-                • Platform'un kullanımından kaynaklanan herhangi bir sağlık sorunundan Platform
-                sahibi sorumlu tutulamaz{'\n'}• Acil durumlarda 112'yi arayın
-              </Text>
-            </View>
-            <Text style={styles.modalText}>
-              Platform "olduğu gibi" sunulmaktadır. Platform sahibi, hizmetin kesintisiz, hatasız
-              veya güvenli olacağına dair hiçbir garanti vermemektedir.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>8. Gizlilik ve Veri Koruma</Text>
-            <Text style={styles.modalText}>
-              Kullanıcı verileri, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) ve ilgili
-              mevzuat kapsamında işlenmekte ve korunmaktadır. Kullanıcılar, kişisel verilerinin
-              toplanması, işlenmesi ve saklanmasına açıkça rıza göstermiş sayılır.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>9. Hesap İptali ve Askıya Alma</Text>
-            <Text style={styles.modalText}>
-              Platform sahibi, aşağıdaki durumlarda Kullanıcı hesabını askıya alabilir veya
-              silebilir:{'\n\n'}
-              • Sözleşme hükümlerinin ihlali{'\n'}
-              • Yanlış veya yanıltıcı bilgi sağlanması{'\n'}
-              • Platform'a zarar verecek faaliyetler{'\n'}
-              • Diğer kullanıcıların haklarının ihlali{'\n'}• Yasadışı faaliyetler{'\n\n'}
-              Kullanıcı, KVKK kapsamındaki haklarını kullanarak hesabını istediği zaman silebilir.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>10. Hizmet Değişiklikleri ve Sonlandırma</Text>
-            <Text style={styles.modalText}>
-              Platform sahibi, önceden bildirimde bulunarak veya bulunmaksızın, Platform'un tamamını
-              veya bir kısmını geçici veya kalıcı olarak değiştirme, askıya alma veya sonlandırma
-              hakkını saklı tutar. Bu durumlardan dolayı Platform sahibinin herhangi bir
-              sorumluluğu bulunmamaktadır.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>11. Sözleşme Değişiklikleri</Text>
-            <Text style={styles.modalText}>
-              Platform sahibi, işbu Sözleşme'yi dilediği zaman değiştirme hakkını saklı tutar.
-              Değişiklikler Platform üzerinden duyurulacak ve yürürlük tarihinden itibaren geçerli
-              olacaktır. Kullanıcı, Platform'u kullanmaya devam ederek değişiklikleri kabul etmiş
-              sayılır.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>12. Uyuşmazlık Çözümü</Text>
-            <Text style={styles.modalText}>
-              İşbu Sözleşme'nin uygulanmasından veya yorumlanmasından doğabilecek her türlü
-              uyuşmazlığın çözümünde Türkiye Cumhuriyeti yasaları uygulanır. Uyuşmazlıkların
-              çözümünde <Text style={styles.boldText}>Sivas Mahkemeleri ve İcra Daireleri</Text>{' '}
-              yetkilidir.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>13. Yürürlük</Text>
-            <Text style={styles.modalText}>
-              İşbu Sözleşme, Kullanıcı'nın Platform'a kayıt olması veya Platform'u kullanmaya
-              başlaması ile yürürlüğe girer ve Kullanıcı'nın hesabını silmesi veya Platform
-              tarafından hesabın kapatılması ile sona erer.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>14. İletişim</Text>
-            <Text style={styles.modalText}>
-              Sözleşme ile ilgili sorularınız veya talepleriniz için aşağıdaki iletişim kanallarını
-              kullanabilirsiniz:
-            </Text>
-            <View style={styles.infoBox}>
-              <Text style={styles.infoBoxText}>E-posta: ecmelazizoglu@gmail.com</Text>
-              <Text style={styles.infoBoxText}>Telefon: 0539 487 00 58</Text>
-              <Text style={styles.infoBoxText}>
-                Adres: Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire:
-                11, Sivas Merkez
-              </Text>
-            </View>
-
-            <Text style={styles.modalSectionTitle}>15. Mücbir Sebepler</Text>
-            <Text style={styles.modalText}>
-              Doğal afetler, savaş, terör, grev, internet altyapı arızaları, siber saldırılar veya
-              Platform sahibinin kontrolü dışındaki diğer olaylar nedeniyle hizmetin sunulamamasından
-              Platform sahibi sorumlu tutulamaz.
-            </Text>
-
-            <Text style={styles.modalSectionTitle}>16. Delil Sözleşmesi</Text>
-            <Text style={styles.modalText}>
-              Taraflar, işbu Sözleşme'den doğabilecek ihtilaflarda Platform'un elektronik
-              kayıtlarının, bilgisayar ve sunucu kayıtlarının, e-posta kayıtlarının geçerli,
-              bağlayıcı, kesin ve münhasır delil teşkil edeceğini ve bu maddenin HMK m. 193
-              anlamında delil sözleşmesi niteliğinde olduğunu kabul eder.
-            </Text>
-
-            <View style={styles.modalFooter}>
-              <Text style={styles.modalFooterText}>
-                Son Güncelleme Tarihi: 8 Ekim 2025{'\n'}
-                Yürürlük Tarihi: 8 Ekim 2025{'\n'}
-                Versiyon: 1.0{'\n\n'}
-                Bu Kullanıcı Sözleşmesi, Platform'a kayıt olan veya Platform'u kullanan her kullanıcı
-                tarafından kabul edilmiş sayılır.
-              </Text>
-            </View>
-          </ScrollView>
+          <WebView
+            source={{ uri: 'https://www.fidbal.com/terms' }}
+            style={styles.webView}
+            startInLoadingState={true}
+            renderLoading={() => (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#4f7aef" />
+                <Text style={styles.loadingText}>Yükleniyor...</Text>
+              </View>
+            )}
+          />
 
           <View style={styles.modalButtonContainer}>
             <TouchableOpacity
@@ -660,11 +535,53 @@ export default function RegisterScreen({ navigation }: any) {
           </View>
         </SafeAreaView>
       </Modal>
+
+      {/* KVKK AYDINLATMA METNİ MODAL - WebView */}
+      <Modal
+        visible={showKVKKModal}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowKVKKModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>KVKK Aydınlatma Metni</Text>
+            <TouchableOpacity onPress={() => setShowKVKKModal(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <WebView
+            source={{ uri: 'https://www.fidbal.com/privacy-policy' }}
+            style={styles.webView}
+            startInLoadingState={true}
+            renderLoading={() => (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#4f7aef" />
+                <Text style={styles.loadingText}>Yükleniyor...</Text>
+              </View>
+            )}
+          />
+
+          <View style={styles.modalButtonContainer}>
+            <TouchableOpacity
+              style={styles.acceptButton}
+              onPress={() => {
+                setAgreedToKVKK(true);
+                setShowKVKKModal(false);
+              }}
+            >
+              <Text style={styles.acceptButtonText}>Anladım ve Kabul Ediyorum</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  // GENEL CONTAINER
   container: {
     flex: 1,
     backgroundColor: '#f3f4f6',
@@ -678,7 +595,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // LOGO STYLES
+  // LOGO & BAŞLIK
   logoContainer: {
     alignItems: 'center',
     marginTop: 20,
@@ -715,7 +632,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // CARD STYLES
+  // KART
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
@@ -780,40 +697,43 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   groupButton: {
-      flex: 1,
-      padding: 14,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: '#cbd5e1',
-      backgroundColor: '#ffffff',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 80,
-    },
-    groupButtonActive: {
-      borderColor: '#6b93f4',
-      backgroundColor: '#dbeafe',
-    },
-    groupButtonActiveExperiment: {
-      borderColor: '#a855f7',
-      backgroundColor: '#f3e8ff',
-    },
-    groupButtonTitle: {
-      fontSize: 12,
-      fontWeight: 'bold',
-      color: '#64748b',
-      textAlign: 'center',
-      lineHeight: 16,
-    },
-    groupButtonTitleActive: {
-      color: '#1e293b',
-    },
-    groupButtonSubtitle: {
-      fontSize: 10,
-      color: '#94a3b8',
-      textAlign: 'center',
-      marginTop: 4,
-    },
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    borderWidth: 2,
+    borderColor: '#cbd5e1',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 80,
+  },
+  groupButtonActive: {
+    borderColor: '#6b93f4',
+    backgroundColor: '#dbeafe',
+  },
+  groupButtonActiveExperiment: {
+    borderColor: '#a855f7',
+    backgroundColor: '#f3e8ff',
+  },
+  groupButtonTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  groupButtonTitleActive: {
+    color: '#1e293b',
+  },
+  groupButtonSubtitle: {
+    fontSize: 10,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  groupButtonSubtitleActive: {
+    color: '#64748b',
+  },
 
   // ŞİFRE GEREKSİNİMLERİ
   passwordRequirements: {
@@ -972,85 +892,25 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontWeight: 'bold',
   },
-  modalContent: {
+  webView: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#ffffff',
   },
-  modalSectionTitle: {
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  loadingText: {
+    marginTop: 12,
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  modalText: {
-    fontSize: 14,
-    color: '#475569',
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  boldText: {
-    fontWeight: 'bold',
-  },
-  infoBox: {
-    backgroundColor: '#dbeafe',
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 8,
-  },
-  infoBoxTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1e40af',
-    marginBottom: 8,
-  },
-  infoBoxText: {
-    fontSize: 13,
-    color: '#1e40af',
-    lineHeight: 20,
-  },
-  warningBox: {
-    backgroundColor: '#fef3c7',
-    borderLeftColor: '#f59e0b',
-  },
-  warningTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#92400e',
-    marginBottom: 8,
-  },
-  warningText: {
-    fontSize: 13,
-    color: '#92400e',
-    lineHeight: 20,
-  },
-  dangerBox: {
-    backgroundColor: '#fee2e2',
-    borderLeftColor: '#ef4444',
-  },
-  dangerTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#991b1b',
-    marginBottom: 8,
-  },
-  dangerText: {
-    fontSize: 13,
-    color: '#991b1b',
-    lineHeight: 20,
-  },
-  modalFooter: {
-    paddingTop: 20,
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-  },
-  modalFooterText: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontStyle: 'italic',
+    color: '#64748b',
+    fontWeight: '500',
   },
   modalButtonContainer: {
     padding: 20,

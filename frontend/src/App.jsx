@@ -19,6 +19,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import AdminFormResponses from './pages/admin/AdminFormResponses';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 
 function App() {
   const { isAuthenticated, token, user, setUser, logout } = useAuthStore();
@@ -72,6 +73,7 @@ function App() {
           element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/dashboard" replace />} 
         />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
 
         {/* Protected Routes */}
         <Route element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
