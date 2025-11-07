@@ -59,23 +59,47 @@ export default function LoginScreen({ navigation }: any) {
 
     setLoading(true);
     try {
+      console.log('🔐 Giriş yapılıyor...', phone);
+      
       const response = await api.post('/auth/login', {
         phone: phone.toString(),
         password: password,
       });
 
+      console.log('✅ Login response:', JSON.stringify(response.data, null, 2));
+
       if (response.data.success) {
-        await login(response.data.user, response.data.token);
+        // ✅ FIX: Token'ın string olduğundan emin ol
+        const token = typeof response.data.token === 'string' 
+          ? response.data.token 
+          : JSON.stringify(response.data.token);
+        
+        const user = response.data.user;
+
+        console.log('💾 Giriş bilgileri kaydediliyor...', {
+          userId: user.userId,
+          phone: user.phone,
+          tokenType: typeof token,
+          tokenLength: token.length
+        });
+
+        await login(user, token);
+        
+        console.log('✅ Giriş başarılı! Dashboard\'a yönlendiriliyor...');
+        // Navigation otomatik olacak (authStore değiştiğinde)
       } else {
         Alert.alert('Giriş Başarısız', response.data.message || 'Giriş yapılamadı');
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);
+      console.error('❌ Error response:', error.response?.data);
+      
       const errorMessage =
         error.response?.data?.error ||
         error.response?.data?.message ||
         error.message ||
         'Bir hata oluştu';
+      
       Alert.alert('Giriş Hatası', errorMessage);
     } finally {
       setLoading(false);

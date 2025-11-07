@@ -76,7 +76,27 @@ export default function FormsScreen() {
       setForms(response.data || []);
     } catch (error: any) {
       console.error('❌ Load forms error:', error);
-      showToast('Formlar yüklenirken hata oluştu', 'error');
+      
+      // ✅ GELİŞTİRİLMİŞ ERROR HANDLING
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+      let errorMessage = 'Formlar yüklenirken hata oluştu';
+
+      if (status === 401) {
+        errorMessage = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+      } else if (status === 403) {
+        errorMessage = 'Bu formlara erişim yetkiniz yok.';
+      } else if (status === 404) {
+        errorMessage = 'Formlar bulunamadı.';
+      } else if (status === 500) {
+        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
+      } else if (error.message === 'Network Error' || !error.response) {
+        errorMessage = 'İnternet bağlantınızı kontrol edin.';
+      } else if (errorData?.error) {
+        errorMessage = errorData.error;
+      }
+
+      showToast(errorMessage, 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -140,10 +160,10 @@ export default function FormsScreen() {
   const completedForms = forms.filter((f) => f.is_filled).length;
   const pendingForms = totalForms - completedForms;
 
-  // Skeleton Loading
+  // ✅ SKELETON LOADING
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
         <View style={[styles.header, { backgroundColor: currentColors.surface, borderBottomColor: currentColors.border }]}>
           <SkeletonLoader width={150} height={28} style={{ marginBottom: 4 }} />
           <SkeletonLoader width={200} height={16} />
@@ -162,15 +182,17 @@ export default function FormsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
       <Toast message={toastMessage} type={toastType} visible={toastVisible} onHide={() => setToastVisible(false)} />
 
+      {/* ✅ OFFLINE BANNER */}
       {!isOnline && (
         <View style={[styles.offlineBanner, { backgroundColor: currentColors.warning }]}>
           <Text style={styles.offlineBannerText}>📡 Offline Mod - Formlar kullanılamaz</Text>
         </View>
       )}
 
+      {/* ✅ HEADER */}
       <View style={[styles.header, { backgroundColor: currentColors.surface, borderBottomColor: currentColors.border }]}>
         <View>
           <Text style={[styles.headerTitle, { color: currentColors.primary }]}>Formlar</Text>
@@ -181,10 +203,17 @@ export default function FormsScreen() {
       <ScrollView
         style={styles.content}
         contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currentColors.brand} />}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
+            tintColor={currentColors.brand}
+            colors={[currentColors.brand]}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
-        {/* İSTATİSTİKLER */}
+        {/* ✅ İSTATİSTİKLER */}
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe' }]}>
             <Text style={styles.statIcon}>📊</Text>
@@ -205,7 +234,7 @@ export default function FormsScreen() {
           </View>
         </View>
 
-        {/* FORMLAR */}
+        {/* ✅ FORMLAR */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>
             Mevcut Formlar {totalForms > 0 && `(${totalForms})`}
@@ -269,7 +298,7 @@ export default function FormsScreen() {
           )}
         </View>
 
-        {/* BİLGİ KARTI */}
+        {/* ✅ BİLGİ KARTI */}
         <View
           style={[
             styles.infoCard,
@@ -286,10 +315,10 @@ export default function FormsScreen() {
         </View>
       </ScrollView>
 
-      {/* WEBVIEW MODAL - iOS SafeArea Düzeltmesi */}
+      {/* ✅ WEBVIEW MODAL - iOS SafeArea Düzeltmesi */}
       <Modal visible={showWebView} animationType="slide" presentationStyle="fullScreen" onRequestClose={handleCloseWebView}>
-        <View style={[styles.modalContainer, { backgroundColor: currentColors.background }]}>
-          {/* HEADER - SafeArea İÇİNDE */}
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
+          {/* ✅ HEADER - iOS SafeArea padding */}
           <View
             style={[
               styles.webViewHeader,
@@ -310,7 +339,7 @@ export default function FormsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* LOADING */}
+          {/* ✅ LOADING INDICATOR */}
           {webViewLoading && (
             <View style={styles.webViewLoadingContainer}>
               <ActivityIndicator size="large" color={currentColors.brand} />
@@ -318,7 +347,7 @@ export default function FormsScreen() {
             </View>
           )}
 
-          {/* WEBVIEW - contentInset ile SafeArea */}
+          {/* ✅ WEBVIEW - contentInset ile SafeArea */}
           {selectedForm && (
             <WebView
               source={{ uri: selectedForm.google_form_url }}
@@ -332,10 +361,10 @@ export default function FormsScreen() {
               javaScriptEnabled
               domStorageEnabled
               startInLoadingState
-              contentInset={{ top: 0, bottom: insets.bottom }}
+              contentInset={{ top: 0, bottom: 0 }}
             />
           )}
-        </View>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );

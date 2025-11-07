@@ -4,15 +4,15 @@
   "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/netinfo": "^11.4.1",
-    "@react-native-community/slider": "5.0.1",
+    "@react-native-community/slider": "^5.0.1",
     "@react-native-picker/picker": "^2.11.1",
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.18",
@@ -20,6 +20,8 @@
     "axios": "^1.7.7",
     "expo": "~54.0.0",
     "expo-av": "~16.0.7",
+    "expo-camera": "~17.0.9",
+    "expo-dev-client": "~6.0.16",
     "expo-device": "^8.0.9",
     "expo-file-system": "~19.0.17",
     "expo-haptics": "~14.0.0",

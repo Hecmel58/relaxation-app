@@ -6,10 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   RefreshControl,
   Modal,
-  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
@@ -47,7 +45,7 @@ export default function BinauralScreen() {
   const [selectedType, setSelectedType] = useState('delta');
   const [currentPlaying, setCurrentPlaying] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   // Heart Rate Modal
   const [showHeartRateModal, setShowHeartRateModal] = useState(false);
@@ -68,7 +66,7 @@ export default function BinauralScreen() {
     { id: 'alpha', name: 'Alpha', freq: '8-13 Hz', icon: '☀️', desc: 'Rahatlama', color: '#f59e0b' },
   ];
 
-  // Test sounds (API boşsa kullanılacak)
+  // Test sounds
   const testSounds: { [key: string]: BinauralSound[] } = {
     delta: [
       {
@@ -114,18 +112,28 @@ export default function BinauralScreen() {
     ],
   };
 
-  useEffect(() => {
-    setupAudio();
-    loadSounds();
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+    Haptics.notificationAsync(
+      type === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
+    );
+  };
 
-    return () => {
-      cleanupSound();
-    };
-  }, []);
-
-  useEffect(() => {
-    loadSounds();
-  }, [selectedType]);
+  const cleanupSound = async () => {
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      } catch (error) {
+        console.error('Cleanup error:', error);
+      }
+    }
+    setCurrentPlaying(null);
+    setProgress(0);
+  };
 
   const setupAudio = async () => {
     try {
@@ -138,26 +146,6 @@ export default function BinauralScreen() {
     } catch (error) {
       console.error('Audio setup error:', error);
     }
-  };
-
-  const cleanupSound = async () => {
-    if (sound) {
-      try {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-      } catch (error) {
-        console.error('Cleanup error:', error);
-      }
-    }
-  };
-
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-    setToastMessage(message);
-    setToastType(type);
-    setToastVisible(true);
-    Haptics.notificationAsync(
-      type === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
-    );
   };
 
   const loadSounds = async () => {
@@ -187,6 +175,21 @@ export default function BinauralScreen() {
     }
   };
 
+  useEffect(() => {
+    setupAudio();
+    loadSounds();
+
+    return () => {
+      cleanupSound();
+    };
+  }, []);
+
+  // Kategori değişince sesi durdur
+  useEffect(() => {
+    cleanupSound();
+    loadSounds();
+  }, [selectedType]);
+
   const onRefresh = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setRefreshing(true);
@@ -199,10 +202,10 @@ export default function BinauralScreen() {
     if (currentPlaying === item.id) {
       // Durdur
       await cleanupSound();
-      setCurrentPlaying(null);
-      setProgress(0);
     } else {
-      // Önce kalp atışı al
+      // Önce mevcut sesi durdur
+      await cleanupSound();
+      // Sonra kalp atışı al
       setPendingSound(item);
       setIsWaitingForAfter(false);
       setShowHeartRateModal(true);
@@ -244,13 +247,12 @@ export default function BinauralScreen() {
 
         // Temizle
         await cleanupSound();
-        setCurrentPlaying(null);
-        setProgress(0);
         setShowHeartRateModal(false);
         setHeartRateBefore('');
         setHeartRateAfter('');
         setPendingSound(null);
         setIsWaitingForAfter(false);
+        sessionStartTime.current = null;
       } catch (error: any) {
         console.error('❌ Heart rate save error:', error);
         showToast('Kayıt başarısız', 'error');
@@ -273,10 +275,11 @@ export default function BinauralScreen() {
           onPlaybackStatusUpdate
         );
 
-        setSound(newSound);
+        soundRef.current = newSound;
         setCurrentPlaying(pendingSound!.id);
         sessionStartTime.current = Date.now();
         setShowHeartRateModal(false);
+        setHeartRateBefore('');
       } catch (error) {
         console.error('❌ Play error:', error);
         showToast('Ses oynatılamadı. Kulaklık takın!', 'error');
@@ -307,7 +310,7 @@ export default function BinauralScreen() {
   // Skeleton Loading
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]}>
         <View style={[styles.header, { backgroundColor: currentColors.surface, borderBottomColor: currentColors.border }]}>
           <SkeletonLoader width={200} height={28} style={{ marginBottom: 4 }} />
           <SkeletonLoader width={250} height={16} />
@@ -326,9 +329,10 @@ export default function BinauralScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]}>
       <Toast message={toastMessage} type={toastType} visible={toastVisible} onHide={() => setToastVisible(false)} />
 
+      {/* OFFLINE BANNER */}
       {!isOnline && (
         <View style={[styles.offlineBanner, { backgroundColor: currentColors.warning }]}>
           <Text style={styles.offlineBannerText}>📡 Offline Mod</Text>
@@ -485,51 +489,221 @@ export default function BinauralScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  offlineBanner: { padding: 8, alignItems: 'center' },
-  offlineBannerText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  header: { padding: 16, borderBottomWidth: 1 },
-  headerTitle: { fontSize: 24, fontWeight: 'bold' },
-  headerSubtitle: { fontSize: 13, marginTop: 2 },
-  content: { flex: 1 },
-  infoCard: { flexDirection: 'row', margin: 16, padding: 16, borderRadius: 12, borderLeftWidth: 4 },
-  infoIcon: { fontSize: 28, marginRight: 12 },
-  infoContent: { flex: 1 },
-  infoTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 8 },
-  infoText: { fontSize: 13, lineHeight: 18 },
-  typesContainer: { flexDirection: 'row', padding: 16, gap: 12 },
-  typeCard: { flex: 1, borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 2 },
-  typeIcon: { fontSize: 32, marginBottom: 8 },
-  typeName: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  typeFreq: { fontSize: 12, marginBottom: 4 },
-  typeDesc: { fontSize: 11, textAlign: 'center' },
-  section: { padding: 16, gap: 16 },
-  soundCard: { borderRadius: 12, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  soundHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  soundIcon: { fontSize: 32 },
-  soundDuration: { fontSize: 12 },
-  soundName: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  soundDescription: { fontSize: 14, marginBottom: 12 },
-  freqGrid: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  freqItem: { flex: 1, padding: 10, borderRadius: 8 },
-  freqLabel: { fontSize: 11, marginBottom: 4 },
-  freqValue: { fontSize: 14, fontWeight: 'bold' },
-  progressContainer: { marginBottom: 12 },
-  progressBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 2 },
-  playButton: { padding: 14, borderRadius: 8, alignItems: 'center' },
-  playButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  playCount: { fontSize: 11, textAlign: 'center', marginTop: 8 },
-  emptyCard: { borderRadius: 12, padding: 32, alignItems: 'center', margin: 16 },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  emptyText: { fontSize: 14, textAlign: 'center' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalCard: { borderRadius: 16, padding: 24 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  modalText: { fontSize: 14, marginBottom: 16 },
-  modalInput: { padding: 14, borderRadius: 8, borderWidth: 1, fontSize: 16, marginBottom: 16 },
-  modalButtons: { flexDirection: 'row', gap: 12 },
-  modalButton: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
-  modalButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  container: { 
+    flex: 1 
+  },
+  offlineBanner: { 
+    padding: 8, 
+    alignItems: 'center' 
+  },
+  offlineBannerText: { 
+    color: '#fff', 
+    fontSize: 12, 
+    fontWeight: '600' 
+  },
+  header: { 
+    padding: 16, 
+    borderBottomWidth: 1 
+  },
+  headerTitle: { 
+    fontSize: 24, 
+    fontWeight: 'bold' 
+  },
+  headerSubtitle: { 
+    fontSize: 13, 
+    marginTop: 2 
+  },
+  content: { 
+    flex: 1 
+  },
+  infoCard: { 
+    flexDirection: 'row', 
+    margin: 16, 
+    padding: 16, 
+    borderRadius: 12, 
+    borderLeftWidth: 4 
+  },
+  infoIcon: { 
+    fontSize: 28, 
+    marginRight: 12 
+  },
+  infoContent: { 
+    flex: 1 
+  },
+  infoTitle: { 
+    fontSize: 15, 
+    fontWeight: 'bold', 
+    marginBottom: 8 
+  },
+  infoText: { 
+    fontSize: 13, 
+    lineHeight: 18 
+  },
+  typesContainer: { 
+    flexDirection: 'row', 
+    padding: 16, 
+    gap: 12 
+  },
+  typeCard: { 
+    flex: 1, 
+    borderRadius: 12, 
+    padding: 16, 
+    alignItems: 'center', 
+    borderWidth: 2 
+  },
+  typeIcon: { 
+    fontSize: 32, 
+    marginBottom: 8 
+  },
+  typeName: { 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    marginBottom: 4 
+  },
+  typeFreq: { 
+    fontSize: 12, 
+    marginBottom: 4 
+  },
+  typeDesc: { 
+    fontSize: 11, 
+    textAlign: 'center' 
+  },
+  section: { 
+    padding: 16, 
+    gap: 16 
+  },
+  soundCard: { 
+    borderRadius: 12, 
+    padding: 16, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 4, 
+    elevation: 2 
+  },
+  soundHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: 12 
+  },
+  soundIcon: { 
+    fontSize: 32 
+  },
+  soundDuration: { 
+    fontSize: 12 
+  },
+  soundName: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginBottom: 8 
+  },
+  soundDescription: { 
+    fontSize: 14, 
+    marginBottom: 12 
+  },
+  freqGrid: { 
+    flexDirection: 'row', 
+    gap: 8, 
+    marginBottom: 12 
+  },
+  freqItem: { 
+    flex: 1, 
+    padding: 10, 
+    borderRadius: 8 
+  },
+  freqLabel: { 
+    fontSize: 11, 
+    marginBottom: 4 
+  },
+  freqValue: { 
+    fontSize: 14, 
+    fontWeight: 'bold' 
+  },
+  progressContainer: { 
+    marginBottom: 12 
+  },
+  progressBar: { 
+    height: 4, 
+    borderRadius: 2, 
+    overflow: 'hidden' 
+  },
+  progressFill: { 
+    height: '100%', 
+    borderRadius: 2 
+  },
+  playButton: { 
+    padding: 14, 
+    borderRadius: 8, 
+    alignItems: 'center' 
+  },
+  playButtonText: { 
+    color: '#fff', 
+    fontSize: 15, 
+    fontWeight: '600' 
+  },
+  playCount: { 
+    fontSize: 11, 
+    textAlign: 'center', 
+    marginTop: 8 
+  },
+  emptyCard: { 
+    borderRadius: 12, 
+    padding: 32, 
+    alignItems: 'center', 
+    margin: 16 
+  },
+  emptyIcon: { 
+    fontSize: 64, 
+    marginBottom: 16 
+  },
+  emptyTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginBottom: 8 
+  },
+  emptyText: { 
+    fontSize: 14, 
+    textAlign: 'center' 
+  },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'center', 
+    padding: 20 
+  },
+  modalCard: { 
+    borderRadius: 16, 
+    padding: 24 
+  },
+  modalTitle: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    marginBottom: 12 
+  },
+  modalText: { 
+    fontSize: 14, 
+    marginBottom: 16 
+  },
+  modalInput: { 
+    padding: 14, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    fontSize: 16, 
+    marginBottom: 16 
+  },
+  modalButtons: { 
+    flexDirection: 'row', 
+    gap: 12 
+  },
+  modalButton: { 
+    flex: 1, 
+    padding: 14, 
+    borderRadius: 8, 
+    alignItems: 'center' 
+  },
+  modalButtonText: { 
+    color: '#fff', 
+    fontSize: 15, 
+    fontWeight: '600' 
+  },
 });

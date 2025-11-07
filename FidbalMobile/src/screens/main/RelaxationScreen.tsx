@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
+  Platform,
   View,
   Text,
   StyleSheet,
@@ -116,6 +117,10 @@ export default function RelaxationScreen() {
   }, []);
 
   useEffect(() => {
+    // Kategori değiştiğinde sesi temizle
+    cleanupSound();
+    setCurrentPlaying(null);
+    setProgress(0);
     loadContent();
   }, [selectedCategory]);
 
@@ -299,7 +304,7 @@ export default function RelaxationScreen() {
   // Skeleton Loading
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
         <View style={[styles.header, { backgroundColor: currentColors.surface, borderBottomColor: currentColors.border }]}>
           <SkeletonLoader width={200} height={28} style={{ marginBottom: 4 }} />
           <SkeletonLoader width={250} height={16} />
@@ -318,7 +323,7 @@ export default function RelaxationScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
       <Toast message={toastMessage} type={toastType} visible={toastVisible} onHide={() => setToastVisible(false)} />
 
       {!isOnline && (
@@ -352,8 +357,14 @@ export default function RelaxationScreen() {
                   borderColor: selectedCategory === cat.id ? currentColors.brand : currentColors.border,
                 },
               ]}
-              onPress={() => {
+              onPress={async () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                // Kategori değiştiğinde sesi durdur
+                if (currentPlaying) {
+                  await cleanupSound();
+                  setCurrentPlaying(null);
+                  setProgress(0);
+                }
                 setSelectedCategory(cat.id);
               }}
             >
@@ -424,7 +435,10 @@ export default function RelaxationScreen() {
       {/* HEART RATE MODAL */}
       <Modal visible={showHeartRateModal} animationType="fade" transparent onRequestClose={() => setShowHeartRateModal(false)}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: currentColors.card }]}>
+          <View style={[styles.modalCard, { 
+            backgroundColor: currentColors.card,
+            marginTop: Platform.OS === 'ios' ? insets.top : 0,
+          }]}>
             <Text style={[styles.modalTitle, { color: currentColors.primary }]}>
               {isWaitingForAfter ? '🫀 Ses Sonrası Kalp Atışı' : '🫀 Ses Öncesi Kalp Atışı'}
             </Text>
@@ -472,10 +486,10 @@ const styles = StyleSheet.create({
   headerSubtitle: { fontSize: 13, marginTop: 2 },
   content: { flex: 1 },
   typesContainer: { flexDirection: 'row', padding: 16, gap: 12 },
-  typeCard: { flex: 1, borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 2 },
-  typeIcon: { fontSize: 32, marginBottom: 8 },
-  typeName: { fontSize: 14, fontWeight: 'bold', marginBottom: 4, textAlign: 'center' },
-  typeDesc: { fontSize: 11, textAlign: 'center' },
+  typeCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 2, minHeight: 140 },
+  typeIcon: { fontSize: 28, marginBottom: 8 },
+  typeName: { fontSize: 12, fontWeight: 'bold', marginBottom: 4, textAlign: 'center', lineHeight: 16 },
+  typeDesc: { fontSize: 10, textAlign: 'center', color: '#94a3b8' },
   section: { padding: 16, gap: 16 },
   contentCard: { borderRadius: 12, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   contentHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },

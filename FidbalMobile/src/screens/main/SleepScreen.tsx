@@ -384,7 +384,11 @@ export default function SleepScreen() {
       <Modal visible={showForm} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowForm(false)}>
         <SafeAreaView style={[styles.modalContainer, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-            <View style={[styles.modalHeader, { backgroundColor: currentColors.surface, borderBottomColor: currentColors.border }]}>
+            <View style={[styles.modalHeader, { 
+              backgroundColor: currentColors.surface, 
+              borderBottomColor: currentColors.border,
+              paddingTop: Platform.OS === 'ios' ? insets.top : 0,
+            }]}>
               <Text style={[styles.modalTitle, { color: currentColors.primary }]}>Yeni Uyku Kaydı</Text>
               <TouchableOpacity onPress={() => setShowForm(false)}>
                 <Text style={[styles.closeButton, { color: currentColors.brand }]}>✕</Text>
@@ -395,8 +399,12 @@ export default function SleepScreen() {
               style={styles.formContent}
               showsVerticalScrollIndicator={false}
               enableOnAndroid={true}
-              extraScrollHeight={100}
+              enableAutomaticScroll={true}
+              extraScrollHeight={150}
+              extraHeight={150}
               keyboardShouldPersistTaps="handled"
+              keyboardOpeningTime={0}
+              enableResetScrollToCoords={false}
             >
               <View style={styles.formGroup}>
                 <Text style={[styles.formLabel, { color: currentColors.primary }]}>📅 Tarih</Text>

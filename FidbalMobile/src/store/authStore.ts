@@ -32,14 +32,21 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (user, token) => {
     try {
-      set({ user, token, isAuthenticated: true });
-      await AsyncStorage.setItem('fidbal_token', token);
+      // ✅ FIX: Token'ı string'e çevir (obje olabilir)
+      const tokenString = typeof token === 'string' ? token : JSON.stringify(token);
+      
+      set({ user, token: tokenString, isAuthenticated: true });
+      
+      // ✅ FIX: Token'ı düzgün kaydet
+      await AsyncStorage.setItem('fidbal_token', tokenString);
       await AsyncStorage.setItem('fidbal_user', JSON.stringify(user));
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      // ✅ API header'ına ekle
+      api.defaults.headers.common['Authorization'] = `Bearer ${tokenString}`;
 
-      console.log('✅ Login successful - Storage updated');
+      console.log('✅ Login successful - Token ve user kaydedildi');
 
-      // ✅ Giriş sonrası push token kaydet (1 saniye bekle)
+      // Push token kaydet (1 saniye bekle)
       setTimeout(() => {
         registerForPushNotifications().catch(err => {
           console.log('⚠️ Push token kaydedilemedi:', err.message);
@@ -47,6 +54,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }, 1000);
     } catch (error) {
       console.error('❌ Login storage error:', error);
+      throw error; // Hatayı yukarı fırlat
     }
   },
 
@@ -69,13 +77,31 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loadStoredAuth: async () => {
     try {
-      const [token, userString] = await AsyncStorage.multiGet(['fidbal_token', 'fidbal_user']);
+      console.log('📝 Loading stored auth...');
+      
+      const [tokenData, userData] = await AsyncStorage.multiGet(['fidbal_token', 'fidbal_user']);
+      
+      const token = tokenData[1];
+      const userString = userData[1];
 
-      if (token[1] && userString[1]) {
-        const user = JSON.parse(userString[1]);
-        api.defaults.headers.common['Authorization'] = `Bearer ${token[1]}`;
-        set({ user, token: token[1], isAuthenticated: true });
-        console.log('✅ Stored auth loaded');
+      if (token && userString) {
+        try {
+          const user = JSON.parse(userString);
+          
+          // ✅ Token'ı string olarak oku
+          const tokenString = typeof token === 'string' ? token : JSON.stringify(token);
+          
+          api.defaults.headers.common['Authorization'] = `Bearer ${tokenString}`;
+          set({ user, token: tokenString, isAuthenticated: true });
+          
+          console.log('✅ Stored auth loaded:', { userId: user.userId, phone: user.phone });
+        } catch (parseError) {
+          console.error('❌ Parse error:', parseError);
+          // Parse hatası varsa storage'ı temizle
+          await AsyncStorage.multiRemove(['fidbal_token', 'fidbal_user']);
+        }
+      } else {
+        console.log('ℹ️ No stored auth found');
       }
     } catch (error) {
       console.error('❌ Load stored auth error:', error);

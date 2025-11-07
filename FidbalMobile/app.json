@@ -29,14 +29,25 @@
       },
       "package": "com.hecmel.fidbal",
       "versionCode": 1,
+      "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "NOTIFICATIONS",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "WAKE_LOCK",
         "RECORD_AUDIO",
-        "CAMERA"
-      ]
+        "CAMERA",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "MODIFY_AUDIO_SETTINGS",
+        "BLUETOOTH",
+        "BLUETOOTH_CONNECT"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -53,8 +64,21 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#3b82f6",
-          "sounds": ["./assets/notification.wav"]
+          "color": "#3b82f6"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "FidBal uygulaması görüntülü görüşme için kameranıza erişmek istiyor.",
+          "microphonePermission": "FidBal uygulaması görüntülü görüşme için mikrofonunuza erişmek istiyor.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "FidBal uygulaması ses kaydı için mikrofonunuza erişmek istiyor."
         }
       ]
     ]

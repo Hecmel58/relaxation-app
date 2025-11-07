@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert,
-  Animated,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -44,8 +42,6 @@ export default function DashboardScreen() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('info');
 
-  const scaleAnim = React.useRef(new Animated.Value(1)).current;
-
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -66,6 +62,7 @@ export default function DashboardScreen() {
         return;
       }
 
+      // ✅ ORİJİNAL ÇALIŞAN ENDPOINT
       const response = await api.get('/sleep/sessions');
 
       if (response.data && response.data.sessions) {
@@ -77,7 +74,25 @@ export default function DashboardScreen() {
       }
     } catch (error: any) {
       console.error('❌ Dashboard data load error:', error);
-      showToast('Veriler yüklenirken hata oluştu', 'error');
+      
+      // ✅ GELİŞTİRİLMİŞ ERROR HANDLING
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+      let errorMessage = 'Veriler yüklenirken hata oluştu';
+
+      if (status === 401) {
+        errorMessage = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+      } else if (status === 403) {
+        errorMessage = 'Bu verilere erişim yetkiniz yok.';
+      } else if (status === 500) {
+        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
+      } else if (error.message === 'Network Error' || !error.response) {
+        errorMessage = 'İnternet bağlantınızı kontrol edin.';
+      } else if (errorData?.error) {
+        errorMessage = errorData.error;
+      }
+
+      showToast(errorMessage, 'error');
       setSleepSessions([]);
     } finally {
       setLoading(false);
@@ -93,116 +108,94 @@ export default function DashboardScreen() {
 
   const handleCardPress = (route: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    // Basınca animasyon
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    navigation.navigate(route as never);
+    navigation.navigate(route);
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('tr-TR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      });
-    } catch {
-      return dateString;
+  const formatDuration = (minutes: number) => {
+    if (!minutes) return '0sa 0dk';
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    return `${hours}sa ${mins}dk`;
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Günaydın';
+    if (hour < 18) return 'İyi günler';
+    return 'İyi akşamlar';
+  };
+
+  // ✅ İSTATİSTİKLERİ HESAPLA
+  const calculateStats = () => {
+    if (!sleepSessions || sleepSessions.length === 0) {
+      return {
+        totalSessions: 0,
+        avgQuality: 0,
+        avgDuration: 0,
+        lastSession: null,
+      };
     }
+
+    const totalQuality = sleepSessions.reduce((sum, s) => sum + (s.sleep_quality || 0), 0);
+    const totalDuration = sleepSessions.reduce((sum, s) => sum + (s.sleep_duration || 0), 0);
+
+    return {
+      totalSessions: sleepSessions.length,
+      avgQuality: totalQuality / sleepSessions.length,
+      avgDuration: totalDuration / sleepSessions.length,
+      lastSession: sleepSessions[0],
+    };
   };
 
-  // ✅ İSTATİSTİKLER
-  const lastSleep = sleepSessions[0];
-  const avgQuality =
-    sleepSessions.length > 0
-      ? (sleepSessions.reduce((sum, s) => sum + (s.sleep_quality || 0), 0) / sleepSessions.length).toFixed(1)
-      : '0';
-  const totalRecords = sleepSessions.length;
-
-  const stats = [
-      {
-        title: 'Son Uyku\nKalitesi',
-        value: lastSleep ? `${lastSleep.sleep_quality}/10` : '—',
-        subtitle: lastSleep ? formatDate(lastSleep.sleep_date) : 'Henüz kayıt yok',
-        icon: '😴',
-        color: currentColors.info,
-        bgColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe',
-      },
-      {
-        title: 'Ortalama\nKalite',
-        value: avgQuality !== '0' ? `${avgQuality}/10` : '—',
-        subtitle: `${totalRecords} kayıt`,
-        icon: '📊',
-        color: currentColors.success,
-        bgColor: isDark ? 'rgba(16, 185, 129, 0.1)' : '#d1fae5',
-      },
-      {
-        title: 'A/B Test\nGrubu',
-        value: user?.abGroup === 'experiment' || user?.ab_group === 'experiment' ? 'Deney' : 'Kontrol',
-        subtitle:
-          user?.abGroup === 'experiment' || user?.ab_group === 'experiment'
-            ? 'Beta'
-            : 'Temel',
-        icon: user?.abGroup === 'experiment' || user?.ab_group === 'experiment' ? '🧪' : '🔬',
-        color: currentColors.warning,
-        bgColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7',
-      },
-    ];
+  const stats = calculateStats();
 
   const quickActions = [
     {
       id: 'sleep',
-      title: 'Uyku Kaydı',
+      title: 'Uyku Takibi',
       icon: '😴',
-      color: currentColors.info,
+      color: '#6366f1',
       route: 'Sleep',
+      show: true,
+    },
+    {
+      id: 'binaural',
+      title: 'Binaural Sesler',
+      icon: '🎵',
+      color: '#8b5cf6',
+      route: 'Binaural',
       show: true,
     },
     {
       id: 'relaxation',
       title: 'Rahatlama',
-      icon: '🧘‍♀️',
-      color: currentColors.success,
+      icon: '🧘',
+      color: '#10b981',
       route: 'Relaxation',
-      show:
-        user?.abGroup === 'experiment' || user?.ab_group === 'experiment' || user?.isAdmin || user?.is_admin,
-    },
-    {
-      id: 'binaural',
-      title: 'Binaural',
-      icon: '🎵',
-      color: '#8b5cf6',
-      route: 'Binaural',
-      show:
-        user?.abGroup === 'experiment' || user?.ab_group === 'experiment' || user?.isAdmin || user?.is_admin,
+      show: true,
     },
     {
       id: 'forms',
       title: 'Formlar',
       icon: '📋',
-      color: currentColors.warning,
+      color: '#f59e0b',
       route: 'Forms',
       show: true,
+    },
+    {
+      id: 'videocall',
+      title: 'Video Görüşme',
+      icon: '📹',
+      color: '#ef4444',
+      route: 'VideoCall',
+      show: user?.abGroup === 'experiment',
     },
     {
       id: 'support',
       title: 'Destek',
       icon: '💬',
-      color: '#ec4899',
       route: 'Support',
+      color: '#ec4899',
       show: true,
     },
   ];
@@ -210,7 +203,7 @@ export default function DashboardScreen() {
   // ✅ SKELETON LOADING
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
         <View style={[styles.header, { backgroundColor: currentColors.surface, borderBottomColor: currentColors.border }]}>
           <View>
             <SkeletonLoader width={80} height={16} style={{ marginBottom: 8 }} />
@@ -239,7 +232,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
       {/* TOAST */}
       <Toast message={toastMessage} type={toastType} visible={toastVisible} onHide={() => setToastVisible(false)} />
 
@@ -250,117 +243,128 @@ export default function DashboardScreen() {
         </View>
       )}
 
+      {/* HEADER */}
+      <View style={[styles.header, { backgroundColor: currentColors.surface, borderBottomColor: currentColors.border }]}>
+        <View>
+          <Text style={[styles.greeting, { color: currentColors.secondary }]}>{getGreeting()},</Text>
+          <Text style={[styles.userName, { color: currentColors.primary }]}>{user?.name || 'Kullanıcı'}</Text>
+        </View>
+        <View style={[styles.avatarContainer, { backgroundColor: currentColors.brand }]}>
+          <Text style={styles.avatarText}>{user?.name?.charAt(0)?.toUpperCase() || '?'}</Text>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.content}
         contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currentColors.brand} />}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={currentColors.brand}
+            colors={[currentColors.brand]}
+          />
+        }
       >
-        {/* HEADER */}
-        <View style={[styles.header, { backgroundColor: currentColors.surface, borderBottomColor: currentColors.border }]}>
-          <View>
-            <Text style={[styles.greeting, { color: currentColors.secondary }]}>Hoş Geldiniz</Text>
-            <Text style={[styles.userName, { color: currentColors.primary }]}>{user?.name || 'Kullanıcı'}</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.profileButton, { backgroundColor: currentColors.brand }]}
-            onPress={() => handleCardPress('Profile')}
-          >
-            <Text style={styles.profileButtonText}>{user?.name?.charAt(0)?.toUpperCase() || '👤'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* İSTATİSTİKLER */}
+        {/* İSTATİSTİK KARTLARI */}
         <View style={styles.statsContainer}>
-          {stats.map((stat, index) => (
-            <Animated.View
-              key={index}
-              style={[styles.statCard, { backgroundColor: stat.bgColor, transform: [{ scale: scaleAnim }] }]}
-            >
-              <Text style={styles.statIcon}>{stat.icon}</Text>
-              <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
-              <Text style={[styles.statTitle, { color: currentColors.secondary }]}>{stat.title}</Text>
-              <Text style={[styles.statSubtitle, { color: currentColors.tertiary }]}>{stat.subtitle}</Text>
-            </Animated.View>
-          ))}
+          <View style={[styles.statCard, { backgroundColor: isDark ? 'rgba(99, 102, 241, 0.15)' : '#e0e7ff' }]}>
+            <Text style={styles.statIcon}>🛌</Text>
+            <Text style={[styles.statLabel, { color: isDark ? '#a5b4fc' : '#6366f1' }]}>Toplam Kayıt</Text>
+            <Text style={[styles.statValue, { color: isDark ? '#818cf8' : '#4f46e5' }]}>
+              {stats.totalSessions}
+            </Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#d1fae5' }]}>
+            <Text style={styles.statIcon}>⭐</Text>
+            <Text style={[styles.statLabel, { color: isDark ? '#6ee7b7' : '#10b981' }]}>Ort. Kalite</Text>
+            <Text style={[styles.statValue, { color: isDark ? '#34d399' : '#059669' }]}>
+              {stats.avgQuality > 0 ? stats.avgQuality.toFixed(1) : '0'}
+            </Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7' }]}>
+            <Text style={styles.statIcon}>⏰</Text>
+            <Text style={[styles.statLabel, { color: isDark ? '#fcd34d' : '#f59e0b' }]}>Ort. Süre</Text>
+            <Text style={[styles.statValue, { color: isDark ? '#fbbf24' : '#d97706' }]}>
+              {Math.round(stats.avgDuration)} dk
+            </Text>
+          </View>
         </View>
 
-        {/* HIZLI İŞLEMLER */}
+        {/* SON UYKU KAYDI */}
+        {stats.lastSession && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>😴 Son Uyku Kaydınız</Text>
+            <View style={[styles.lastSessionCard, { backgroundColor: currentColors.card }]}>
+              <View style={styles.lastSessionHeader}>
+                <Text style={[styles.lastSessionDate, { color: currentColors.secondary }]}>
+                  {new Date(stats.lastSession.sleep_date).toLocaleDateString('tr-TR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </Text>
+              </View>
+              <View style={styles.lastSessionStats}>
+                <View style={styles.lastSessionStat}>
+                  <Text style={[styles.lastSessionStatLabel, { color: currentColors.tertiary }]}>Kalite</Text>
+                  <Text style={[styles.lastSessionStatValue, { color: currentColors.primary }]}>
+                    {stats.lastSession.sleep_quality}/10
+                  </Text>
+                </View>
+                {stats.lastSession.sleep_duration && (
+                  <View style={styles.lastSessionStat}>
+                    <Text style={[styles.lastSessionStatLabel, { color: currentColors.tertiary }]}>Süre</Text>
+                    <Text style={[styles.lastSessionStatValue, { color: currentColors.primary }]}>
+                      {Math.round(stats.lastSession.sleep_duration)} dk
+                    </Text>
+                  </View>
+                )}
+              </View>
+              {stats.lastSession.notes && (
+                <Text style={[styles.lastSessionNotes, { color: currentColors.secondary }]}>
+                  {stats.lastSession.notes}
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* HIZLI ERİŞİM */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>Hızlı İşlemler</Text>
-          <View style={styles.actionsGrid}>
+          <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>⚡ Hızlı Erişim</Text>
+          <View style={styles.quickActionsGrid}>
             {quickActions
               .filter((action) => action.show)
               .map((action) => (
                 <TouchableOpacity
                   key={action.id}
-                  style={[styles.actionCard, { backgroundColor: isDark ? currentColors.card : action.color + '15' }]}
+                  style={[styles.quickActionCard, { backgroundColor: currentColors.card }]}
                   onPress={() => handleCardPress(action.route)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.actionIcon}>{action.icon}</Text>
-                  <Text style={[styles.actionTitle, { color: action.color }]}>{action.title}</Text>
+                  <View style={[styles.quickActionIconContainer, { backgroundColor: action.color + '20' }]}>
+                    <Text style={styles.quickActionIcon}>{action.icon}</Text>
+                  </View>
+                  <Text style={[styles.quickActionTitle, { color: currentColors.primary }]}>{action.title}</Text>
                 </TouchableOpacity>
               ))}
           </View>
         </View>
 
-        {/* SON UYKU KAYITLARI */}
-        {sleepSessions.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>Son Uyku Kayıtları</Text>
-              <TouchableOpacity onPress={() => handleCardPress('Sleep')}>
-                <Text style={[styles.seeAllText, { color: currentColors.brand }]}>Tümü →</Text>
-              </TouchableOpacity>
-            </View>
-            {sleepSessions.slice(0, 3).map((session) => (
-              <View key={session.id} style={[styles.recordCard, { backgroundColor: currentColors.card }]}>
-                <View style={styles.recordLeft}>
-                  <Text style={[styles.recordDate, { color: currentColors.primary }]}>{formatDate(session.sleep_date)}</Text>
-                  {session.notes && (
-                    <Text style={[styles.recordNotes, { color: currentColors.secondary }]} numberOfLines={1}>
-                      {session.notes}
-                    </Text>
-                  )}
-                </View>
-                <View style={styles.recordRight}>
-                  <Text style={[styles.recordQuality, { color: currentColors.brand }]}>{session.sleep_quality}/10</Text>
-                  <Text style={[styles.recordLabel, { color: currentColors.tertiary }]}>kalite</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* BETA KULLANICI BİLGİSİ */}
-        {(user?.abGroup === 'experiment' || user?.ab_group === 'experiment') && (
-          <View style={[styles.betaCard, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7', borderLeftColor: currentColors.warning }]}>
-            <Text style={styles.betaIcon}>🧪</Text>
-            <View style={styles.betaContent}>
-              <Text style={[styles.betaTitle, { color: isDark ? '#fbbf24' : '#92400e' }]}>Beta Kullanıcısı</Text>
-              <Text style={[styles.betaText, { color: isDark ? '#fde68a' : '#78350f' }]}>
-                Yeni özellikleri test ediyorsunuz: Rahatlama teknikleri ve Binaural sesler. Deneyimlerinizi
-                uzmanlarımızla paylaşmayı unutmayın!
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* YENİ KULLANICILAR İÇİN HOŞGELDİN MESAJI */}
-        {sleepSessions.length === 0 && (
-          <View style={[styles.welcomeCard, { backgroundColor: currentColors.card }]}>
-            <Text style={styles.welcomeIcon}>👋</Text>
-            <Text style={[styles.welcomeTitle, { color: currentColors.primary }]}>FidBal'e Hoş Geldiniz!</Text>
-            <Text style={[styles.welcomeText, { color: currentColors.secondary }]}>
-              Uyku kalitenizi takip etmeye hazır mısınız?{'\n'}
-              İlk uyku kaydınızı ekleyerek başlayın!
+        {/* İPUCU */}
+        <View style={[styles.tipCard, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe', borderLeftColor: currentColors.info }]}>
+          <Text style={styles.tipIcon}>💡</Text>
+          <View style={styles.tipContent}>
+            <Text style={[styles.tipTitle, { color: isDark ? '#60a5fa' : '#1e40af' }]}>İpucu</Text>
+            <Text style={[styles.tipText, { color: isDark ? '#93c5fd' : '#3b82f6' }]}>
+              Düzenli uyku takibi yaparak uyku kalitenizi artırabilir ve daha iyi uyku alışkanlıkları geliştirebilirsiniz.
             </Text>
-            <TouchableOpacity style={[styles.welcomeButton, { backgroundColor: currentColors.brand }]} onPress={() => handleCardPress('Sleep')}>
-              <Text style={styles.welcomeButtonText}>İlk Kaydı Oluştur</Text>
-            </TouchableOpacity>
           </View>
-        )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -368,57 +372,56 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flex: 1 },
-  offlineBanner: { padding: 12, alignItems: 'center' },
-  offlineBannerText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1 },
+  offlineBanner: { padding: 8, alignItems: 'center' },
+  offlineBannerText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
   greeting: { fontSize: 14, marginBottom: 4 },
   userName: { fontSize: 24, fontWeight: 'bold' },
-  profileButton: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 },
-  profileButtonText: { fontSize: 20, color: '#fff', fontWeight: 'bold' },
+  avatarContainer: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  content: { flex: 1 },
+
+  // İSTATİSTİKLER
   statsContainer: { flexDirection: 'row', padding: 16, gap: 12 },
-  statCard: {
-      flex: 1,
-      borderRadius: 16,
-      padding: 12,
-      alignItems: 'center',
-      minHeight: 140,
-      justifyContent: 'center'
-    },
-    statIcon: { fontSize: 32, marginBottom: 8 },
-    statValue: { fontSize: 22, fontWeight: 'bold', marginBottom: 4 },
-    statTitle: {
-      fontSize: 11,
-      fontWeight: '600',
-      textAlign: 'center',
-      marginBottom: 2,
-      lineHeight: 14,
-    },
-    statSubtitle: { fontSize: 9, textAlign: 'center' },
+  statCard: { 
+    flex: 1, 
+    borderRadius: 16, 
+    padding: 16, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 4, 
+    elevation: 2 
+  },
+  statIcon: { fontSize: 32, marginBottom: 8, textAlign: 'center' },
+  statLabel: { fontSize: 11, textAlign: 'center', marginBottom: 4, fontWeight: '600' },
+  statValue: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
+
+  // SON UYKU KAYDI
   section: { padding: 16 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
-  seeAllText: { fontSize: 14, fontWeight: '600' },
-  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  actionCard: { width: '48%', aspectRatio: 1.5, borderRadius: 16, padding: 16, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  actionIcon: { fontSize: 40, marginBottom: 8 },
-  actionTitle: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  recordCard: { flexDirection: 'row', justifyContent: 'space-between', borderRadius: 12, padding: 16, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  recordLeft: { flex: 1 },
-  recordDate: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  recordNotes: { fontSize: 13 },
-  recordRight: { alignItems: 'flex-end', justifyContent: 'center' },
-  recordQuality: { fontSize: 20, fontWeight: 'bold', marginBottom: 2 },
-  recordLabel: { fontSize: 11 },
-  betaCard: { flexDirection: 'row', margin: 16, padding: 16, borderRadius: 16, borderLeftWidth: 4, gap: 12 },
-  betaIcon: { fontSize: 32 },
-  betaContent: { flex: 1 },
-  betaTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  betaText: { fontSize: 13, lineHeight: 18 },
-  welcomeCard: { margin: 16, padding: 24, borderRadius: 16, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
-  welcomeIcon: { fontSize: 64, marginBottom: 16 },
-  welcomeTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
-  welcomeText: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 20 },
-  welcomeButton: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 },
-  welcomeButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  lastSessionCard: { borderRadius: 12, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  lastSessionHeader: { marginBottom: 12 },
+  lastSessionDate: { fontSize: 14 },
+  lastSessionStats: { flexDirection: 'row', gap: 16, marginBottom: 8 },
+  lastSessionStat: { flex: 1 },
+  lastSessionStatLabel: { fontSize: 12, marginBottom: 4 },
+  lastSessionStatValue: { fontSize: 20, fontWeight: 'bold' },
+  lastSessionNotes: { fontSize: 13, marginTop: 8, fontStyle: 'italic' },
+
+  // HIZLI ERİŞİM
+  quickActionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  quickActionCard: { width: '48%', borderRadius: 12, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  quickActionIconContainer: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  quickActionIcon: { fontSize: 28 },
+  quickActionTitle: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
+
+  // İPUCU
+  tipCard: { margin: 16, borderRadius: 12, padding: 16, flexDirection: 'row', borderLeftWidth: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  tipIcon: { fontSize: 28, marginRight: 12 },
+  tipContent: { flex: 1 },
+  tipTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 4 },
+  tipText: { fontSize: 13, lineHeight: 18 },
 });

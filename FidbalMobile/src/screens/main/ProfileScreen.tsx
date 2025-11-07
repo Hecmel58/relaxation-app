@@ -52,7 +52,7 @@ const TERMS_HTML = `
     Ad Soyad: Hasan Balkaya<br>
     Telefon: 0539 487 00 58<br>
     Adres: Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez<br>
-    E-posta: ecmelazizoglu@gmail.com
+    E-posta: Hecmel@fidbal.com
   </div>
 
   <h2>2. Sözleşmenin Konusu</h2>
@@ -132,7 +132,7 @@ const TERMS_HTML = `
   <h2>14. İletişim</h2>
   <p>Sözleşme ile ilgili sorularınız veya talepleriniz için aşağıdaki iletişim kanallarını kullanabilirsiniz:</p>
   <div class="info-box">
-    E-posta: ecmelazizoglu@gmail.com<br>
+    E-posta: Hecmel@fidbal.com<br>
     Telefon: 0539 487 00 58<br>
     Adres: Mehmet Akif Ersoy Mahallesi, 49-44 Sokak, Davutoğulları Apt., Kat: 4, Daire: 11, Sivas Merkez
   </div>
@@ -155,6 +155,8 @@ const TERMS_HTML = `
 
 export default function ProfileScreen() {
   const isDark = useThemeStore((state) => state.isDark);
+  const theme = useThemeStore((state) => state.theme);
+  const setTheme = useThemeStore((state) => state.setTheme);
   const isOnline = useOfflineStore((state) => state.isOnline);
   const { user, logout } = useAuthStore();
   const currentColors = isDark ? colors.dark : colors.light;
@@ -185,7 +187,7 @@ export default function ProfileScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
-  // ✅ DÜZELTİLMİŞ VERİ İNDİRME FONKSİYONU - Web sitesi ile aynı
+  // ✅ DÜZELTİLMİŞ VERİ İNDİRME FONKSİYONU - Endpoint düzeltildi
   const handleDownloadData = async () => {
     if (!isOnline) {
       showToast('Verileri indirmek için internet bağlantısı gerekli', 'error');
@@ -274,6 +276,7 @@ export default function ProfileScreen() {
   const executeDeleteAccount = async () => {
     setDeleting(true);
     try {
+      // ✅ Orijinal çalışan endpoint
       const response = await api.delete('/user/account');
       if (response.data.success) {
         showToast('Hesabınız başarıyla silindi. Güle güle!', 'success');
@@ -400,6 +403,71 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* ✅ YENİ: DARK MODE AYARLARI */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>🎨 Görünüm Ayarları</Text>
+          
+          <View style={[styles.themeContainer, { backgroundColor: currentColors.card, borderColor: currentColors.border }]}>
+            <Text style={[styles.themeLabel, { color: currentColors.primary }]}>Tema Seçimi</Text>
+            
+            <View style={styles.themeButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.themeButton,
+                  { borderColor: currentColors.border, backgroundColor: currentColors.input },
+                  theme === 'light' && { backgroundColor: currentColors.brand, borderColor: currentColors.brand }
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setTheme('light');
+                  showToast('Aydınlık tema aktif', 'success');
+                }}
+              >
+                <Text style={[styles.themeButtonIcon, theme === 'light' && { color: '#fff' }]}>☀️</Text>
+                <Text style={[styles.themeButtonText, { color: currentColors.primary }, theme === 'light' && { color: '#fff' }]}>
+                  Aydınlık
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.themeButton,
+                  { borderColor: currentColors.border, backgroundColor: currentColors.input },
+                  theme === 'dark' && { backgroundColor: currentColors.brand, borderColor: currentColors.brand }
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setTheme('dark');
+                  showToast('Karanlık tema aktif', 'success');
+                }}
+              >
+                <Text style={[styles.themeButtonIcon, theme === 'dark' && { color: '#fff' }]}>🌙</Text>
+                <Text style={[styles.themeButtonText, { color: currentColors.primary }, theme === 'dark' && { color: '#fff' }]}>
+                  Karanlık
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.themeButton,
+                  { borderColor: currentColors.border, backgroundColor: currentColors.input },
+                  theme === 'system' && { backgroundColor: currentColors.brand, borderColor: currentColors.brand }
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setTheme('system');
+                  showToast('Sistem teması aktif', 'success');
+                }}
+              >
+                <Text style={[styles.themeButtonIcon, theme === 'system' && { color: '#fff' }]}>📱</Text>
+                <Text style={[styles.themeButtonText, { color: currentColors.primary }, theme === 'system' && { color: '#fff' }]}>
+                  Sistem
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: currentColors.primary }]}>📄 Yasal Belgeler</Text>
 
@@ -448,7 +516,7 @@ export default function ProfileScreen() {
             © 2025 FidBal - Tüm Hakları Saklıdır
           </Text>
           <Text style={[styles.footerText, { color: currentColors.tertiary }]}>
-            Hecmel Tarafından Hazırlanmıştır
+          Hecmel Tarafından Hazırlanmıştır
           </Text>
         </View>
       </ScrollView>
@@ -471,7 +539,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
           <WebView
-            source={{ html: TERMS_HTML }}
+            source={{ uri: 'https://www.fidbal.com/terms' }}
             style={styles.webView}
             javaScriptEnabled
             domStorageEnabled
@@ -535,6 +603,13 @@ const styles = StyleSheet.create({
   actionButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, marginBottom: 12 },
   actionButtonIcon: { fontSize: 20, marginRight: 8 },
   actionButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  // ✅ YENİ: DARK MODE STYLES
+  themeContainer: { borderRadius: 12, padding: 16, borderWidth: 1, marginBottom: 16 },
+  themeLabel: { fontSize: 14, fontWeight: '600', marginBottom: 12 },
+  themeButtons: { flexDirection: 'row', gap: 8 },
+  themeButton: { flex: 1, padding: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center', gap: 4 },
+  themeButtonIcon: { fontSize: 20 },
+  themeButtonText: { fontSize: 12, fontWeight: '600' },
   linkButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 12, borderWidth: 1, marginBottom: 12 },
   linkButtonText: { fontSize: 15, fontWeight: '600' },
   linkButtonIcon: { fontSize: 24 },
@@ -545,11 +620,11 @@ const styles = StyleSheet.create({
   logoutButton: { padding: 16, borderRadius: 12, alignItems: 'center' },
   logoutButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   footer: { alignItems: 'center', padding: 24 },
-    footerText: { fontSize: 12, marginBottom: 4 },
-    webViewModalContainer: { flex: 1 },
-    webViewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
-    webViewTitle: { fontSize: 18, fontWeight: 'bold' },
-    webViewCloseButton: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    webViewCloseButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-    webView: { flex: 1 },
-  });
+  footerText: { fontSize: 12, marginBottom: 4 },
+  webViewModalContainer: { flex: 1 },
+  webViewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
+  webViewTitle: { fontSize: 18, fontWeight: 'bold' },
+  webViewCloseButton: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  webViewCloseButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  webView: { flex: 1 },
+});

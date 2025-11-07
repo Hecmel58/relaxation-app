@@ -4,6 +4,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { Text } from 'react-native';
 import { useAuthStore } from '../store/authStore';
+import { useThemeStore } from '../store/themeStore';
+import { colors } from '../utils/colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Auth Screens
@@ -26,18 +28,20 @@ const Tab = createBottomTabNavigator();
 
 function MainTabs() {
   const user = useAuthStore((state) => state.user);
+  const isDark = useThemeStore((state) => state.isDark);
+  const currentColors = isDark ? colors.dark : colors.light;
   const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: currentColors.brand,
+        tabBarInactiveTintColor: currentColors.tertiary,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: currentColors.surface,
           borderTopWidth: 1,
-          borderTopColor: '#e2e8f0',
+          borderTopColor: currentColors.border,
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom,
           paddingTop: 8,

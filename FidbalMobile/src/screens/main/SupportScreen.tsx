@@ -15,6 +15,7 @@ import {
   StatusBar,
   Keyboard,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -28,10 +29,15 @@ import {
   deleteDoc,
   doc,
   QuerySnapshot,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
+import { colors } from '../../utils/colors';
 import { WebView } from 'react-native-webview';
+import { requestCameraAndMicrophonePermissions, checkCameraAndMicrophonePermissions } from '../../utils/permissions';
+import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -52,6 +58,8 @@ interface VideoCall {
 
 export default function SupportScreen() {
   const { user } = useAuthStore();
+  const isDark = useThemeStore((state) => state.isDark);
+  const currentColors = isDark ? colors.dark : colors.light;
   const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -63,7 +71,9 @@ export default function SupportScreen() {
   const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [webViewLoaded, setWebViewLoaded] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const webViewRef = useRef<WebView>(null);
 
   // ✅ Cleanup refs
   const unsubMessagesRef = useRef<(() => void) | null>(null);
@@ -153,10 +163,10 @@ export default function SupportScreen() {
         console.log('📞 Video calls güncellendi, docs sayısı:', snapshot.docs.length);
 
         // Hiç doküman yoksa state'leri temizle
-        if (snapshot.docs.length === 0 && videoCallStatus === 'idle') {
-          setShowVideoCall(false);
-          setRoomId('');
-          setCurrentCallId(null);
+        if (snapshot.docs.length === 0) {
+          if (videoCallStatus !== 'idle') {
+            setVideoCallStatus('idle');
+          }
           return;
         }
 
@@ -170,20 +180,20 @@ export default function SupportScreen() {
             roomId: call.roomId
           });
 
-          // ✅ ADMIN KABUL ETTİ - Admin aynı odaya katılacak
+          // ✅ ADMIN KABUL ETTİ
           if (call.status === 'accepted' && call.roomId) {
-            console.log('✅ ADMIN KABUL ETTİ! Admin odaya katılıyor...');
+            console.log('✅✅✅ ADMIN KABUL ETTİ!');
+            
             setVideoCallStatus('connected');
-
-            // Birkaç saniye sonra Firebase'den temizle (görüşme başladıktan sonra)
-            setTimeout(async () => {
-              try {
-                await deleteDoc(doc(db, 'videoCalls', callId));
-                console.log('✅ Görüşme başladı, Firebase kaydı temizlendi');
-              } catch (e) {
-                console.error('Cleanup error:', e);
-              }
-            }, 5000); // 5 saniye sonra temizle
+            setCurrentCallId(callId);
+            
+            // Firebase'den hemen sil
+            try {
+              await deleteDoc(doc(db, 'videoCalls', callId));
+              console.log('✅ Video call kaydı temizlendi');
+            } catch (e) {
+              console.error('Cleanup error:', e);
+            }
 
             break;
           }
@@ -208,12 +218,11 @@ export default function SupportScreen() {
             break;
           }
 
-          // ⏳ BEKLEME DURUMU - Jitsi açık, admin bekleniyor
-          if (call.status === 'waiting' && showVideoCall) {
-            console.log('⏳ Admin bekleniyor, Jitsi açık...');
+          // ⏳ BEKLEME DURUMU
+          if (call.status === 'waiting') {
+            console.log('⏳ Admin bekleniyor...');
             setCurrentCallId(callId);
             setVideoCallStatus('waiting');
-            // Jitsi zaten açık, kullanıcı bekliyor
           }
         }
       },
@@ -230,13 +239,13 @@ export default function SupportScreen() {
         unsubVideoCallsRef.current();
       }
     };
-  }, [user?.userId, showVideoCall, videoCallStatus]);
+  }, [user?.userId, videoCallStatus]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user?.userId) return;
 
     const messageText = newMessage.trim();
-    setNewMessage(''); // Önce temizle, daha iyi UX
+    setNewMessage('');
     setLoading(true);
 
     try {
@@ -256,7 +265,7 @@ export default function SupportScreen() {
     } catch (error) {
       console.error('❌ Send message error:', error);
       Alert.alert('Hata', 'Mesaj gönderilemedi. Lütfen tekrar deneyin.');
-      setNewMessage(messageText); // Hata durumunda mesajı geri koy
+      setNewMessage(messageText);
     } finally {
       setLoading(false);
     }
@@ -272,6 +281,29 @@ export default function SupportScreen() {
       Alert.alert('Uyarı', 'Zaten aktif bir görüşme talebiniz var.');
       return;
     }
+
+    // Haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    console.log('🎬 Video call başlatılıyor...');
+    console.log('📋 Platform:', Platform.OS);
+
+    // Önce mevcut izinleri kontrol et
+    const hasExistingPermissions = await checkCameraAndMicrophonePermissions();
+    console.log('🔍 Mevcut izinler:', hasExistingPermissions);
+
+    if (!hasExistingPermissions) {
+      console.log('🔐 Yeni izin isteniyor...');
+      const hasPermissions = await requestCameraAndMicrophonePermissions();
+      console.log('📋 İzin sonucu:', hasPermissions);
+      
+      if (!hasPermissions) {
+        console.log('❌ İzinler reddedildi');
+        return;
+      }
+    }
+
+    console.log('✅ İzinler mevcut, devam ediliyor...');
 
     const newRoomId = `FidBal-Support-${user.userId}-${Date.now()}`;
 
@@ -296,11 +328,9 @@ export default function SupportScreen() {
       setCurrentCallId(docRef.id);
       setRoomId(newRoomId);
       setVideoCallStatus('waiting');
-
-      // HEMEN Jitsi Meet'i aç! Kullanıcı orada bekleyecek
       setShowVideoCall(true);
+      setWebViewLoaded(false);
 
-      // Alert gösterme, çünkü Jitsi açılıyor zaten
     } catch (error) {
       console.error('❌ Video call start error:', error);
       Alert.alert('Hata', 'Görüntülü görüşme başlatılamadı. Lütfen tekrar deneyin.');
@@ -313,8 +343,13 @@ export default function SupportScreen() {
 
   const handleEndCall = useCallback(async () => {
     console.log('📞 Video call sonlandırılıyor...');
+    
+    // Haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     setShowVideoCall(false);
     setVideoCallStatus('idle');
+    setWebViewLoaded(false);
 
     if (currentCallId) {
       try {
@@ -322,12 +357,27 @@ export default function SupportScreen() {
         console.log('✅ Video call Firebase\'den silindi');
       } catch (error) {
         console.error('End call cleanup error:', error);
+        
+        // Fallback: Query ile silme
+        try {
+          const q = query(
+            collection(db, 'videoCalls'),
+            where('userId', '==', user?.userId)
+          );
+          const snapshot = await getDocs(q);
+          snapshot.docs.forEach(async (document) => {
+            await deleteDoc(doc(db, 'videoCalls', document.id));
+          });
+          console.log('✅ Fallback cleanup başarılı');
+        } catch (fallbackError) {
+          console.error('Fallback cleanup error:', fallbackError);
+        }
       }
       setCurrentCallId(null);
     }
 
     setRoomId('');
-  }, [currentCallId]);
+  }, [currentCallId, user?.userId]);
 
   const formatTime = (timestamp: any) => {
     if (!timestamp) return '';
@@ -338,14 +388,318 @@ export default function SupportScreen() {
     });
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+  // WebView için Jitsi HTML - ANDROID FIX
+  const jitsiHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html {
+          height: 100%;
+          width: 100%;
+          overflow: hidden;
+          background: #000;
+        }
+        #jaas-container {
+          width: 100vw;
+          height: 100vh;
+          position: fixed;
+          top: 0;
+          left: 0;
+        }
+        .loading {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          color: white;
+          text-align: center;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="jaas-container"></div>
+      
+      <script src='https://meet.jit.si/external_api.js'></script>
+      <script>
+        console.log('🚀 Jitsi script yükleniyor...');
+        
+        // ANDROID MEDIA FIX - Kritik polyfill
+        (function() {
+          console.log('🔧 Android media polyfill başlatılıyor...');
+          
+          // MediaDevices polyfill for Android WebView
+          if (navigator.mediaDevices === undefined) {
+            navigator.mediaDevices = {};
+            console.log('✅ navigator.mediaDevices polyfill eklendi');
+          }
 
-      <View style={styles.header}>
+          if (navigator.mediaDevices.getUserMedia === undefined) {
+            navigator.mediaDevices.getUserMedia = function(constraints) {
+              console.log('📹 getUserMedia called with:', JSON.stringify(constraints));
+              
+              var legacyGetUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+              
+              if (!legacyGetUserMedia) {
+                console.error('❌ No getUserMedia implementation found');
+                return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
+              }
+              
+              return new Promise(function(resolve, reject) {
+                legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+              });
+            };
+            console.log('✅ getUserMedia polyfill eklendi');
+          }
+
+          // enumerateDevices polyfill
+          if (navigator.mediaDevices.enumerateDevices === undefined) {
+            navigator.mediaDevices.enumerateDevices = function() {
+              return new Promise(function(resolve) {
+                var kinds = {audio: 'audioinput', video: 'videoinput'};
+                return Promise.all(Object.keys(kinds).map(function(kind) {
+                  return navigator.mediaDevices.getUserMedia({[kind]: true})
+                    .then(function(stream) {
+                      stream.getTracks().forEach(function(track) { track.stop(); });
+                      return [{
+                        kind: kinds[kind],
+                        label: kind + ' device',
+                        deviceId: 'default',
+                        groupId: 'default'
+                      }];
+                    })
+                    .catch(function(e) {
+                      return [];
+                    });
+                })).then(function(devices) {
+                  resolve(devices.flat());
+                });
+              });
+            };
+            console.log('✅ enumerateDevices polyfill eklendi');
+          }
+        })();
+
+        // Jitsi başlatma
+        function startJitsi() {
+          try {
+            console.log('🎬 Jitsi Meet başlatılıyor...');
+            
+            const domain = 'meet.jit.si';
+            const options = {
+              roomName: '${roomId}',
+              width: '100%',
+              height: '100%',
+              parentNode: document.getElementById('jaas-container'),
+              userInfo: {
+                displayName: '${user?.name || 'Kullanıcı'}',
+                email: '${user?.email || ''}'
+              },
+              configOverwrite: {
+                // ANDROID FIX: Prejoin page'i devre dışı bırak - doğrudan odaya gir
+                prejoinPageEnabled: false,
+                startWithAudioMuted: false,
+                startWithVideoMuted: false,
+                disableDeepLinking: true,
+                disableInviteFunctions: true,
+                doNotStoreRoom: true,
+                enableWelcomePage: false,
+                enableClosePage: false,
+                
+                // ANDROID MEDIA CONSTRAINTS - Basit ayarlar
+                constraints: {
+                  video: {
+                    height: { ideal: 360, max: 360, min: 180 },
+                    width: { ideal: 640, max: 640, min: 320 },
+                    frameRate: { ideal: 20, max: 20 }
+                  },
+                  audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                  }
+                },
+                
+                // ANDROID PERFORMANS AYARLARI
+                disableAudioLevels: false,
+                enableNoAudioDetection: true,
+                enableNoisyMicDetection: true,
+                resolution: 360,
+                maxFullResolutionParticipants: 2,
+                enableLayerSuspension: true,
+                
+                // P2P devre dışı - sunucu üzerinden daha stabil
+                p2p: { enabled: false },
+                
+                // Diğer ayarlar
+                enableLobbyChat: false,
+                requireDisplayName: false,
+                disableModeratorIndicator: true,
+                startScreenSharing: false,
+                enableEmailInStats: false,
+                debug: false,
+                
+                // ANDROID FIX: Disable some features that cause issues
+                disableThirdPartyRequests: true,
+                enableAnalytics: false,
+                gatherStats: false
+              },
+              interfaceConfigOverwrite: {
+                // ANDROID FIX: Basit arayüz
+                MOBILE_APP_PROMO: false,
+                SHOW_JITSI_WATERMARK: false,
+                SHOW_WATERMARK_FOR_GUESTS: false,
+                SHOW_BRAND_WATERMARK: false,
+                SHOW_POWERED_BY: false,
+                SHOW_PROMOTIONAL_CLOSE_PAGE: false,
+                
+                // Toolbar ayarları
+                TOOLBAR_BUTTONS: [
+                  'microphone', 'camera', 'hangup', 'tileview'
+                ],
+                SETTINGS_SECTIONS: ['devices'],
+                VIDEO_LAYOUT_FIT: 'both',
+                TOOLBAR_ALWAYS_VISIBLE: false,
+                
+                // Display ayarları
+                DEFAULT_REMOTE_DISPLAY_NAME: 'Katılımcı',
+                DEFAULT_LOCAL_DISPLAY_NAME: '${user?.name || 'Kullanıcı'}',
+                APP_NAME: 'FidBal',
+                
+                // ANDROID FIX: Disable unnecessary features
+                DISABLE_VIDEO_BACKGROUND: false,
+                DISABLE_FOCUS_INDICATOR: false,
+                DISABLE_DOMINANT_SPEAKER_INDICATOR: false
+              }
+            };
+
+            console.log('⚙️ Jitsi options:', JSON.stringify(options, null, 2));
+            
+            const api = new JitsiMeetExternalAPI(domain, options);
+            console.log('✅ Jitsi API oluşturuldu');
+
+            // Event listeners
+            api.addEventListener('videoConferenceJoined', (e) => {
+              console.log('✅ Konferansa katıldı:', e);
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'joined'
+              }));
+            });
+
+            api.addEventListener('videoConferenceLeft', (e) => {
+              console.log('❌ Konferanstan ayrıldı:', e);
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'close'
+              }));
+            });
+
+            api.addEventListener('participantJoined', (e) => {
+              console.log('👤 Katılımcı katıldı:', e);
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'participantJoined'
+              }));
+            });
+
+            api.addEventListener('participantLeft', (e) => {
+              console.log('👤 Katılımcı ayrıldı:', e);
+            });
+
+            api.addEventListener('readyToClose', () => {
+              console.log('🔒 Jitsi kapanıyor');
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'close'
+              }));
+            });
+
+            // MEDIA EVENT'LERİ - Android debug için
+            api.addEventListener('audioAvailabilityChanged', (e) => {
+              console.log('🎤 Ses durumu değişti:', e);
+            });
+
+            api.addEventListener('videoAvailabilityChanged', (e) => {
+              console.log('📹 Video durumu değişti:', e);
+            });
+
+            api.addEventListener('deviceListChanged', (e) => {
+              console.log('🔧 Cihaz listesi değişti:', e);
+            });
+
+            api.addEventListener('mediaSessionStatus', (e) => {
+              console.log('📞 Media session durumu:', e);
+            });
+
+            // Hata yakalama
+            api.addEventListener('errorOccurred', (error) => {
+              console.error('❌ Jitsi hatası:', error);
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'error',
+                data: error
+              }));
+            });
+
+            // Conference events
+            api.addEventListener('conferenceJoined', () => {
+              console.log('🎉 Conference joined');
+            });
+
+            api.addEventListener('conferenceLeft', () => {
+              console.log('🚪 Conference left');
+            });
+
+          } catch (error) {
+            console.error('❌ Jitsi başlatma hatası:', error);
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'error',
+              message: error.toString()
+            }));
+          }
+        }
+
+        // Sayfa yüklendiğinde Jitsi'yi başlat
+        console.log('📄 DOM yüklendi, Jitsi başlatılıyor...');
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', startJitsi);
+        } else {
+          startJitsi();
+        }
+
+        // Fallback: 3 saniye sonra başlat
+        setTimeout(() => {
+          if (!window.jitsiAPI) {
+            console.log('🕒 Fallback: Jitsi timeout ile başlatılıyor...');
+            startJitsi();
+          }
+        }, 3000);
+
+      </script>
+    </body>
+    </html>
+  `;
+
+  return (
+    <SafeAreaView 
+      style={[styles.container, { backgroundColor: currentColors.background }]} 
+      edges={['top', 'bottom']}
+    >
+      <StatusBar 
+        barStyle={isDark ? 'light-content' : 'dark-content'} 
+        backgroundColor={currentColors.surface} 
+      />
+
+      <View style={[styles.header, { 
+        backgroundColor: currentColors.surface, 
+        borderBottomColor: currentColors.border 
+      }]}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Uzman Desteği</Text>
-          <Text style={styles.headerSubtitle}>Uyku uzmanlarımızla iletişime geçin</Text>
+          <Text style={[styles.headerTitle, { color: currentColors.primary }]}>
+            Uzman Desteği
+          </Text>
+          <Text style={[styles.headerSubtitle, { color: currentColors.secondary }]}>
+            Uyku uzmanlarımızla iletişime geçin
+          </Text>
         </View>
 
         {/* VİDEO CALL BUTONU */}
@@ -361,15 +715,20 @@ export default function SupportScreen() {
             accessibilityLabel="Görüntülü görüşme başlat"
             accessibilityRole="button"
           >
-            <Text style={styles.videoButtonText}>🎥</Text>
+            {videoCallStatus === 'waiting' ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.videoButtonText}>🎥</Text>
+            )}
           </TouchableOpacity>
         )}
       </View>
 
       <KeyboardAvoidingView
         style={styles.content}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        enabled={Platform.OS === 'ios'}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -390,11 +749,13 @@ export default function SupportScreen() {
           {messages.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>💬</Text>
-              <Text style={styles.emptyText}>Henüz mesaj yok</Text>
-              <Text style={styles.emptySubtext}>
+              <Text style={[styles.emptyText, { color: currentColors.primary }]}>
+                Henüz mesaj yok
+              </Text>
+              <Text style={[styles.emptySubtext, { color: currentColors.secondary }]}>
                 Uyku uzmanlarımıza sorularınızı sorabilirsiniz
               </Text>
-              <Text style={styles.refreshHint}>
+              <Text style={[styles.refreshHint, { color: currentColors.tertiary }]}>
                 ↻ Yukarı çekerek yenileyin
               </Text>
             </View>
@@ -404,26 +765,37 @@ export default function SupportScreen() {
                 key={msg.id}
                 style={[
                   styles.messageCard,
-                  msg.sender === 'user' ? styles.userMessage : styles.expertMessage
+                  msg.sender === 'user' 
+                    ? styles.userMessage 
+                    : [styles.expertMessage, { 
+                        backgroundColor: currentColors.card,
+                        borderColor: currentColors.border
+                      }]
                 ]}
               >
                 <View style={styles.messageHeader}>
                   <Text style={[
                     styles.messageSender,
-                    msg.sender === 'user' ? styles.userMessageSender : styles.expertMessageSender
+                    msg.sender === 'user' 
+                      ? styles.userMessageSender 
+                      : [styles.expertMessageSender, { color: currentColors.secondary }]
                   ]}>
                     {msg.sender === 'user' ? 'Siz' : 'Uzman'}
                   </Text>
                   <Text style={[
                     styles.messageTime,
-                    msg.sender === 'user' ? styles.userMessageTime : styles.expertMessageTime
+                    msg.sender === 'user' 
+                      ? styles.userMessageTime 
+                      : [styles.expertMessageTime, { color: currentColors.tertiary }]
                   ]}>
                     {formatTime(msg.timestamp)}
                   </Text>
                 </View>
                 <Text style={[
                   styles.messageText,
-                  msg.sender === 'user' ? styles.userMessageText : styles.expertMessageText
+                  msg.sender === 'user' 
+                    ? styles.userMessageText 
+                    : [styles.expertMessageText, { color: currentColors.primary }]
                 ]}>
                   {msg.text}
                 </Text>
@@ -434,12 +806,21 @@ export default function SupportScreen() {
 
         <View style={[
           styles.inputContainer,
-          Platform.OS === 'ios' && keyboardHeight > 0 && { paddingBottom: 10 }
+          { 
+            backgroundColor: currentColors.surface,
+            borderTopColor: currentColors.border,
+            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight : 
+                          Platform.OS === 'ios' && keyboardHeight > 0 ? 10 : 12
+          }
         ]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { 
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f8fafc',
+              borderColor: currentColors.border,
+              color: currentColors.primary
+            }]}
             placeholder="Mesajınızı yazın..."
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor={currentColors.tertiary}
             value={newMessage}
             onChangeText={setNewMessage}
             multiline
@@ -466,11 +847,20 @@ export default function SupportScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      <View style={[styles.infoCard, { marginBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={[
+        styles.infoCard, 
+        { 
+          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe',
+          borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : '#bfdbfe',
+          marginBottom: Math.max(insets.bottom, 16) 
+        }
+      ]}>
         <Text style={styles.infoIcon}>💡</Text>
         <View style={styles.infoTextContainer}>
-          <Text style={styles.infoTitle}>İpucu</Text>
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoTitle, { color: isDark ? '#60a5fa' : '#1e40af' }]}>
+            İpucu
+          </Text>
+          <Text style={[styles.infoText, { color: isDark ? '#60a5fa' : '#1e40af' }]}>
             Uzmanlarımız hafta içi 09:00-18:00 saatleri arasında çevrimiçidir
           </Text>
         </View>
@@ -483,193 +873,49 @@ export default function SupportScreen() {
         presentationStyle="fullScreen"
         onRequestClose={handleEndCall}
         supportedOrientations={['portrait', 'landscape']}
-        statusBarTranslucent={true}
+        statusBarTranslucent={false}
       >
-        <SafeAreaView style={styles.videoContainer} edges={['top', 'bottom', 'left', 'right']}>
-          <StatusBar barStyle="light-content" backgroundColor="#1e293b" translucent={true} />
-
-          <View style={[styles.videoHeader, { paddingTop: insets.top }]}>
-            <Text style={styles.videoTitle}>Görüntülü Görüşme</Text>
-            <TouchableOpacity
-              style={styles.endCallButton}
-              onPress={handleEndCall}
-              accessibilityLabel="Görüşmeyi bitir"
-              accessibilityRole="button"
-            >
-              <Text style={styles.endCallButtonText}>📞 Bitir</Text>
-            </TouchableOpacity>
+        <SafeAreaView style={styles.videoContainer} edges={['top', 'bottom']}>
+          <StatusBar barStyle="light-content" backgroundColor="#1e293b" translucent={false} />
+          
+          <View style={styles.videoSafeArea}>
+            <View style={styles.videoHeader}>
+              <Text style={styles.videoTitle}>Görüntülü Görüşme</Text>
+              <TouchableOpacity
+                style={styles.endCallButton}
+                onPress={handleEndCall}
+                accessibilityLabel="Görüşmeyi bitir"
+                accessibilityRole="button"
+              >
+                <Text style={styles.endCallButtonText}>📞 Bitir</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {roomId ? (
-            <>
+            <View style={styles.webviewWrapper}>
               {/* BEKLEME OVERLAY - Admin henüz katılmadıysa göster */}
               {videoCallStatus === 'waiting' && (
-                <View style={[styles.waitingOverlay, { top: insets.top + 60 }]}>
-                  <ActivityIndicator size="large" color="#fff" style={styles.waitingSpinner} />
-                  <Text style={styles.waitingIcon}>⏳</Text>
-                  <Text style={styles.waitingOverlayTitle}>Uzman Bekleniyor</Text>
-                  <Text style={styles.waitingOverlayText}>
-                    Uzman görüşmeye katıldığında otomatik olarak bağlanacaksınız
-                  </Text>
-                  <Text style={styles.waitingOverlaySubtext}>
-                    Lütfen bu ekranda bekleyiniz...
-                  </Text>
+                <View style={styles.waitingOverlayContainer}>
+                  <View style={styles.waitingCard}>
+                    <ActivityIndicator size="large" color="#3b82f6" style={styles.waitingSpinner} />
+                    <Text style={styles.waitingIcon}>⏳</Text>
+                    <Text style={styles.waitingOverlayTitle}>Uzman Bekleniyor</Text>
+                    <Text style={styles.waitingOverlayText}>
+                      Uzman görüşmeye katıldığında otomatik olarak bağlanacaksınız
+                    </Text>
+                    <Text style={styles.waitingOverlaySubtext}>
+                      Lütfen bu ekranda bekleyiniz...
+                    </Text>
+                  </View>
                 </View>
               )}
 
               <View style={styles.webviewContainer}>
                 <WebView
+                  ref={webViewRef}
                   source={{
-                    html: `
-                      <!DOCTYPE html>
-                      <html>
-                      <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-                        <style>
-                          * { margin: 0; padding: 0; box-sizing: border-box; }
-                          body, html {
-                            height: 100%;
-                            width: 100%;
-                            overflow: hidden;
-                            background: #000;
-                          }
-                          #jaas-container {
-                            width: 100vw;
-                            height: 100vh;
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                          }
-                        </style>
-                      </head>
-                      <body>
-                        <div id="jaas-container"></div>
-                        <script src='https://meet.jit.si/external_api.js'></script>
-                        <script>
-                          window.onload = function() {
-                            try {
-                              const domain = 'meet.jit.si';
-                              const options = {
-                                roomName: '${roomId}',
-                                width: '100%',
-                                height: '100%',
-                                parentNode: document.getElementById('jaas-container'),
-                                userInfo: {
-                                  displayName: '${user?.name || 'Kullanıcı'}',
-                                  email: '${user?.email || ''}'
-                                },
-                                configOverwrite: {
-                                  startWithAudioMuted: false,
-                                  startWithVideoMuted: false,
-                                  prejoinPageEnabled: false,
-                                  disableDeepLinking: true,
-                                  disableInviteFunctions: false,
-                                  doNotStoreRoom: true,
-                                  enableWelcomePage: false,
-                                  enableClosePage: false,
-                                  disable1On1Mode: false,
-                                  p2p: {
-                                    enabled: false
-                                  },
-                                  enableLobbyChat: false,
-                                  requireDisplayName: false,
-                                  disableModeratorIndicator: false,
-                                  startScreenSharing: false,
-                                  enableEmailInStats: false
-                                },
-                                interfaceConfigOverwrite: {
-                                  MOBILE_APP_PROMO: false,
-                                  ANDROID_APP_PACKAGE: null,
-                                  APP_NAME: 'FidBal Meet',
-                                  SHOW_JITSI_WATERMARK: false,
-                                  SHOW_WATERMARK_FOR_GUESTS: false,
-                                  SHOW_BRAND_WATERMARK: false,
-                                  BRAND_WATERMARK_LINK: '',
-                                  SHOW_POWERED_BY: false,
-                                  SHOW_PROMOTIONAL_CLOSE_PAGE: false,
-                                  SHOW_CHROME_EXTENSION_BANNER: false,
-                                  TOOLBAR_BUTTONS: [
-                                    'microphone',
-                                    'camera',
-                                    'hangup',
-                                    'chat',
-                                    'fullscreen',
-                                    'fodeviceselection',
-                                    'toggle-camera'
-                                  ],
-                                  SETTINGS_SECTIONS: ['devices', 'language'],
-                                  VIDEO_QUALITY_LABEL_DISABLED: false,
-                                  CONNECTION_INDICATOR_DISABLED: false,
-                                  VIDEO_LAYOUT_FIT: 'both',
-                                  MOBILE_APP_REDIRECT: false,
-                                  SHOW_DEEP_LINKING_IMAGE: false,
-                                  GENERATE_ROOMNAMES_ON_WELCOME_PAGE: false,
-                                  DISPLAY_WELCOME_PAGE_CONTENT: false,
-                                  INVITATION_POWERED_BY: false,
-                                  AUTHENTICATION_ENABLE: false,
-                                  TOOLBAR_ALWAYS_VISIBLE: false,
-                                  TOOLBAR_TIMEOUT: 4000,
-                                  DEFAULT_REMOTE_DISPLAY_NAME: 'Katılımcı',
-                                  DEFAULT_LOCAL_DISPLAY_NAME: '${user?.name || 'Kullanıcı'}'
-                                },
-                                onload: function() {
-                                  window.ReactNativeWebView.postMessage(JSON.stringify({
-                                    type: 'loaded',
-                                    message: 'Jitsi Meet yüklendi'
-                                  }));
-                                }
-                              };
-
-                              const api = new JitsiMeetExternalAPI(domain, options);
-
-                              // Event listeners
-                              api.addEventListener('videoConferenceJoined', function(event) {
-                                window.ReactNativeWebView.postMessage(JSON.stringify({
-                                  type: 'joined',
-                                  data: event
-                                }));
-                              });
-
-                              api.addEventListener('videoConferenceLeft', function(event) {
-                                window.ReactNativeWebView.postMessage(JSON.stringify({
-                                  type: 'left',
-                                  data: event
-                                }));
-                              });
-
-                              api.addEventListener('participantJoined', function(event) {
-                                window.ReactNativeWebView.postMessage(JSON.stringify({
-                                  type: 'participantJoined',
-                                  data: event
-                                }));
-                              });
-
-                              api.addEventListener('readyToClose', function() {
-                                window.ReactNativeWebView.postMessage(JSON.stringify({
-                                  type: 'close'
-                                }));
-                              });
-
-                              // Hata yakalama
-                              api.addEventListener('errorOccurred', function(event) {
-                                window.ReactNativeWebView.postMessage(JSON.stringify({
-                                  type: 'error',
-                                  data: event
-                                }));
-                              });
-
-                            } catch (error) {
-                              window.ReactNativeWebView.postMessage(JSON.stringify({
-                                type: 'error',
-                                message: error.toString()
-                              }));
-                            }
-                          }
-                        </script>
-                      </body>
-                      </html>
-                    `,
+                    html: jitsiHTML,
                     baseUrl: 'https://meet.jit.si'
                   }}
                   style={styles.webview}
@@ -684,70 +930,102 @@ export default function SupportScreen() {
                   allowsProtectedMedia={true}
                   allowFileAccess={true}
                   allowUniversalAccessFromFileURLs={true}
-                  renderLoading={() => (
-                    <View style={styles.webviewLoading}>
-                      <ActivityIndicator size="large" color="#3b82f6" />
-                      <Text style={styles.webviewLoadingText}>Yükleniyor...</Text>
-                    </View>
-                  )}
+                  allowFileAccessFromFileURLs={true}
+                  
+                  // ANDROID KRİTİK AYARLAR
+                  androidLayerType="hardware"
+                  androidHardwareAccelerationDisabled={false}
+                  cacheEnabled={true}
+                  thirdPartyCookiesEnabled={true}
+                  sharedCookiesEnabled={true}
+                  
+                  // ANDROID MEDIA İZİNLERİ
+                  mediaCapturePermissionGrantType="grant"
+                  onPermissionRequest={(event) => {
+                    console.log('🔐 WebView permission request:', event.nativeEvent.resources);
+                    // Tüm izinleri HEMEN ver
+                    if (event.nativeEvent.resources.includes('video-capture') || 
+                        event.nativeEvent.resources.includes('audio-capture')) {
+                      event.nativeEvent.grant(event.nativeEvent.resources);
+                      console.log('✅ WebView media izinleri verildi:', event.nativeEvent.resources);
+                    }
+                  }}
+                  
+                  // ANDROID FIX: WebView message handling
                   onMessage={(event) => {
                     try {
                       const message = JSON.parse(event.nativeEvent.data);
-                      console.log('📱 Jitsi Event:', message);
-
-                      // ÖNEMSİZ HATALARI FİLTRELE
-                      if (message.type === 'error') {
-                        const errorName = message.data?.error?.name;
-
-                        // Önemsiz/bilinen hataları görmezden gel
-                        const ignorableErrors = [
-                          'conference.connectionError.membersOnly',
-                          'conference.connectionError',
-                          'conference.setupError',
-                          'conference.connectionError.other'
-                        ];
-
-                        if (ignorableErrors.includes(errorName)) {
-                          console.log('⚠️ Jitsi bilinen hata (görmezden geliniyor):', errorName);
-                          return; // Bu hatayı işleme, devam et
-                        }
-
-                        // Ciddi hataları göster
-                        console.error('❌ Jitsi Error:', message);
-                        if (message.data?.error?.isFatal) {
-                          Alert.alert('Hata', 'Video görüşmede bir sorun oluştu');
-                        }
-                        return;
-                      }
+                      console.log('📱 Jitsi Event:', message.type);
 
                       if (message.type === 'close' || message.type === 'left') {
+                        console.log('🚪 Call ended by user');
                         handleEndCall();
                       } else if (message.type === 'joined') {
-                        console.log('✅ Konferansa katıldı');
+                        console.log('✅ Conference joined successfully');
+                        setVideoCallStatus('connected');
                       } else if (message.type === 'participantJoined') {
-                        console.log('👤 Katılımcı katıldı:', message.data);
-                        // Admin katıldıysa overlay'i kaldır
-                        if (videoCallStatus === 'waiting') {
-                          setVideoCallStatus('connected');
+                        console.log('👤 Participant joined - admin connected!');
+                        setVideoCallStatus('connected');
+                      } else if (message.type === 'error') {
+                        console.error('❌ Jitsi Error:', message);
+                        // Media hatası durumunda kullanıcıyı bilgilir
+                        if (message.message && message.message.includes('media')) {
+                          Alert.alert(
+                            'Medya Hatası', 
+                            'Kamera veya mikrofon başlatılamadı. Lütfen uygulama izinlerini kontrol edin.',
+                            [{ text: 'Tamam', onPress: handleEndCall }]
+                          );
                         }
                       }
                     } catch (error) {
                       console.error('Message parse error:', error);
                     }
                   }}
-                  onError={(error) => {
-                    console.error('WebView error:', error);
-                    Alert.alert('Hata', 'Video görüşme yüklenemedi');
+                  
+                  onLoadStart={() => {
+                    console.log('🌐 WebView yükleniyor...');
+                    setWebViewLoaded(false);
                   }}
-                  onLoadStart={() => console.log('🎥 Jitsi yükleniyor...')}
-                  onLoadEnd={() => console.log('✅ Jitsi yüklendi')}
+                  
+                  onLoadEnd={() => {
+                    console.log('✅ WebView yüklendi');
+                    setWebViewLoaded(true);
+                  }}
+                  
+                  onLoadProgress={({ nativeEvent }) => {
+                    console.log(`📊 WebView progress: ${Math.round(nativeEvent.progress * 100)}%`);
+                  }}
+                  
+                  onError={(error) => {
+                    console.error('❌ WebView error:', error.nativeEvent);
+                    Alert.alert('Yükleme Hatası', 'Video görüşme başlatılamadı. Lütfen tekrar deneyin.');
+                  }}
+                  
+                  onHttpError={(error) => {
+                    console.error('❌ WebView HTTP error:', error.nativeEvent);
+                  }}
+                  
+                  onContentProcessDidTerminate={() => {
+                    console.log('🔄 WebView process terminated, reloading...');
+                    webViewRef.current?.reload();
+                  }}
+                  
+                  renderLoading={() => (
+                    <View style={styles.webviewLoading}>
+                      <ActivityIndicator size="large" color="#3b82f6" />
+                      <Text style={styles.webviewLoadingText}>Jitsi Meet başlatılıyor...</Text>
+                      <Text style={styles.webviewLoadingSubtext}>
+                        {Platform.OS === 'android' ? 'Android media ayarları yapılıyor...' : 'iOS optimizasyonu aktif'}
+                      </Text>
+                    </View>
+                  )}
                 />
               </View>
-            </>
+            </View>
           ) : (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#fff" />
-              <Text style={styles.loadingText}>Bağlanıyor...</Text>
+              <Text style={styles.loadingText}>Oda hazırlanıyor...</Text>
             </View>
           )}
         </SafeAreaView>
@@ -760,16 +1038,13 @@ const styles = StyleSheet.create({
   // Container styles
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc'
   },
 
   // Header styles
   header: {
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e2e8f0',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
@@ -792,12 +1067,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: Platform.OS === 'ios' ? '700' : 'bold',
-    color: '#0f172a',
     letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#64748b',
     marginTop: 4,
     lineHeight: 18,
   },
@@ -824,6 +1097,7 @@ const styles = StyleSheet.create({
   },
   videoButtonDisabled: {
     opacity: 0.5,
+    backgroundColor: '#6b7280',
   },
   videoButtonText: {
     fontSize: 24
@@ -855,12 +1129,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#0f172a',
     marginBottom: 8
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#64748b',
     textAlign: 'center',
     paddingHorizontal: 32,
     lineHeight: 20,
@@ -868,7 +1140,6 @@ const styles = StyleSheet.create({
   },
   refreshHint: {
     fontSize: 12,
-    color: '#94a3b8',
     fontStyle: 'italic',
   },
 
@@ -887,9 +1158,7 @@ const styles = StyleSheet.create({
   },
   expertMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
     borderBottomLeftRadius: 4,
   },
   messageHeader: {
@@ -908,7 +1177,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
   },
   expertMessageSender: {
-    color: '#64748b',
   },
   messageTime: {
     fontSize: 10,
@@ -918,7 +1186,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
   },
   expertMessageTime: {
-    color: '#94a3b8',
   },
   messageText: {
     fontSize: 15,
@@ -928,7 +1195,6 @@ const styles = StyleSheet.create({
     color: '#fff'
   },
   expertMessageText: {
-    color: '#0f172a'
   },
 
   // Input area
@@ -936,15 +1202,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e2e8f0',
     gap: 8,
     alignItems: 'flex-end',
   },
   input: {
     flex: 1,
-    backgroundColor: '#f8fafc',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: Platform.OS === 'ios' ? 10 : 8,
@@ -952,8 +1215,6 @@ const styles = StyleSheet.create({
     maxHeight: 120,
     minHeight: 40,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    color: '#0f172a',
   },
   sendButton: {
     width: 40,
@@ -974,13 +1235,11 @@ const styles = StyleSheet.create({
   // Info card
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: '#dbeafe',
     marginHorizontal: 16,
     marginTop: 12,
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#bfdbfe',
     alignItems: 'center',
     gap: 12
   },
@@ -993,12 +1252,10 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1e40af',
     marginBottom: 2
   },
   infoText: {
     fontSize: 12,
-    color: '#1e40af',
     lineHeight: 16,
   },
 
@@ -1006,6 +1263,9 @@ const styles = StyleSheet.create({
   videoContainer: {
     flex: 1,
     backgroundColor: '#000'
+  },
+  videoSafeArea: {
+    backgroundColor: '#1e293b',
   },
   videoHeader: {
     flexDirection: 'row',
@@ -1043,6 +1303,12 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
 
+  // WebView wrapper
+  webviewWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
+
   // WebView
   webviewContainer: {
     flex: 1,
@@ -1067,6 +1333,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
   },
+  webviewLoadingSubtext: {
+    color: '#94a3b8',
+    marginTop: 4,
+    fontSize: 12,
+  },
 
   // Loading states
   loadingContainer: {
@@ -1082,35 +1353,62 @@ const styles = StyleSheet.create({
   },
 
   // Waiting overlay
-  waitingOverlay: {
+  waitingOverlayContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
+    top: 0,
     bottom: 0,
-    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
-    padding: 20
+    padding: 20,
+  },
+  waitingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    maxWidth: 320,
+    width: '100%',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
   },
   waitingSpinner: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   waitingIcon: {
     fontSize: 48,
-    marginBottom: 20
+    marginBottom: 16
+  },
+  waitingOverlayTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   waitingOverlayText: {
-      fontSize: 16,
-      color: '#cbd5e1',
-      textAlign: 'center',
-      marginBottom: 8,
-      lineHeight: 22,
-    },
-    waitingOverlaySubtext: {
-      fontSize: 14,
-      color: '#94a3b8',
-      textAlign: 'center',
-      fontStyle: 'italic'
-    },
-  });
+    fontSize: 15,
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 22,
+  },
+  waitingOverlaySubtext: {
+    fontSize: 13,
+    color: '#94a3b8',
+    textAlign: 'center',
+    fontStyle: 'italic'
+  },
+});
