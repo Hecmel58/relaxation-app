@@ -12,6 +12,10 @@ const { RATE_LIMIT } = require('./src/config/constants');
 const logger = require('./src/utils/logger');
 
 const app = express();
+
+// Trust proxy - Vercel için gerekli (X-Forwarded-For uyarısını düzeltir)
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 
 const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'NODE_ENV'];
@@ -80,17 +84,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const generalLimiter = rateLimit({
   windowMs: RATE_LIMIT.WINDOW_MS,
   max: 1000,
-  message: { success: false, error: 'Çok fazla istek gönderdiniz. Lütfen biraz bekleyin.' },
+  message: { success: false, error: 'Cok fazla istek gonderdiniz. Lutfen biraz bekleyin.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path.includes('/health') || req.path.includes('/chat/unread-count')
+  skip: (req) => req.path.includes('/health') || req.path.includes('/chat/unread-count') || req.path.includes('/cron/ping')
 });
 
 const authLimiter = rateLimit({
   windowMs: RATE_LIMIT.WINDOW_MS,
   max: 50,
   skipSuccessfulRequests: true,
-  message: { success: false, error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
+  message: { success: false, error: 'Cok fazla giris denemesi. 15 dakika sonra tekrar deneyin.' },
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.body.phone || req.ip,
@@ -98,7 +102,7 @@ const authLimiter = rateLimit({
     logger.warn(`Rate limit exceeded for IP: ${req.ip}, Phone: ${req.body.phone || 'N/A'}`);
     res.status(429).json({
       success: false,
-      error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.'
+      error: 'Cok fazla giris denemesi. 15 dakika sonra tekrar deneyin.'
     });
   }
 });
@@ -106,6 +110,26 @@ const authLimiter = rateLimit({
 app.use('/api', generalLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+
+// Cron job endpoint - Neon'u uyku modundan çıkarmak için
+app.get('/api/cron/ping', async (req, res) => {
+  try {
+    const pool = require('./src/config/database');
+    await pool.query('SELECT 1');
+    res.json({ 
+      success: true, 
+      message: 'Database ping successful',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Cron ping error:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Database ping failed',
+      message: error.message
+    });
+  }
+});
 
 app.get('/', (req, res) => {
   res.json({
@@ -128,7 +152,7 @@ app.use(errorHandler);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    error: 'Endpoint bulunamadı',
+    error: 'Endpoint bulunamadi',
     path: req.path
   });
 });

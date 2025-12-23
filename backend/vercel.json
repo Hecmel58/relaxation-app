@@ -12,6 +12,12 @@
       "destination": "/index.js"
     }
   ],
+  "crons": [
+    {
+      "path": "/api/cron/ping",
+      "schedule": "*/4 * * * *"
+    }
+  ],
   "env": {
     "NODE_ENV": "production"
   },
