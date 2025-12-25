@@ -1,31 +1,48 @@
-const { Pool } = require('pg');
+const { neon } = require('@neondatabase/serverless');
 require('dotenv').config();
 
-// Neon serverless için optimize edilmiş ayarlar
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
+// Neon Serverless Driver - HTTP tabanlı, TCP cold start yok
+const sql = neon(process.env.DATABASE_URL);
+
+console.log('Using Neon Serverless Driver (HTTP-based)');
+
+// Pool benzeri interface - mevcut kodla uyumlu
+const pool = {
+  // Ana query metodu
+  query: async (text, params) => {
+    try {
+      let result;
+      if (params && params.length > 0) {
+        result = await sql.unsafe(text, params);
+      } else {
+        result = await sql.unsafe(text);
+      }
+      return { 
+        rows: Array.isArray(result) ? result : [result], 
+        rowCount: Array.isArray(result) ? result.length : 1 
+      };
+    } catch (err) {
+      console.error('Database query error:', err.message);
+      throw err;
+    }
   },
-  max: 5,
-  idleTimeoutMillis: 120000,
-  connectionTimeoutMillis: 60000,
-  statement_timeout: 60000,
-  query_timeout: 60000,
-  keepAlive: true,
-  keepAliveInitialDelayMillis: 10000
-});
 
-pool.on('error', (err) => {
-  console.error('Unexpected database error:', err);
-});
+  // Connect metodu - uyumluluk için
+  connect: async () => {
+    return {
+      query: pool.query,
+      release: () => {}
+    };
+  },
 
-pool.on('connect', () => {
-  console.log('New database connection established');
-});
+  // Event handlers - uyumluluk için
+  on: (event, handler) => {
+    // Neon serverless'ta event'ler kullanılmaz
+  }
+};
 
-// Retry mantigi ile sorgu calistirma
-const queryWithRetry = async (text, params, retries = 5) => {
+// Retry mantığı ile query
+const queryWithRetry = async (text, params, retries = 3) => {
   let lastError;
   
   for (let i = 0; i < retries; i++) {
@@ -34,58 +51,33 @@ const queryWithRetry = async (text, params, retries = 5) => {
       return result;
     } catch (err) {
       lastError = err;
-      console.error(`Database query attempt ${i + 1}/${retries} failed:`, err.message);
+      console.error(`Query attempt ${i + 1}/${retries} failed:`, err.message);
       
-      // Baglanti hatasi kontrolu
-      const isConnectionError = 
-        err.message.includes('timeout') || 
-        err.message.includes('connection') ||
-        err.message.includes('terminated') ||
-        err.message.includes('ECONNRESET') ||
-        err.message.includes('ETIMEDOUT') ||
-        err.message.includes('Connection terminated') ||
-        err.code === 'ECONNRESET' ||
-        err.code === 'ETIMEDOUT' ||
-        err.code === '57P01' ||
-        err.code === '57P02' ||
-        err.code === '57P03';
-      
-      // Son deneme degilse ve baglanti hatasi ise bekle ve tekrar dene
-      if (i < retries - 1 && isConnectionError) {
-        const waitTime = Math.min((i + 1) * 2000, 10000);
-        console.log(`Retrying in ${waitTime/1000} seconds...`);
+      if (i < retries - 1) {
+        const waitTime = (i + 1) * 1000;
+        console.log(`Retrying in ${waitTime/1000}s...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
-        continue;
       }
-      throw err;
     }
   }
   throw lastError;
 };
 
-// Test connection with retry
+// Test connection
 const testConnection = async () => {
-  for (let i = 0; i < 5; i++) {
-    try {
-      const res = await pool.query('SELECT NOW()');
-      console.log('Database connected successfully');
-      return true;
-    } catch (err) {
-      console.error(`Database connection attempt ${i + 1}/5 failed:`, err.message);
-      if (i < 4) {
-        const waitTime = (i + 1) * 3000;
-        console.log(`Retrying connection in ${waitTime/1000} seconds...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
+  try {
+    await sql`SELECT 1`;
+    console.log('Database connected successfully (Neon Serverless HTTP)');
+    return true;
+  } catch (err) {
+    console.error('Database connection failed:', err.message);
+    return false;
   }
-  console.error('All database connection attempts failed');
-  return false;
 };
 
-// Initial connection test
 testConnection();
 
-// Export both pool and retry function
+// Export - pool olarak export et (mevcut kodla uyumlu)
 module.exports = pool;
+module.exports.query = pool.query;
 module.exports.queryWithRetry = queryWithRetry;
