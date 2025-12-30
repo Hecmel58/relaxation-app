@@ -13,7 +13,7 @@ const logger = require('./src/utils/logger');
 
 const app = express();
 
-// Trust proxy - Vercel için gerekli (X-Forwarded-For uyarısını düzeltir)
+// Trust proxy - Fly.io ve Vercel icin gerekli
 app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3000;
@@ -46,6 +46,7 @@ const allowedOrigins = [
   'https://fidbal.com',
   'https://www.fidbal.com',
   'https://fidbal-backend.vercel.app',
+  'https://relaxation-app.fly.dev',
   'https://relaxation-app.pages.dev'
 ];
 
@@ -53,7 +54,7 @@ app.use(cors({
   origin: function(origin, callback) {
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('pages.dev') || origin.includes('cloudflare')) {
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('pages.dev') || origin.includes('cloudflare') || origin.includes('fly.dev')) {
       callback(null, true);
     } else {
       logger.warn(`CORS blocked origin: ${origin}`);
@@ -111,7 +112,16 @@ app.use('/api', generalLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-// Cron job endpoint - Neon'u uyku modundan çıkarmak için
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'FidBal API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Cron job endpoint - Neon'u uyku modundan cikarmak icin
 app.get('/api/cron/ping', async (req, res) => {
   try {
     const pool = require('./src/config/database');
@@ -167,10 +177,9 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    logger.info(`FidBal Backend API v2.0 running on port ${PORT}`);
-  });
-}
+// Fly.io ve diger platformlar icin 0.0.0.0'da dinle
+app.listen(PORT, '0.0.0.0', () => {
+  logger.info(`FidBal Backend API v2.0 running on 0.0.0.0:${PORT}`);
+});
 
 module.exports = app;
