@@ -1,0 +1,36 @@
+node_modules/
+.env
+.DS_Store
+*.log
+.vercel
+dist/
+build/
+logs/
+*.log
+.env.local
+.env.development
+.env.production
+.env.test
+# Büyük dosyalar
+*.zip
+*.rar
+*.7z
+
+# Node modules
+node_modules/
+backend/node_modules/
+mobile/node_modules/
+
+# Build dosyaları
+dist/
+build/
+*.exe
+
+# Geçici dosyalar
+*.tmp
+*.temp
+.cache/
+
+# Platform-specific
+.DS_Store
+Thumbs.db
