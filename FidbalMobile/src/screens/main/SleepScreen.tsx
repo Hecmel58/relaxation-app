@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   RefreshControl,
   Modal,
@@ -16,7 +15,6 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as Haptics from 'expo-haptics';
 import { useThemeStore } from '../../store/themeStore';
 import { useOfflineStore } from '../../store/offlineStore';
@@ -28,27 +26,28 @@ import api from '../../services/api';
 interface SleepSession {
   id: number;
   sleep_date: string;
+  bedtime?: string;
   sleep_time?: string;
   wake_time?: string;
   sleep_quality: number;
-  sleep_duration?: number;
   rem_duration?: number;
   deep_sleep_duration?: number;
   light_sleep_duration?: number;
   awake_duration?: number;
+  night_awakenings?: number;
   heart_rate?: number;
   stress_level?: number;
-  mood_before?: number;
-  mood_after?: number;
-  screen_time_before?: number;
+  mood_before_sleep?: number;
+  mood_after_sleep?: number;
+  screen_time?: number;
   room_temperature?: number;
-  last_meal_time?: string;
+  meal_time?: string;
   caffeine_intake?: boolean;
   alcohol_intake?: boolean;
-  exercise?: boolean;
-  medication?: boolean;
-  meditation?: boolean;
-  reading?: boolean;
+  exercise_done?: boolean;
+  medication_taken?: boolean;
+  meditation_done?: boolean;
+  reading_done?: boolean;
   notes?: string;
   sleep_efficiency?: number;
   created_at: string;
@@ -71,26 +70,28 @@ export default function SleepScreen() {
 
   const [formData, setFormData] = useState({
     date: new Date(),
-    sleep_time: '',
-    wake_time: '',
+    bedtime: '22:00',
+    sleep_time: '23:00',
+    wake_time: '07:00',
     sleep_quality: '',
-    mood_before: '',
-    mood_after: '',
+    mood_before_sleep: '',
+    mood_after_sleep: '',
     rem_duration: '',
     deep_sleep_duration: '',
     light_sleep_duration: '',
     awake_duration: '',
+    night_awakenings: '',
     heart_rate: '',
     stress_level: '',
-    screen_time_before: '',
+    screen_time: '',
     room_temperature: '',
-    last_meal_time: '',
+    meal_time: '',
     caffeine_intake: false,
     alcohol_intake: false,
-    exercise: false,
-    medication: false,
-    meditation: false,
-    reading: false,
+    exercise_done: false,
+    medication_taken: false,
+    meditation_done: false,
+    reading_done: false,
     notes: '',
   });
 
@@ -101,19 +102,19 @@ export default function SleepScreen() {
     loadSessions();
   }, []);
 
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
     setToastMessage(message);
     setToastType(type);
     setToastVisible(true);
     Haptics.notificationAsync(
       type === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
     );
-  };
+  }, []);
 
   const loadSessions = async () => {
     try {
       if (!isOnline) {
-        showToast('Offline modasınız. Veriler güncel olmayabilir.', 'warning');
+        showToast('Offline moddasınız. Veriler güncel olmayabilir.', 'warning');
         setLoading(false);
         return;
       }
@@ -142,12 +143,12 @@ export default function SleepScreen() {
       return;
     }
 
-    if (formData.mood_before && (parseInt(formData.mood_before) < 1 || parseInt(formData.mood_before) > 5)) {
+    if (formData.mood_before_sleep && (parseInt(formData.mood_before_sleep) < 1 || parseInt(formData.mood_before_sleep) > 5)) {
       showToast('Ruhsal durum 1-5 arası olmalıdır', 'error');
       return;
     }
 
-    if (formData.mood_after && (parseInt(formData.mood_after) < 1 || parseInt(formData.mood_after) > 5)) {
+    if (formData.mood_after_sleep && (parseInt(formData.mood_after_sleep) < 1 || parseInt(formData.mood_after_sleep) > 5)) {
       showToast('Ruhsal durum 1-5 arası olmalıdır', 'error');
       return;
     }
@@ -162,40 +163,81 @@ export default function SleepScreen() {
       return;
     }
 
+    const durationFields = [
+      { name: 'REM süresi', value: formData.rem_duration },
+      { name: 'Derin uyku', value: formData.deep_sleep_duration },
+      { name: 'Hafif uyku', value: formData.light_sleep_duration },
+      { name: 'Uyanık kalma süresi', value: formData.awake_duration },
+      { name: 'Ekran süresi', value: formData.screen_time },
+    ];
+
+    for (const field of durationFields) {
+      if (field.value) {
+        const minutes = parseInt(field.value);
+        if (isNaN(minutes) || minutes < 0 || minutes > 1440) {
+          showToast(`${field.name} 0-1440 dakika arası olmalıdır`, 'error');
+          return;
+        }
+      }
+    }
+
+    if (formData.night_awakenings) {
+      const awakenings = parseInt(formData.night_awakenings);
+      if (isNaN(awakenings) || awakenings < 0 || awakenings > 50) {
+        showToast('Gece uyanma sayısı 0-50 arası olmalıdır', 'error');
+        return;
+      }
+    }
+
+    if (formData.room_temperature) {
+      const temp = parseInt(formData.room_temperature);
+      if (temp < -10 || temp > 50) {
+        showToast('Oda sıcaklığı -10°C ile 50°C arası olmalıdır', 'error');
+        return;
+      }
+    }
+
     setSubmitting(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
+      const totalSleep = (parseInt(formData.rem_duration) || 0) + 
+                        (parseInt(formData.deep_sleep_duration) || 0) + 
+                        (parseInt(formData.light_sleep_duration) || 0);
+
       const payload = {
         date: formData.date.toISOString().split('T')[0],
-        sleep_time: formData.sleep_time || undefined,
-        wake_time: formData.wake_time || undefined,
+        bedtime: formData.bedtime,
+        sleep_time: formData.sleep_time,
+        wake_time: formData.wake_time,
         sleep_quality: parseInt(formData.sleep_quality),
-        mood_before_sleep: formData.mood_before ? parseInt(formData.mood_before) : undefined,
-        mood_after_sleep: formData.mood_after ? parseInt(formData.mood_after) : undefined,
+        mood_before_sleep: formData.mood_before_sleep ? parseInt(formData.mood_before_sleep) : undefined,
+        mood_after_sleep: formData.mood_after_sleep ? parseInt(formData.mood_after_sleep) : undefined,
         rem_duration: formData.rem_duration ? parseInt(formData.rem_duration) : 0,
         deep_sleep_duration: formData.deep_sleep_duration ? parseInt(formData.deep_sleep_duration) : 0,
         light_sleep_duration: formData.light_sleep_duration ? parseInt(formData.light_sleep_duration) : 0,
         awake_duration: formData.awake_duration ? parseInt(formData.awake_duration) : 0,
+        night_awakenings: formData.night_awakenings ? parseInt(formData.night_awakenings) : 0,
         heart_rate: formData.heart_rate ? parseInt(formData.heart_rate) : 0,
         stress_level: formData.stress_level ? parseInt(formData.stress_level) : undefined,
-        screen_time: formData.screen_time_before ? parseInt(formData.screen_time_before) : 0,
+        screen_time: formData.screen_time ? parseInt(formData.screen_time) : 0,
         room_temperature: formData.room_temperature ? parseInt(formData.room_temperature) : 20,
-        meal_time: formData.last_meal_time || undefined,
+        meal_time: formData.meal_time || undefined,
         caffeine_intake: formData.caffeine_intake,
         alcohol_intake: formData.alcohol_intake,
-        exercise_done: formData.exercise,
-        medication_taken: formData.medication,
-        meditation_done: formData.meditation,
-        reading_done: formData.reading,
+        exercise_done: formData.exercise_done,
+        medication_taken: formData.medication_taken,
+        meditation_done: formData.meditation_done,
+        reading_done: formData.reading_done,
         notes: formData.notes || '',
+        total_sleep_minutes: totalSleep
       };
 
       console.log('📤 Gönderilen payload:', payload);
 
       if (isOnline) {
         await api.post('/sleep/sessions', payload);
-        showToast('Uyku kaydı oluşturuldu!', 'success');
+        showToast('Uyku kaydı başarıyla oluşturuldu!', 'success');
         setShowForm(false);
         loadSessions();
         resetForm();
@@ -212,7 +254,17 @@ export default function SleepScreen() {
     } catch (error: any) {
       console.error('❌ Submit error:', error);
       console.error('❌ Error response:', error.response?.data);
-      showToast(error.response?.data?.error || error.response?.data?.details || 'Kayıt eklenemedi', 'error');
+      
+      let errorMessage = 'Kayıt eklenemedi';
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.details) {
+        errorMessage = error.response.data.details;
+      } else if (error.message === 'Network Error') {
+        errorMessage = 'İnternet bağlantınızı kontrol edin';
+      }
+      
+      showToast(errorMessage, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -221,28 +273,40 @@ export default function SleepScreen() {
   const resetForm = () => {
     setFormData({
       date: new Date(),
-      sleep_time: '',
-      wake_time: '',
+      bedtime: '22:00',
+      sleep_time: '23:00',
+      wake_time: '07:00',
       sleep_quality: '',
-      mood_before: '',
-      mood_after: '',
+      mood_before_sleep: '',
+      mood_after_sleep: '',
       rem_duration: '',
       deep_sleep_duration: '',
       light_sleep_duration: '',
       awake_duration: '',
+      night_awakenings: '',
       heart_rate: '',
       stress_level: '',
-      screen_time_before: '',
+      screen_time: '',
       room_temperature: '',
-      last_meal_time: '',
+      meal_time: '',
       caffeine_intake: false,
       alcohol_intake: false,
-      exercise: false,
-      medication: false,
-      meditation: false,
-      reading: false,
+      exercise_done: false,
+      medication_taken: false,
+      meditation_done: false,
+      reading_done: false,
       notes: '',
     });
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (selectedDate) {
+      setFormData({ ...formData, date: selectedDate });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -265,10 +329,13 @@ export default function SleepScreen() {
   };
 
   const totalSessions = sessions.length;
-  const avgQuality =
-    totalSessions > 0 ? (sessions.reduce((sum, s) => sum + s.sleep_quality, 0) / totalSessions).toFixed(1) : '0';
-  const avgDuration =
-    totalSessions > 0 ? Math.round(sessions.reduce((sum, s) => sum + (s.sleep_duration || 0), 0) / totalSessions) : 0;
+  const avgQuality = totalSessions > 0 ? 
+    (sessions.reduce((sum, s) => sum + s.sleep_quality, 0) / totalSessions).toFixed(1) : '0';
+  const totalSleepSum = sessions.reduce((sum, s) => {
+    const sessionDuration = (s.rem_duration || 0) + (s.deep_sleep_duration || 0) + (s.light_sleep_duration || 0);
+    return sum + sessionDuration;
+  }, 0);
+  const avgDuration = totalSessions > 0 ? Math.round(totalSleepSum / totalSessions) : 0;
 
   if (loading) {
     return (
@@ -292,7 +359,13 @@ export default function SleepScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top']}>
-      <Toast message={toastMessage} type={toastType} visible={toastVisible} onHide={() => setToastVisible(false)} />
+      <Toast 
+        message={toastMessage} 
+        type={toastType} 
+        visible={toastVisible} 
+        onHide={() => setToastVisible(false)} 
+        duration={3000}
+      />
 
       {!isOnline && (
         <View style={[styles.offlineBanner, { backgroundColor: currentColors.warning }]}>
@@ -311,6 +384,8 @@ export default function SleepScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             setShowForm(true);
           }}
+          accessibilityLabel="Yeni uyku kaydı ekle"
+          accessibilityRole="button"
         >
           <Text style={styles.addButtonText}>+ Yeni</Text>
         </TouchableOpacity>
@@ -354,78 +429,116 @@ export default function SleepScreen() {
               <Text style={[styles.emptyText, { color: currentColors.secondary }]}>İlk uyku kaydınızı ekleyin!</Text>
             </View>
           ) : (
-            sessions.map((session) => (
-              <View key={session.id} style={[styles.sessionCard, { backgroundColor: currentColors.card }]}>
-                <View style={styles.sessionLeft}>
-                  <Text style={[styles.sessionDate, { color: currentColors.primary }]}>{formatDate(session.sleep_date)}</Text>
-                  <View style={styles.sessionDetails}>
-                    <Text style={[styles.sessionDetail, { color: currentColors.secondary }]}>
-                      💤 {formatDuration(session.sleep_duration || 0)}
+            sessions.map((session) => {
+              const sessionDuration = (session.rem_duration || 0) + (session.deep_sleep_duration || 0) + (session.light_sleep_duration || 0);
+              return (
+                <View key={session.id} style={[styles.sessionCard, { backgroundColor: currentColors.card }]}>
+                  <View style={styles.sessionLeft}>
+                    <Text style={[styles.sessionDate, { color: currentColors.primary }]}>
+                      {formatDate(session.sleep_date)}
                     </Text>
-                    {session.heart_rate && session.heart_rate > 0 && (
-                      <Text style={[styles.sessionDetail, { color: currentColors.secondary }]}>🫀 {session.heart_rate}</Text>
+                    <View style={styles.sessionDetails}>
+                      <Text style={[styles.sessionDetail, { color: currentColors.secondary }]}>
+                        💤 {formatDuration(sessionDuration)}
+                      </Text>
+                      {session.heart_rate && session.heart_rate > 0 && (
+                        <Text style={[styles.sessionDetail, { color: currentColors.secondary }]}>
+                          🫀 {session.heart_rate}
+                        </Text>
+                      )}
+                    </View>
+                    {session.notes && (
+                      <Text style={[styles.sessionNotes, { color: currentColors.tertiary }]} numberOfLines={1}>
+                        "{session.notes}"
+                      </Text>
                     )}
                   </View>
-                  {session.notes && (
-                    <Text style={[styles.sessionNotes, { color: currentColors.tertiary }]} numberOfLines={1}>
-                      "{session.notes}"
+                  <View style={styles.sessionRight}>
+                    <Text style={[styles.sessionQuality, { color: currentColors.brand }]}>
+                      {session.sleep_quality}/10
                     </Text>
-                  )}
+                  </View>
                 </View>
-                <View style={styles.sessionRight}>
-                  <Text style={[styles.sessionQuality, { color: currentColors.brand }]}>{session.sleep_quality}/10</Text>
-                </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       </ScrollView>
 
-      <Modal visible={showForm} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowForm(false)}>
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <Modal 
+        visible={showForm} 
+        animationType="slide" 
+        presentationStyle="fullScreen" 
+        onRequestClose={() => setShowForm(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: currentColors.background }]}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+            style={{ flex: 1 }}
+            keyboardVerticalOffset={0}
+          >
             <View style={[styles.modalHeader, { 
               backgroundColor: currentColors.surface, 
               borderBottomColor: currentColors.border,
-              paddingTop: Platform.OS === 'ios' ? insets.top : 0,
+              paddingTop: insets.top + 16,
+              paddingBottom: 16,
+              paddingHorizontal: 16,
             }]}>
-              <Text style={[styles.modalTitle, { color: currentColors.primary }]}>Yeni Uyku Kaydı</Text>
-              <TouchableOpacity onPress={() => setShowForm(false)}>
+              <Text style={[styles.modalTitle, { color: currentColors.primary }]}>
+                Yeni Uyku Kaydı
+              </Text>
+              <TouchableOpacity 
+                onPress={() => setShowForm(false)}
+                accessibilityLabel="Formu kapat"
+                accessibilityRole="button"
+              >
                 <Text style={[styles.closeButton, { color: currentColors.brand }]}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            <KeyboardAwareScrollView
+            <ScrollView
               style={styles.formContent}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
               showsVerticalScrollIndicator={false}
-              enableOnAndroid={true}
-              enableAutomaticScroll={true}
-              extraScrollHeight={150}
-              extraHeight={150}
               keyboardShouldPersistTaps="handled"
-              keyboardOpeningTime={0}
-              enableResetScrollToCoords={false}
+              keyboardDismissMode="interactive"
+              bounces={true}
             >
-              <View style={styles.formGroup}>
+              <View style={[styles.formGroup, { paddingTop: 16 }]}>
                 <Text style={[styles.formLabel, { color: currentColors.primary }]}>📅 Tarih</Text>
                 <TouchableOpacity
-                  style={[styles.input, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder }]}
-                  onPress={() => setShowDatePicker(true)}
+                  style={[styles.input, { 
+                    backgroundColor: currentColors.input, 
+                    borderColor: currentColors.inputBorder 
+                  }]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowDatePicker(true);
+                  }}
                 >
                   <Text style={[styles.inputText, { color: currentColors.primary }]}>
                     {formData.date.toLocaleDateString('tr-TR')}
                   </Text>
                 </TouchableOpacity>
-                {showDatePicker && (
+                
+                {showDatePicker && Platform.OS === 'ios' && (
+                  <DateTimePicker
+                    value={formData.date}
+                    mode="date"
+                    display="spinner"
+                    maximumDate={new Date()}
+                    onChange={handleDateChange}
+                    style={styles.datePicker}
+                  />
+                )}
+
+                {showDatePicker && Platform.OS === 'android' && (
                   <DateTimePicker
                     value={formData.date}
                     mode="date"
                     display="default"
                     maximumDate={new Date()}
-                    onChange={(event, date) => {
-                      setShowDatePicker(false);
-                      if (date) setFormData({ ...formData, date });
-                    }}
+                    onChange={handleDateChange}
                   />
                 )}
               </View>
@@ -462,78 +575,126 @@ export default function SleepScreen() {
                 </View>
               </View>
 
-              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>⏱️ Uyku Süreleri (dakika)</Text>
+              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>
+                ⏱️ Uyku Süreleri (dakika)
+              </Text>
               <View style={styles.durationGrid}>
                 <View style={styles.durationItem}>
                   <Text style={[styles.durationLabel, { color: currentColors.secondary }]}>REM</Text>
                   <TextInput
-                    style={[styles.durationInput, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
+                    style={[styles.durationInput, { 
+                      backgroundColor: currentColors.input, 
+                      borderColor: currentColors.inputBorder, 
+                      color: currentColors.primary 
+                    }]}
                     value={formData.rem_duration}
                     onChangeText={(text) => {
-                      const num = parseInt(text) || 0;
-                      if (num >= 0 && num <= 1440) {
-                        setFormData({ ...formData, rem_duration: text });
-                      }
+                      const numericValue = text.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, rem_duration: numericValue });
                     }}
                     keyboardType="numeric"
                     placeholder="30"
                     placeholderTextColor={currentColors.placeholder}
+                    maxLength={4}
+                    returnKeyType="done"
                   />
                 </View>
+                
                 <View style={styles.durationItem}>
                   <Text style={[styles.durationLabel, { color: currentColors.secondary }]}>Derin</Text>
                   <TextInput
-                    style={[styles.durationInput, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
+                    style={[styles.durationInput, { 
+                      backgroundColor: currentColors.input, 
+                      borderColor: currentColors.inputBorder, 
+                      color: currentColors.primary 
+                    }]}
                     value={formData.deep_sleep_duration}
                     onChangeText={(text) => {
-                      const num = parseInt(text) || 0;
-                      if (num >= 0 && num <= 1440) {
-                        setFormData({ ...formData, deep_sleep_duration: text });
-                      }
+                      const numericValue = text.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, deep_sleep_duration: numericValue });
                     }}
                     keyboardType="numeric"
-                    placeholder="330"
+                    placeholder="120"
                     placeholderTextColor={currentColors.placeholder}
+                    maxLength={4}
+                    returnKeyType="done"
                   />
                 </View>
+                
                 <View style={styles.durationItem}>
                   <Text style={[styles.durationLabel, { color: currentColors.secondary }]}>Hafif</Text>
                   <TextInput
-                    style={[styles.durationInput, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
+                    style={[styles.durationInput, { 
+                      backgroundColor: currentColors.input, 
+                      borderColor: currentColors.inputBorder, 
+                      color: currentColors.primary 
+                    }]}
                     value={formData.light_sleep_duration}
                     onChangeText={(text) => {
-                      const num = parseInt(text) || 0;
-                      if (num >= 0 && num <= 1440) {
-                        setFormData({ ...formData, light_sleep_duration: text });
-                      }
+                      const numericValue = text.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, light_sleep_duration: numericValue });
                     }}
                     keyboardType="numeric"
-                    placeholder="30"
+                    placeholder="180"
                     placeholderTextColor={currentColors.placeholder}
+                    maxLength={4}
+                    returnKeyType="done"
                   />
                 </View>
+                
                 <View style={styles.durationItem}>
-                  <Text style={[styles.durationLabel, { color: currentColors.secondary }]}>Uyanık</Text>
+                  <Text style={[styles.durationLabel, { color: currentColors.secondary }]}>Uyanık Kalma</Text>
                   <TextInput
-                    style={[styles.durationInput, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
+                    style={[styles.durationInput, { 
+                      backgroundColor: currentColors.input, 
+                      borderColor: currentColors.inputBorder, 
+                      color: currentColors.primary 
+                    }]}
                     value={formData.awake_duration}
                     onChangeText={(text) => {
-                      const num = parseInt(text) || 0;
-                      if (num >= 0 && num <= 1440) {
-                        setFormData({ ...formData, awake_duration: text });
-                      }
+                      const numericValue = text.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, awake_duration: numericValue });
                     }}
                     keyboardType="numeric"
                     placeholder="20"
                     placeholderTextColor={currentColors.placeholder}
+                    maxLength={4}
+                    returnKeyType="done"
                   />
                 </View>
               </View>
 
-              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>😊 Ruhsal Durum (1-5)</Text>
+              <View style={styles.formGroup}>
+                <Text style={[styles.formLabel, { color: currentColors.primary }]}>
+                  🌙 Gece Uyanma Sayısı
+                </Text>
+                <TextInput
+                  style={[styles.input, { 
+                    backgroundColor: currentColors.input, 
+                    borderColor: currentColors.inputBorder, 
+                    color: currentColors.primary 
+                  }]}
+                  value={formData.night_awakenings}
+                  onChangeText={(text) => {
+                    const numericValue = text.replace(/[^0-9]/g, '');
+                    setFormData({ ...formData, night_awakenings: numericValue });
+                  }}
+                  keyboardType="numeric"
+                  placeholder="2"
+                  placeholderTextColor={currentColors.placeholder}
+                  maxLength={2}
+                  returnKeyType="done"
+                />
+              </View>
+
+              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>
+                😊 Ruhsal Durum (1-5)
+              </Text>
               <View style={styles.row}>
                 <View style={styles.halfWidth}>
-                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>Uyumadan Önce</Text>
+                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>
+                    Uyumadan Önce
+                  </Text>
                   <View style={styles.moodButtons}>
                     {[1, 2, 3, 4, 5].map((value) => (
                       <TouchableOpacity
@@ -541,18 +702,18 @@ export default function SleepScreen() {
                         style={[
                           styles.moodButton,
                           { borderColor: currentColors.border },
-                          formData.mood_before === value.toString() && { backgroundColor: currentColors.brand },
+                          formData.mood_before_sleep === value.toString() && { backgroundColor: currentColors.brand },
                         ]}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setFormData({ ...formData, mood_before: value.toString() });
+                          setFormData({ ...formData, mood_before_sleep: value.toString() });
                         }}
                       >
                         <Text
                           style={[
                             styles.moodButtonText,
                             { color: currentColors.primary },
-                            formData.mood_before === value.toString() && { color: '#fff' },
+                            formData.mood_before_sleep === value.toString() && { color: '#fff' },
                           ]}
                         >
                           {value}
@@ -563,7 +724,9 @@ export default function SleepScreen() {
                 </View>
 
                 <View style={styles.halfWidth}>
-                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>Uyandıktan Sonra</Text>
+                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>
+                    Uyandıktan Sonra
+                  </Text>
                   <View style={styles.moodButtons}>
                     {[1, 2, 3, 4, 5].map((value) => (
                       <TouchableOpacity
@@ -571,18 +734,18 @@ export default function SleepScreen() {
                         style={[
                           styles.moodButton,
                           { borderColor: currentColors.border },
-                          formData.mood_after === value.toString() && { backgroundColor: currentColors.brand },
+                          formData.mood_after_sleep === value.toString() && { backgroundColor: currentColors.brand },
                         ]}
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setFormData({ ...formData, mood_after: value.toString() });
+                          setFormData({ ...formData, mood_after_sleep: value.toString() });
                         }}
                       >
                         <Text
                           style={[
                             styles.moodButtonText,
                             { color: currentColors.primary },
-                            formData.mood_after === value.toString() && { color: '#fff' },
+                            formData.mood_after_sleep === value.toString() && { color: '#fff' },
                           ]}
                         >
                           {value}
@@ -593,81 +756,130 @@ export default function SleepScreen() {
                 </View>
               </View>
 
-              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>🫀 Sağlık Verileri</Text>
+              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>
+                🫀 Sağlık Verileri
+              </Text>
               <View style={styles.row}>
                 <View style={styles.halfWidth}>
-                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>Kalp Atışı (bpm)</Text>
+                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>
+                    Kalp Atışı (bpm)
+                  </Text>
                   <TextInput
-                    style={[styles.input, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
+                    style={[styles.input, { 
+                      backgroundColor: currentColors.input, 
+                      borderColor: currentColors.inputBorder, 
+                      color: currentColors.primary 
+                    }]}
                     value={formData.heart_rate}
                     onChangeText={(text) => {
-                      const num = parseInt(text) || 0;
-                      if (num >= 0 && num <= 250) {
-                        setFormData({ ...formData, heart_rate: text });
-                      }
+                      const numericValue = text.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, heart_rate: numericValue });
                     }}
                     keyboardType="numeric"
-                    placeholder="77"
+                    placeholder="72"
                     placeholderTextColor={currentColors.placeholder}
+                    maxLength={3}
+                    returnKeyType="done"
                   />
                 </View>
 
                 <View style={styles.halfWidth}>
-                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>Stres (1-10)</Text>
+                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>
+                    Stres (1-10)
+                  </Text>
                   <TextInput
-                    style={[styles.input, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
+                    style={[styles.input, { 
+                      backgroundColor: currentColors.input, 
+                      borderColor: currentColors.inputBorder, 
+                      color: currentColors.primary 
+                    }]}
                     value={formData.stress_level}
                     onChangeText={(text) => {
-                      const num = parseInt(text) || 0;
-                      if (num >= 0 && num <= 10) {
-                        setFormData({ ...formData, stress_level: text });
-                      }
+                      const numericValue = text.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, stress_level: numericValue });
                     }}
                     keyboardType="numeric"
                     placeholder="3"
                     placeholderTextColor={currentColors.placeholder}
+                    maxLength={2}
+                    returnKeyType="done"
                   />
                 </View>
               </View>
 
-              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>🌡️ Çevre Koşulları</Text>
+              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>
+                🌡️ Çevre Koşulları
+              </Text>
               <View style={styles.row}>
                 <View style={styles.halfWidth}>
-                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>Ekran Süresi (dk)</Text>
+                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>
+                    Ekran Süresi (dk)
+                  </Text>
                   <TextInput
-                    style={[styles.input, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
-                    value={formData.screen_time_before}
+                    style={[styles.input, { 
+                      backgroundColor: currentColors.input, 
+                      borderColor: currentColors.inputBorder, 
+                      color: currentColors.primary 
+                    }]}
+                    value={formData.screen_time}
                     onChangeText={(text) => {
-                      const num = parseInt(text) || 0;
-                      if (num >= 0 && num <= 1440) {
-                        setFormData({ ...formData, screen_time_before: text });
-                      }
+                      const numericValue = text.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, screen_time: numericValue });
                     }}
                     keyboardType="numeric"
-                    placeholder="0"
+                    placeholder="30"
                     placeholderTextColor={currentColors.placeholder}
+                    maxLength={4}
+                    returnKeyType="done"
                   />
                 </View>
 
                 <View style={styles.halfWidth}>
-                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>Sıcaklık (°C)</Text>
+                  <Text style={[styles.formLabel, { color: currentColors.secondary }]}>
+                    Sıcaklık (°C)
+                  </Text>
                   <TextInput
-                    style={[styles.input, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
+                    style={[styles.input, { 
+                      backgroundColor: currentColors.input, 
+                      borderColor: currentColors.inputBorder, 
+                      color: currentColors.primary 
+                    }]}
                     value={formData.room_temperature}
                     onChangeText={(text) => {
-                      const num = parseInt(text) || 0;
-                      if (num >= -10 && num <= 50) {
-                        setFormData({ ...formData, room_temperature: text });
-                      }
+                      const numericValue = text.replace(/[^0-9-]/g, '');
+                      setFormData({ ...formData, room_temperature: numericValue });
                     }}
                     keyboardType="numeric"
                     placeholder="20"
                     placeholderTextColor={currentColors.placeholder}
+                    maxLength={3}
+                    returnKeyType="done"
                   />
                 </View>
               </View>
 
-              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>📋 Aktiviteler</Text>
+              {/* SON YEMEK SAATİ - DÜZGÜN MARGIN İLE */}
+              <View style={[styles.formGroup, { marginTop: 24 }]}>
+                <Text style={[styles.formLabel, { color: currentColors.primary }]}>
+                  🍽️ Son Yemek Saati
+                </Text>
+                <TextInput
+                  style={[styles.input, { 
+                    backgroundColor: currentColors.input, 
+                    borderColor: currentColors.inputBorder, 
+                    color: currentColors.primary 
+                  }]}
+                  value={formData.meal_time}
+                  onChangeText={(text) => setFormData({ ...formData, meal_time: text })}
+                  placeholder="Örn: 20:30"
+                  placeholderTextColor={currentColors.placeholder}
+                  returnKeyType="done"
+                />
+              </View>
+
+              <Text style={[styles.sectionHeader, { color: currentColors.primary }]}>
+                📋 Aktiviteler
+              </Text>
               <View style={styles.switchGroup}>
                 <View style={styles.switchItem}>
                   <Text style={[styles.switchLabel, { color: currentColors.secondary }]}>☕ Kafein</Text>
@@ -678,6 +890,7 @@ export default function SleepScreen() {
                       setFormData({ ...formData, caffeine_intake: value });
                     }}
                     trackColor={{ false: currentColors.border, true: currentColors.brand }}
+                    ios_backgroundColor={currentColors.border}
                   />
                 </View>
 
@@ -690,62 +903,73 @@ export default function SleepScreen() {
                       setFormData({ ...formData, alcohol_intake: value });
                     }}
                     trackColor={{ false: currentColors.border, true: currentColors.brand }}
+                    ios_backgroundColor={currentColors.border}
                   />
                 </View>
 
                 <View style={styles.switchItem}>
                   <Text style={[styles.switchLabel, { color: currentColors.secondary }]}>🏃 Egzersiz</Text>
                   <Switch
-                    value={formData.exercise}
+                    value={formData.exercise_done}
                     onValueChange={(value) => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setFormData({ ...formData, exercise: value });
+                      setFormData({ ...formData, exercise_done: value });
                     }}
                     trackColor={{ false: currentColors.border, true: currentColors.brand }}
+                    ios_backgroundColor={currentColors.border}
                   />
                 </View>
 
                 <View style={styles.switchItem}>
                   <Text style={[styles.switchLabel, { color: currentColors.secondary }]}>💊 İlaç</Text>
                   <Switch
-                    value={formData.medication}
+                    value={formData.medication_taken}
                     onValueChange={(value) => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setFormData({ ...formData, medication: value });
+                      setFormData({ ...formData, medication_taken: value });
                     }}
                     trackColor={{ false: currentColors.border, true: currentColors.brand }}
+                    ios_backgroundColor={currentColors.border}
                   />
                 </View>
 
                 <View style={styles.switchItem}>
                   <Text style={[styles.switchLabel, { color: currentColors.secondary }]}>🧘 Meditasyon</Text>
                   <Switch
-                    value={formData.meditation}
+                    value={formData.meditation_done}
                     onValueChange={(value) => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setFormData({ ...formData, meditation: value });
+                      setFormData({ ...formData, meditation_done: value });
                     }}
                     trackColor={{ false: currentColors.border, true: currentColors.brand }}
+                    ios_backgroundColor={currentColors.border}
                   />
                 </View>
 
                 <View style={styles.switchItem}>
                   <Text style={[styles.switchLabel, { color: currentColors.secondary }]}>📖 Okuma</Text>
                   <Switch
-                    value={formData.reading}
+                    value={formData.reading_done}
                     onValueChange={(value) => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setFormData({ ...formData, reading: value });
+                      setFormData({ ...formData, reading_done: value });
                     }}
                     trackColor={{ false: currentColors.border, true: currentColors.brand }}
+                    ios_backgroundColor={currentColors.border}
                   />
                 </View>
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { color: currentColors.primary }]}>📝 Notlar (Opsiyonel)</Text>
+                <Text style={[styles.formLabel, { color: currentColors.primary }]}>
+                  📝 Notlar (Opsiyonel)
+                </Text>
                 <TextInput
-                  style={[styles.notesInput, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
+                  style={[styles.notesInput, { 
+                    backgroundColor: currentColors.input, 
+                    borderColor: currentColors.inputBorder, 
+                    color: currentColors.primary 
+                  }]}
                   value={formData.notes}
                   onChangeText={(text) => setFormData({ ...formData, notes: text })}
                   placeholder="Uykunuzla ilgili notlar..."
@@ -753,21 +977,39 @@ export default function SleepScreen() {
                   multiline
                   numberOfLines={4}
                   maxLength={500}
+                  returnKeyType="done"
+                  blurOnSubmit={true}
                 />
               </View>
-            </KeyboardAwareScrollView>
+            </ScrollView>
 
-            <View style={[styles.modalFooter, { backgroundColor: currentColors.surface, borderTopColor: currentColors.border }]}>
+            <View style={[styles.modalFooter, { 
+              backgroundColor: currentColors.surface, 
+              borderTopColor: currentColors.border,
+              paddingTop: 16,
+              paddingBottom: insets.bottom + 16,
+              paddingHorizontal: 16,
+            }]}>
               <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: currentColors.brand }, !formData.sleep_quality && { opacity: 0.5 }]}
+                style={[
+                  styles.submitButton, 
+                  { backgroundColor: currentColors.brand }, 
+                  (!formData.sleep_quality || submitting) && { opacity: 0.5 }
+                ]}
                 onPress={handleSubmit}
                 disabled={submitting || !formData.sleep_quality}
+                accessibilityLabel="Uyku kaydını kaydet"
+                accessibilityRole="button"
               >
-                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>💾 Kaydet</Text>}
+                {submitting ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.submitButtonText}>💾 Kaydet</Text>
+                )}
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -777,24 +1019,60 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   offlineBanner: { padding: 8, alignItems: 'center' },
   offlineBannerText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 16, 
+    borderBottomWidth: 1 
+  },
   headerTitle: { fontSize: 24, fontWeight: 'bold' },
   headerSubtitle: { fontSize: 13, marginTop: 2 },
   addButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
   addButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   content: { flex: 1 },
   statsContainer: { flexDirection: 'row', padding: 16, gap: 12 },
-  statCard: { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center' },
+  statCard: { 
+    flex: 1, 
+    borderRadius: 12, 
+    padding: 14, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
   statIcon: { fontSize: 24, marginBottom: 6 },
   statValue: { fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
   statLabel: { fontSize: 10 },
   section: { padding: 16 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
-  emptyCard: { borderRadius: 12, padding: 32, alignItems: 'center' },
+  emptyCard: { 
+    borderRadius: 12, 
+    padding: 32, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   emptyIcon: { fontSize: 64, marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
   emptyText: { fontSize: 14, textAlign: 'center' },
-  sessionCard: { borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  sessionCard: { 
+    borderRadius: 12, 
+    padding: 14, 
+    marginBottom: 10, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 1 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 2, 
+    elevation: 1 
+  },
   sessionLeft: { flex: 1 },
   sessionDate: { fontSize: 15, fontWeight: '600', marginBottom: 6 },
   sessionDetails: { flexDirection: 'row', gap: 10 },
@@ -803,32 +1081,79 @@ const styles = StyleSheet.create({
   sessionRight: { justifyContent: 'center' },
   sessionQuality: { fontSize: 22, fontWeight: 'bold' },
   modalContainer: { flex: 1 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    borderBottomWidth: 1 
+  },
   modalTitle: { fontSize: 20, fontWeight: 'bold' },
   closeButton: { fontSize: 28, fontWeight: 'bold' },
-  formContent: { flex: 1, padding: 16 },
+  formContent: { flex: 1, paddingHorizontal: 16 },
   formGroup: { marginBottom: 18 },
   formLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
   sectionHeader: { fontSize: 15, fontWeight: 'bold', marginTop: 8, marginBottom: 12 },
   input: { padding: 12, borderRadius: 8, borderWidth: 1, fontSize: 15 },
   inputText: { fontSize: 15 },
   ratingButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  ratingButton: { width: 42, height: 42, borderRadius: 8, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
+  ratingButton: { 
+    width: 42, 
+    height: 42, 
+    borderRadius: 8, 
+    borderWidth: 2, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   ratingButtonText: { fontSize: 14 },
-  durationGrid: { flexDirection: 'row', gap: 8 },
+  durationGrid: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   durationItem: { flex: 1 },
   durationLabel: { fontSize: 11, marginBottom: 4, textAlign: 'center' },
-  durationInput: { padding: 10, borderRadius: 8, borderWidth: 1, fontSize: 14, textAlign: 'center' },
+  durationInput: { 
+    padding: 10, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    fontSize: 14, 
+    textAlign: 'center' 
+  },
   row: { flexDirection: 'row', gap: 12 },
   halfWidth: { flex: 1 },
   moodButtons: { flexDirection: 'row', gap: 6 },
-  moodButton: { flex: 1, height: 38, borderRadius: 8, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
+  moodButton: { 
+    flex: 1, 
+    height: 38, 
+    borderRadius: 8, 
+    borderWidth: 2, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   moodButtonText: { fontSize: 13 },
   switchGroup: { gap: 10 },
-  switchItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 },
+  switchItem: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingVertical: 6 
+  },
   switchLabel: { fontSize: 14 },
-  notesInput: { padding: 12, borderRadius: 8, borderWidth: 1, fontSize: 14, minHeight: 100, textAlignVertical: 'top' },
-  modalFooter: { padding: 16, borderTopWidth: 1 },
-  submitButton: { padding: 16, borderRadius: 8, alignItems: 'center' },
+  notesInput: { 
+    padding: 12, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    fontSize: 14, 
+    minHeight: 100, 
+    textAlignVertical: 'top' 
+  },
+  modalFooter: { borderTopWidth: 1 },
+  submitButton: { 
+    padding: 16, 
+    borderRadius: 8, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
   submitButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  datePicker: { marginTop: 10 },
 });
