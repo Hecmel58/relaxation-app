@@ -1,0 +1,88 @@
+{
+  "appInfo": {
+    "name": "FidBal",
+    "primaryLanguage": "Turkish",
+    "bundleId": "com.hecmel.fidbal",
+    "sku": "FIDBAL001",
+    "userAccess": "full"
+  },
+  
+  "localizations": {
+    "tr-TR": {
+      "name": "FidBal - Uyku ve Stres Yönetimi",
+      "subtitle": "Akademik Uyku Takibi",
+      "description": "FidBal, İstanbul Üniversitesi akademik tez çalışması kapsamında geliştirilmiş bilimsel temelli bir mobil uygulamadır. Uyku kalitesi takibi, stres yönetimi ve rahatlama teknikleri sunar.",
+      "keywords": "uyku, stres, meditasyon, sağlık, takip, akademik, araştırma",
+      "promotionalText": "Bilimsel temelli uyku geliştirme. Akademik araştırmaya katılın.",
+      "releaseNotes": "İlk sürüm - Akademik araştırma uygulaması"
+    },
+    "en-US": {
+      "name": "FidBal - Sleep & Stress Management",
+      "subtitle": "Academic Sleep Tracking",
+      "description": "FidBal is a scientifically-backed mobile application developed as part of an academic thesis. Offers sleep quality tracking, stress management, and relaxation techniques.",
+      "keywords": "sleep, stress, meditation, health, tracking, academic, research",
+      "promotionalText": "Scientifically-backed sleep improvement. Join academic research.",
+      "releaseNotes": "Initial release - Academic research application"
+    }
+  },
+  
+  "availability": {
+    "availableTerritories": "all",
+    "preorder": false,
+    "releaseType": "manual",
+    "versionRelease": "immediately"
+  },
+  
+  "pricing": {
+    "priceTier": 0,
+    "familySharing": true,
+    "educationalDiscount": true
+  },
+  
+  "appReview": {
+    "contactInfo": {
+      "firstName": "Hasan",
+      "lastName": "Balkaya",
+      "email": "hecmel@fidbal.com",
+      "phone": "+905394870058"
+    },
+    "notes": "This is an academic research application for sleep and stress management studies. All user data is anonymized for research purposes. Demo account available for review: Phone: 5551112233, Password: Test123!",
+    "attachments": [],
+    "signInRequired": false
+  },
+  
+  "ageRating": {
+    "age": 12,
+    "contentDescriptors": {
+      "medicalTreatment": "infrequentMild",
+      "horrorFear": "infrequentMild"
+    },
+    "kidFriendly": false,
+    "gambling": false,
+    "contests": false
+  },
+  
+  "gameCenter": {
+    "enabled": false
+  },
+  
+  "inAppPurchases": {
+    "enabled": false
+  },
+  
+  "testflight": {
+    "externalTesters": 100,
+    "internalTesters": 25,
+    "feedbackEnabled": true,
+    "autoNotify": true
+  },
+  
+  "appClips": {
+    "enabled": false
+  },
+  
+  "pushNotifications": {
+    "enabled": true,
+    "environment": "production"
+  }
+}

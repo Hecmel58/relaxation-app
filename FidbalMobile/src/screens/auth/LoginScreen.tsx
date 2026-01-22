@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Modal,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { WebView } from 'react-native-webview';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 
@@ -22,12 +21,30 @@ export default function LoginScreen({ navigation }: any) {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [agreedToKVKK, setAgreedToKVKK] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
-  const [showKVKKModal, setShowKVKKModal] = useState(false);
   const login = useAuthStore((state) => state.login);
+
+  // Sayfa yüklendiğinde kayıtlı bilgileri getir
+  useEffect(() => {
+    loadSavedCredentials();
+  }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const savedPhone = await AsyncStorage.getItem('fidbal_saved_phone');
+      const savedPassword = await AsyncStorage.getItem('fidbal_saved_password');
+      const savedRememberMe = await AsyncStorage.getItem('fidbal_remember_me');
+      
+      if (savedRememberMe === 'true' && savedPhone && savedPassword) {
+        setPhone(savedPhone);
+        setPassword(savedPassword);
+        setRememberMe(true);
+      }
+    } catch (error) {
+      console.log('Kayıtlı bilgiler yüklenemedi:', error);
+    }
+  };
 
   const handlePhoneChange = (text: string) => {
     const value = text.replace(/\D/g, '');
@@ -39,11 +56,6 @@ export default function LoginScreen({ navigation }: any) {
   const handleLogin = async () => {
     if (!phone || !password) {
       Alert.alert('Hata', 'Telefon numarası ve şifre gereklidir');
-      return;
-    }
-
-    if (!agreedToTerms || !agreedToKVKK) {
-      Alert.alert('Hata', 'Kullanıcı sözleşmesi ve KVKK aydınlatma metnini onaylamanız gerekmektedir');
       return;
     }
 
@@ -69,6 +81,18 @@ export default function LoginScreen({ navigation }: any) {
       console.log('✅ Login response:', JSON.stringify(response.data, null, 2));
 
       if (response.data.success) {
+        // Beni Hatırla seçiliyse bilgileri kaydet
+        if (rememberMe) {
+          await AsyncStorage.setItem('fidbal_saved_phone', phone);
+          await AsyncStorage.setItem('fidbal_saved_password', password);
+          await AsyncStorage.setItem('fidbal_remember_me', 'true');
+        } else {
+          // Beni Hatırla seçili değilse kayıtlı bilgileri sil
+          await AsyncStorage.removeItem('fidbal_saved_phone');
+          await AsyncStorage.removeItem('fidbal_saved_password');
+          await AsyncStorage.removeItem('fidbal_remember_me');
+        }
+
         // ✅ FIX: Token'ın string olduğundan emin ol
         const token = typeof response.data.token === 'string' 
           ? response.data.token 
@@ -170,58 +194,22 @@ export default function LoginScreen({ navigation }: any) {
               </View>
             </View>
 
+            {/* Beni Hatırla */}
             <TouchableOpacity
-              style={styles.checkboxContainer}
-              onPress={() => setAgreedToTerms(!agreedToTerms)}
+              style={styles.rememberMeContainer}
+              onPress={() => setRememberMe(!rememberMe)}
               disabled={loading}
             >
-              <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
-                {agreedToTerms && <Text style={styles.checkmark}>✓</Text>}
+              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                {rememberMe && <Text style={styles.checkmark}>✓</Text>}
               </View>
-              <View style={styles.termsTextContainer}>
-                <Text style={styles.termsText}>
-                  <Text
-                    style={styles.termsLink}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      setShowTermsModal(true);
-                    }}
-                  >
-                    Kullanıcı sözleşmesini
-                  </Text>
-                  {' okudum ve onaylıyorum'}
-                </Text>
-              </View>
+              <Text style={styles.rememberMeText}>Beni Hatırla</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.checkboxContainer}
-              onPress={() => setAgreedToKVKK(!agreedToKVKK)}
-              disabled={loading}
-            >
-              <View style={[styles.checkbox, agreedToKVKK && styles.checkboxChecked]}>
-                {agreedToKVKK && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <View style={styles.termsTextContainer}>
-                <Text style={styles.termsText}>
-                  <Text
-                    style={styles.termsLink}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      setShowKVKKModal(true);
-                    }}
-                  >
-                    KVKK aydınlatma metnini
-                  </Text>
-                  {' okudum ve onaylıyorum'}
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.loginButton, (loading || !agreedToTerms || !agreedToKVKK) && styles.loginButtonDisabled]}
+              style={[styles.loginButton, loading && styles.loginButtonDisabled]}
               onPress={handleLogin}
-              disabled={loading || !agreedToTerms || !agreedToKVKK}
+              disabled={loading}
               activeOpacity={0.8}
             >
               {loading ? (
@@ -250,88 +238,6 @@ export default function LoginScreen({ navigation }: any) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* KULLANICI SÖZLEŞMESİ MODAL - WebView */}
-      <Modal
-        visible={showTermsModal}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setShowTermsModal(false)}
-      >
-        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Kullanıcı Sözleşmesi</Text>
-            <TouchableOpacity onPress={() => setShowTermsModal(false)} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <WebView
-            source={{ uri: 'https://www.fidbal.com/terms' }}
-            style={styles.webView}
-            startInLoadingState={true}
-            renderLoading={() => (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#4f7aef" />
-                <Text style={styles.loadingText}>Yükleniyor...</Text>
-              </View>
-            )}
-          />
-
-          <View style={styles.modalButtonContainer}>
-            <TouchableOpacity
-              style={styles.acceptButton}
-              onPress={() => {
-                setAgreedToTerms(true);
-                setShowTermsModal(false);
-              }}
-            >
-              <Text style={styles.acceptButtonText}>Anladım ve Kabul Ediyorum</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Modal>
-
-      {/* KVKK AYDINLATMA METNİ MODAL - WebView */}
-      <Modal
-        visible={showKVKKModal}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setShowKVKKModal(false)}
-      >
-        <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>KVKK Aydınlatma Metni</Text>
-            <TouchableOpacity onPress={() => setShowKVKKModal(false)} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <WebView
-            source={{ uri: 'https://www.fidbal.com/privacy-policy' }}
-            style={styles.webView}
-            startInLoadingState={true}
-            renderLoading={() => (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#4f7aef" />
-                <Text style={styles.loadingText}>Yükleniyor...</Text>
-              </View>
-            )}
-          />
-
-          <View style={styles.modalButtonContainer}>
-            <TouchableOpacity
-              style={styles.acceptButton}
-              onPress={() => {
-                setAgreedToKVKK(true);
-                setShowKVKKModal(false);
-              }}
-            >
-              <Text style={styles.acceptButtonText}>Anladım ve Kabul Ediyorum</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -439,10 +345,10 @@ const styles = StyleSheet.create({
   eyeIcon: {
     fontSize: 20,
   },
-  checkboxContainer: {
+  rememberMeContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 20,
   },
   checkbox: {
     width: 20,
@@ -450,10 +356,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 2,
     borderColor: '#cbd5e1',
-    marginRight: 12,
+    marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 2,
   },
   checkboxChecked: {
     backgroundColor: '#4f7aef',
@@ -464,24 +369,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  termsTextContainer: {
-    flex: 1,
-  },
-  termsText: {
-    fontSize: 13,
+  rememberMeText: {
+    fontSize: 14,
     color: '#64748b',
-    lineHeight: 18,
-  },
-  termsLink: {
-    color: '#4f7aef',
-    fontWeight: '600',
   },
   loginButton: {
     backgroundColor: '#6b93f4',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    marginTop: 8,
     marginBottom: 16,
     shadowColor: '#4f7aef',
     shadowOffset: { width: 0, height: 4 },
@@ -522,75 +418,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4f7aef',
     fontWeight: '600',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    backgroundColor: '#ffffff',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    flex: 1,
-    paddingRight: 10,
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeButtonText: {
-    fontSize: 28,
-    color: '#64748b',
-    fontWeight: 'bold',
-  },
-  webView: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  modalButtonContainer: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    backgroundColor: '#ffffff',
-  },
-  acceptButton: {
-    backgroundColor: '#6b93f4',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#4f7aef',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  acceptButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
   },
 });

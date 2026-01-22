@@ -1,0 +1,119 @@
+# Privacy Manifest for FidBal
+# Required for iOS 17+ App Store submission
+
+## PRIVACY INFORMATION
+App Name: FidBal
+Bundle ID: com.hecmel.fidbal
+Version: 1.0.0
+
+## DATA COLLECTION SUMMARY
+This application collects the following data for academic research purposes:
+
+### 1. Personal Information
+- Name: Required for account creation
+- Phone Number: Required for authentication
+- Email: Optional for communication
+
+### 2. Health Data
+- Sleep patterns and quality scores
+- Heart rate measurements (during relaxation sessions)
+- Stress level self-assessments
+- Mood tracking data
+
+### 3. Usage Data
+- App interaction logs
+- Feature usage statistics
+- Session durations
+- Error reports
+
+### 4. Device Information
+- Device model and OS version
+- Network connection type
+- Notification settings
+- Permission status
+
+## DATA USAGE
+Collected data is used for:
+
+### Primary Purposes:
+1. **Academic Research**: Data contributes to sleep and stress management studies at Istanbul University
+2. **Personalized Features**: Provide customized relaxation recommendations
+3. **App Functionality**: Enable core features like sleep tracking and video calls
+4. **Analytics**: Improve app performance and user experience
+
+### Secondary Purposes:
+1. **Scientific Publications**: Anonymized data may be used in academic papers
+2. **App Development**: Feedback for future feature development
+
+## DATA STORAGE
+- **Location**: Firebase servers (EU region)
+- **Retention**: Data stored for 2 years from last activity
+- **Anonymization**: Research data is anonymized after 6 months
+- **Backup**: Encrypted backups maintained for 30 days
+
+## DATA SHARING
+### Third Parties:
+1. **Firebase Analytics**: App usage statistics (Google)
+2. **Expo Notifications**: Push notification delivery
+3. **Jitsi Meet**: Video call infrastructure (encrypted)
+
+### No Sharing With:
+- Advertising networks
+- Data brokers
+- Social media platforms
+- Commercial partners
+
+## USER RIGHTS
+Under GDPR/KVKK, users have the right to:
+1. Access their personal data
+2. Correct inaccurate data
+3. Delete their account and data
+4. Export their data in JSON format
+5. Opt-out of research participation
+6. Withdraw consent at any time
+
+## SECURITY MEASURES
+- End-to-end encryption for video calls
+- HTTPS for all API communications
+- Regular security audits
+- Access controls and authentication
+- Data minimization principles
+
+## CONTACT INFORMATION
+For privacy inquiries:
+- Email: Hecmel@fidbal.com
+- Website: https://fidbal.com/privacy
+- Address: [Mehmet Akif Ersoy Mahallesi 49-44 sokak No 1 kat 4 daire 11]
+
+## COMPLIANCE
+- GDPR Compliant
+- KVKK Compliant (Turkish Data Protection Law)
+- Apple Privacy Guidelines
+- Google Play Data Safety Section
+
+## DECLARED API REASONS (iOS Privacy Manifest)
+
+### Required Reason APIs Used:
+
+#### NSPrivacyAccessedAPICategoryFileTimestamp
+- **Reason**: C.12.1 - App functionality
+- **Purpose**: Track file creation times for data synchronization
+
+#### NSPrivacyAccessedAPICategorySystemBootTime  
+- **Reason**: C.12.1 - App functionality
+- **Purpose**: Calculate session durations and timing
+
+#### NSPrivacyAccessedAPICategoryDiskSpace
+- **Reason**: C.12.1 - App functionality
+- **Purpose**: Check available storage for offline data
+
+#### NSPrivacyAccessedAPICategoryActiveKeyboards
+- **Reason**: C.12.1 - App functionality
+- **Purpose**: Adjust UI for keyboard visibility
+
+### Privacy Nutrition Label:
+- Data Not Linked to You: Yes
+- Data Used for Tracking: No
+- Data Collected: Yes (Health & Fitness, Contact Info, Usage Data)
+
+Last Updated: 2025-01-15

@@ -1,0 +1,53 @@
+GOOGLE PLAY CONSOLE - REVIEW NOTES
+====================================
+
+APP: FidBal - Uyku ve Stres Yönetimi
+PACKAGE: com.hecmel.fidbal
+VERSION: 1.0.0 (1)
+
+TEST ACCOUNT:
+Phone: 5555551144
+Password: *Demo58*
+
+QUICK TEST (2 minutes):
+1. Launch app
+2. Login with above credentials
+3. Tap "Uyku" → "+ Yeni"
+4. Enter sleep quality (e.g., 8)
+5. Submit
+
+FULL TEST (5 minutes):
+1. Login (5555551144 / *Demo58*)
+2. Uyku: Add sleep record
+3. Rahatlama: Try breathing exercise
+4. Destek: Test video call button
+5. Formlar: Open a form
+6. Profil: Switch theme dark/light
+
+VIDEO CALLS:
+- Uses Jitsi Meet (WebView)
+- No admin required for testing
+- Shows waiting screen
+
+PERMISSIONS:
+- Camera: Video calls
+- Microphone: Video calls & audio exercises
+- Notifications: Reminders only
+
+DATA SAFETY:
+- Health data collected for research
+- Anonymized after 6 months
+- No data sharing with third parties
+- Users can export/delete data
+
+CONTACT:
+Developer: Hasan Balkaya
+Email: hecmel@fidbal.com
+Phone: +90 539 487 00 58
+Response: Within 2 hours
+
+APP TYPE:
+- Health & Fitness category
+- Academic research application
+- Free, no ads, no purchases
+- Turkish language primary

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 // ✅ PRODUCTION BACKEND URL
-const API_URL = 'https://fidbal-backend.vercel.app/api';
+const API_URL = 'https://relaxation-app.fly.dev/api';
 
 const api = axios.create({
   baseURL: API_URL,

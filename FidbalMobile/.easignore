@@ -1,0 +1,40 @@
+node_modules/
+android/
+ios/
+.expo/
+.git/
+*.log
+*.tgz
+.DS_Store
+Thumbs.db
+
+# Firebase ve Google Service Dosyaları (Build'de gerekmez)
+google-services-key.json
+google-play-key.json
+firebase-config.json
+
+# Apple Developer Dosyaları
+*.cer
+*.p12
+*.provisionprofile
+
+# EAS Build artifacts
+.eas-build
+__archive
+
+# Source maps (production'da gerekmez)
+*.map
+
+# Test files
+__tests__/
+*.test.*
+*.spec.*
+
+# Documentation
+docs/
+README.md
+
+# Config files (EAS zaten kendi config'ini kullanır)
+eas.json
+app.config.js
+app.config.ts

@@ -1,0 +1,104 @@
+{
+  "storeListing": {
+    "title": {
+      "en-US": "FidBal - Sleep & Stress Management",
+      "tr-TR": "FidBal - Uyku ve Stres Yönetimi"
+    },
+    "shortDescription": {
+      "en-US": "Academic sleep tracking and relaxation app",
+      "tr-TR": "Akademik uyku takibi ve rahatlama uygulaması"
+    },
+    "fullDescription": {
+      "en-US": "FidBal is a scientifically-backed mobile application developed as part of an academic thesis at Istanbul University. Track sleep, manage stress, and improve wellbeing.",
+      "tr-TR": "FidBal, İstanbul Üniversitesi akademik tez çalışması kapsamında geliştirilmiş bilimsel temelli bir mobil uygulamadır. Uyku takibi, stres yönetimi ve refah geliştirme."
+    },
+    "featureGraphic": "feature-graphic.png",
+    "phoneScreenshots": [
+      "screenshot-1.png",
+      "screenshot-2.png",
+      "screenshot-3.png",
+      "screenshot-4.png",
+      "screenshot-5.png"
+    ],
+    "sevenInchScreenshots": [],
+    "tenInchScreenshots": [],
+    "tvScreenshots": [],
+    "wearScreenshots": []
+  },
+  
+  "contentRating": {
+    "rating": "TEEN",
+    "contentDescriptors": [
+      "DIGITAL_PURCHASES",
+      "USERS_INTERACT",
+      "SHARES_LOCATION",
+      "SHARES_INFO"
+    ],
+    "questionnaire": {
+      "category": "HEALTH_AND_FITNESS",
+      "interactiveElements": ["Digital purchases", "Users interact", "Shares location"],
+      "privacyPolicyUrl": "https://fidbal.com/privacy-policy"
+    }
+  },
+  
+  "dataSafety": {
+    "dataCollected": [
+      {
+        "type": "Personal info",
+        "dataElements": ["Name", "Email address", "Phone number"],
+        "purpose": "App functionality, Analytics, Personalization",
+        "optional": false
+      },
+      {
+        "type": "Health and fitness",
+        "dataElements": ["Sleep data", "Heart rate", "Exercise info"],
+        "purpose": "App functionality, Analytics, Personalization",
+        "optional": true
+      }
+    ],
+    "dataShared": [
+      {
+        "type": "Personal info",
+        "dataElements": ["Name", "Email address"],
+        "purpose": "App functionality",
+        "recipients": "Other users"
+      }
+    ],
+    "securityPractices": {
+      "dataEncryptedInTransit": true,
+      "dataCanBeDeleted": true,
+      "committedToPlayFamiliesPolicy": true
+    },
+    "privacyPolicyUrl": "https://fidbal.com/privacy-policy"
+  },
+  
+  "pricing": {
+    "price": "0.00",
+    "currency": "USD",
+    "distribution": "free",
+    "countries": "all"
+  },
+  
+  "releases": {
+    "track": "internal",
+    "name": "1.0.0",
+    "releaseNotes": [
+      {
+        "language": "en-US",
+        "text": "Initial release - Academic research application"
+      },
+      {
+        "language": "tr-TR",
+        "text": "İlk sürüm - Akademik araştırma uygulaması"
+      }
+    ],
+    "status": "draft"
+  },
+  
+  "testing": {
+    "internalTesters": ["hecmel@fidbal.com"],
+    "closedTesters": [],
+    "openTesting": false,
+    "feedbackUrl": "https://fidbal.com/feedback"
+  }
+}

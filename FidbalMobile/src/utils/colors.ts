@@ -1,4 +1,6 @@
-// TEMA RENK PALETİ
+// TEMA RENK PALETİ - FidBal Mobile App
+// ✅ SkeletonLoader için skeleton rengi eklendi
+
 export const colors = {
   light: {
     // Background
@@ -33,6 +35,10 @@ export const colors = {
 
     // Shadow
     shadow: '#000000',
+
+    // ✅ Skeleton Loader için eklendi
+    skeleton: '#e2e8f0',
+    skeletonHighlight: '#f1f5f9',
   },
   dark: {
     // Background
@@ -67,6 +73,10 @@ export const colors = {
 
     // Shadow
     shadow: '#000000',
+
+    // ✅ Skeleton Loader için eklendi
+    skeleton: '#334155',
+    skeletonHighlight: '#475569',
   },
 };
 

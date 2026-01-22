@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "fidbal",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -18,9 +19,27 @@
       "infoPlist": {
         "NSCameraUsageDescription": "FidBal uygulaması görüntülü görüşme özelliği için kamera erişimine ihtiyaç duyar.",
         "NSMicrophoneUsageDescription": "FidBal uygulaması görüntülü görüşme ve ses kaydı özellikleri için mikrofon erişimine ihtiyaç duyar.",
+        "NSPhotoLibraryUsageDescription": "FidBal uygulaması fotoğraf seçmek için medya kütüphanesine erişmek istiyor.",
         "NSUserTrackingUsageDescription": "Bu bilgi, uygulama deneyiminizi iyileştirmek ve size daha iyi hizmet sunmak için kullanılacaktır.",
-        "UIBackgroundModes": ["audio"]
-      }
+        "UIBackgroundModes": ["audio", "remote-notification"],
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": ["C12.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+            "NSPrivacyAccessedAPITypeReasons": ["C12.1"]
+          }
+        ]
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.associated-domains": []
+      },
+      "usesAppleSignIn": false
     },
     "android": {
       "adaptiveIcon": {
@@ -31,23 +50,28 @@
       "versionCode": 1,
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
-        "NOTIFICATIONS",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "WAKE_LOCK",
-        "RECORD_AUDIO",
-        "CAMERA",
-        "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "MODIFY_AUDIO_SETTINGS",
-        "BLUETOOTH",
-        "BLUETOOTH_CONNECT"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN"
       ],
-      "config": {
-        "googleMaps": {
-          "apiKey": ""
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "fidbal"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
         }
-      }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -57,14 +81,23 @@
         "projectId": "61f6b7c6-54a2-4315-81a7-6f8fc7095f0a"
       },
       "privacyPolicyUrl": "https://fidbal.com/privacy-policy",
-      "termsOfServiceUrl": "https://fidbal.com/terms-of-service"
+      "termsOfServiceUrl": "https://fidbal.com/terms-of-service",
+      "supportUrl": "https://fidbal.com/support",
+      "demoUser": {
+        "phone": "5555551144",
+        "password": "*Demo58*",
+        "notes": "Demo account for store review - Full access",
+        "name": "Demo Reviewer"
+      }
     },
     "plugins": [
       [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#3b82f6"
+          "color": "#3b82f6",
+          "androidMode": "default",
+          "androidCollapsedTitle": "FidBal Bildirimleri"
         }
       ],
       [
@@ -78,9 +111,33 @@
       [
         "expo-av",
         {
-          "microphonePermission": "FidBal uygulaması ses kaydı için mikrofonunuza erişmek istiyor."
+          "microphonePermission": "FidBal uygulaması ses kaydı için mikrofonunuza erişmek istiyor.",
+          "backgroundAudio": {
+            "ios": {
+              "mode": "audio"
+            },
+            "android": {
+              "foregroundService": {
+                "notificationTitle": "FidBal Binaural Ses",
+                "notificationBody": "Binaural ses çalınıyor",
+                "notificationColor": "#3b82f6"
+              }
+            }
+          }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FidBal uygulaması fotoğraf seçmek için medya kütüphanesine erişmek istiyor.",
+          "cameraPermission": "FidBal uygulaması fotoğraf çekmek için kameranıza erişmek istiyor."
+        }
+      ],
+      [
+        "expo-dev-client"
       ]
-    ]
+    ],
+    "owner": "hecmel",
+    "newArchEnabled": false
   }
 }

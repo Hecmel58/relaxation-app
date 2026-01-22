@@ -1,0 +1,53 @@
+APP STORE CONNECT REVIEW NOTES
+================================
+
+APP INFORMATION:
+- Name: FidBal - Uyku ve Stres Yönetimi
+- Bundle ID: com.hecmel.fidbal
+- Version: 1.0.0
+- Category: Health & Fitness → Medical
+
+DEMO ACCOUNT (FOR REVIEW):
+Phone: 5555551144
+Password: *Demo58*
+Note: Full access demo account
+
+TESTING CHECKLIST FOR REVIEWERS:
+☑️ Login with demo account
+☑️ Add sleep record (Uyku → +Yeni)
+☑️ Try relaxation exercise (Rahatlama)
+☑️ Test video call button (Destek → 🎥)
+☑️ Open forms (Formlar)
+☑️ Check theme switch (Profil → Tema)
+
+VIDEO CALL FUNCTIONALITY:
+- Uses Jitsi Meet (browser-based)
+- No actual admin required for testing
+- Shows "Uzman Bekleniyor" screen
+- Reviewers don't need to join the call
+
+PERMISSIONS EXPLAINED:
+- Camera: Video calls only
+- Microphone: Video calls and relaxation audio
+- Notifications: Sleep reminders and alerts
+
+RESEARCH COMPLIANCE:
+- Academic thesis application (Istanbul University)
+- All users sign consent form on registration
+- Data anonymized for research
+- KVKK/GDPR compliant
+
+CONTACT INFORMATION:
+Review Questions: hecmel@fidbal.com
+Emergency: +90 539 487 00 58
+Privacy: https://fidbal.com/privacy-policy
+
+TIME NEEDED FOR REVIEW:
+Full testing: 5-7 minutes
+Quick check: 2-3 minutes
+
+ADDITIONAL NOTES:
+- App is in Turkish language
+- Contains health-related content
+- Free, no purchases
+- Age rating: 12+

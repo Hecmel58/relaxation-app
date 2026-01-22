@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 1. TOPLANAN VERİ TİPLERİ -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+        <!-- SAĞLIK VERİLERİ -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeHealthAndFitness</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+                <string>NSPrivacyCollectedDataTypePurposeResearch</string>
+            </array>
+        </dict>
+        
+        <!-- KİŞİSEL BİLGİLER -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeName</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        
+        <!-- İLETİŞİM BİLGİLERİ -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeEmailAddress</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+        
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePhoneNumber</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+    </array>
+    
+    <!-- 2. KULLANILAN API TİPLERİ -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <!-- DOSYA ZAMAN DAMGASI -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>C12.1</string>
+            </array>
+        </dict>
+        
+        <!-- SİSTEM AÇILIŞ ZAMANI -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>C12.1</string>
+            </array>
+        </dict>
+        
+        <!-- DİSK ALANI -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>C12.1</string>
+            </array>
+        </dict>
+        
+        <!-- AKTİF KLAVYELER -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryActiveKeyboards</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>C12.1</string>
+            </array>
+        </dict>
+        
+        <!-- KAMERA -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryCamera</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>D3.14.2</string>
+            </array>
+        </dict>
+        
+        <!-- MİKROFON -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryMicrophone</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>D3.14.2</string>
+            </array>
+        </dict>
+        
+        <!-- FOTOĞRAF KÜTÜPHANESİ -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryPhotoLibrary</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>D3.14.4</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

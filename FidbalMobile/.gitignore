@@ -30,7 +30,11 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env
+.env.local
+.env.development
+.env.production
+.env.eas.json
 
 # typescript
 *.tsbuildinfo
@@ -38,8 +42,28 @@ yarn-error.*
 # generated native folders
 /ios
 /android
-.env
-*.env
+
+# Firebase ve Google Service Dosyaları (KRİTİK - GitHub'a yüklenmemeli)
+google-services.json
+GoogleService-Info.plist
+google-services-key.json
+google-play-key.json
+firebase-config.json
+
+# Apple Developer Dosyaları
+*.cer
+*.p12
+*.provisionprofile
+DistributionSummary.plist
+ExportOptions.plist
+
+# EAS Build artifacts
+*.apk
+*.aab
+*.ipa
+.eas-build
+__archive
+
 # Büyük dosyalar
 *.zip
 *.rar
@@ -63,3 +87,12 @@ build/
 # Platform-specific
 .DS_Store
 Thumbs.db
+
+# iOS Derived Data
+ios/DerivedData/
+
+# Android Build
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties

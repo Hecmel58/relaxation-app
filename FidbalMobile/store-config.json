@@ -1,0 +1,94 @@
+{
+  "app": {
+    "name": "FidBal - Uyku ve Stres Yönetimi",
+    "bundleId": "com.hecmel.fidbal",
+    "version": "1.0.0",
+    "buildNumber": "1"
+  },
+  
+  "storeListing": {
+    "title": {
+      "en": "FidBal - Sleep & Stress Management",
+      "tr": "FidBal - Uyku ve Stres Yönetimi"
+    },
+    
+    "subtitle": {
+      "en": "Academic Sleep Tracking & Relaxation",
+      "tr": "Akademik Uyku Takibi ve Rahatlama"
+    },
+    
+    "description": {
+      "en": "FidBal is a scientifically-backed mobile application developed as part of an academic thesis at Istanbul University. The app helps users track sleep patterns, manage stress levels, and improve overall well-being through evidence-based techniques.\n\n🔬 FEATURES:\n• Sleep Quality Tracking with detailed analytics\n• Heart Rate Monitoring for relaxation sessions\n• Binaural Sounds for mental relaxation\n• Guided Meditation & Breathing Exercises\n• Expert Support via secure video calls\n• Offline Mode - Use without internet\n• Dark/Light Theme for comfort\n• Academic Research Participation\n\n📊 FOR RESEARCH:\nThis application is part of an academic study on sleep patterns and stress management. User data contributes to scientific research while maintaining complete privacy and anonymity.\n\n🛡️ PRIVACY:\n• No data sharing with third parties\n• End-to-end encrypted communications\n• GDPR/KVKK compliant\n• Voluntary participation\n\n⏰ RECOMMENDED USE:\n• Daily sleep tracking before bed\n• 10-minute relaxation sessions\n• Weekly progress reviews\n• Expert consultations when needed",
+      
+      "tr": "FidBal, İstanbul Üniversitesi akademik tez çalışması kapsamında geliştirilmiş bilimsel temelli bir mobil uygulamadır. Kullanıcıların uyku kalitesini takip etmelerine, stres seviyelerini yönetmelerine ve kanıta dayalı tekniklerle genel refahı artırmalarına yardımcı olur.\n\n🔬 ÖZELLİKLER:\n• Detaylı analizlerle uyku kalitesi takibi\n• Rahatlama seansları için kalp atışı izleme\n• Zihinsel rahatlama için binaural sesler\n• Rehberli meditasyon ve nefes egzersizleri\n• Güvenli video görüşmelerle uzman desteği\n• Çevrimdışı Mod - İnternetsiz kullanım\n• Konfor için karanlık/aydınlık tema\n• Akademik araştırmaya katılım\n\n📊 ARAŞTIRMA İÇİN:\nBu uygulama, uyku düzenleri ve stres yönetimi üzerine yapılan akademik bir çalışmanın parçasıdır. Kullanıcı verileri, tam gizlilik ve anonimlik korunarak bilimsel araştırmalara katkı sağlar.\n\n🛡️ GİZLİLİK:\n• Üçüncü taraflarla veri paylaşımı yok\n• Uçtan uca şifreli iletişim\n• GDPR/KVKK uyumlu\n• Gönüllü katılım\n\n⏰ ÖNERİLEN KULLANIM:\n• Yatmadan önce günlük uyku takibi\n• 10 dakikalık rahatlama seansları\n• Haftalık ilerleme değerlendirmesi\n• İhtiyaç duyulduğunda uzman görüşmeleri"
+    },
+    
+    "keywords": {
+      "en": ["sleep", "stress", "meditation", "health", "wellness", "tracking", "academic", "research", "relaxation", "therapy"],
+      "tr": ["uyku", "stres", "meditasyon", "sağlık", "refah", "takip", "akademik", "araştırma", "rahatlama", "terapi"]
+    },
+    
+    "promotionalText": {
+      "en": "Scientifically-backed sleep improvement. Join academic research.",
+      "tr": "Bilimsel temelli uyku geliştirme. Akademik araştırmaya katılın."
+    },
+    
+    "releaseNotes": {
+      "en": "Initial release - Academic research application for sleep and stress management",
+      "tr": "İlk sürüm - Uyku ve stres yönetimi için akademik araştırma uygulaması"
+    },
+    
+    "supportUrl": {
+      "en": "https://fidbal.com/support",
+      "tr": "https://fidbal.com/destek"
+    },
+    
+    "marketingUrl": {
+      "en": "https://fidbal.com",
+      "tr": "https://fidbal.com"
+    },
+    
+    "privacyPolicyUrl": {
+      "en": "https://fidbal.com/privacy-policy",
+      "tr": "https://fidbal.com/gizlilik-politikasi"
+    },
+    
+    "termsOfServiceUrl": {
+      "en": "https://fidbal.com/terms",
+      "tr": "https://fidbal.com/kullanim-kosullari"
+    }
+  },
+  
+  "ratings": {
+    "ageRating": 12,
+    "contentDescriptors": {
+      "en": ["Infrequent/Mild Medical/Treatment Information", "Infrequent/Mild Horror/Fear Themes"],
+      "tr": ["Seyrek/Hafif Tıbbi/Tedavi Bilgileri", "Seyrek/Hafif Korku/Korku Temaları"]
+    },
+    "rating": "12+"
+  },
+  
+  "pricing": {
+    "price": 0.00,
+    "currency": "USD",
+    "free": true,
+    "inAppPurchases": false
+  },
+  
+  "categories": {
+    "primary": "Health & Fitness",
+    "secondary": "Lifestyle"
+  },
+  
+  "screenshots": {
+    "iphone65": ["6.5-inch iPhone", "5 required"],
+    "iphone55": ["5.5-inch iPhone", "5 required"],
+    "ipadPro": ["12.9-inch iPad Pro", "5 required"],
+    "android": ["7-inch", "8 required"]
+  },
+  
+  "testInstructions": {
+    "en": "This is an academic research application. For testing:\n1. Register with phone number\n2. Complete sleep tracking for 3 days\n3. Try relaxation exercises\n4. Test video call functionality\n\nDemo account: 5551112233 / Test123!",
+    "tr": "Bu bir akademik araştırma uygulamasıdır. Test için:\n1. Telefon numarası ile kayıt olun\n2. 3 gün boyunca uyku takibini tamamlayın\n3. Rahatlama egzersizlerini deneyin\n4. Video görüşme fonksiyonunu test edin\n\nDemo hesap: 5551112233 / Test123!"
+  }
+}

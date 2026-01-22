@@ -7,6 +7,8 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 import {
   registerForPushNotifications,
   scheduleSleepReminder,
+  scheduleWeeklyRelaxationReminders,
+  listScheduledNotifications,
 } from './src/services/notifications';
 import { Audio } from 'expo-av';
 import { useAuthStore } from './src/store/authStore';
@@ -19,10 +21,11 @@ LogBox.ignoreAllLogs(true);
 // ✅ Notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
+    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -31,14 +34,15 @@ export default function App() {
   const [initError, setInitError] = useState<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
-  const notificationListener = useRef<any>();
-  const responseListener = useRef<any>();
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
   const appState = useRef(AppState.currentState);
   const inactiveTimer = useRef<NodeJS.Timeout | null>(null);
 
   const loadStoredAuth = useAuthStore((state) => state.loadStoredAuth);
   const logout = useAuthStore((state) => state.logout);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
   const loadTheme = useThemeStore((state) => state.loadTheme);
   const loadPendingRequests = useOfflineStore((state) => state.loadPendingRequests);
   const syncPendingRequests = useOfflineStore((state) => state.syncPendingRequests);
@@ -50,21 +54,18 @@ export default function App() {
     // ✅ AUTO-LOCK: 5 dakika hareketsizlik sonrası logout
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (appState.current.match(/active/) && nextAppState === 'background') {
-        // Arka plana geçince timer başlat
         inactiveTimer.current = setTimeout(() => {
           console.log('⏰ Auto-lock: Logging out due to inactivity');
           logout();
-        }, 5 * 60 * 1000); // 5 dakika
+        }, 5 * 60 * 1000);
       }
 
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // Ön plana gelince timer'ı iptal et
         if (inactiveTimer.current) {
           clearTimeout(inactiveTimer.current);
           inactiveTimer.current = null;
         }
 
-        // Online ise pending requests'leri senkronize et
         if (isOnline) {
           syncPendingRequests().catch(err => {
             console.error('❌ Auto-sync failed:', err);
@@ -75,7 +76,6 @@ export default function App() {
       appState.current = nextAppState;
     });
 
-    // Cleanup
     return () => {
       subscription.remove();
       if (inactiveTimer.current) {
@@ -90,23 +90,56 @@ export default function App() {
     };
   }, []);
 
-  // ✅ Login sonrası push token kaydet
+  // ✅ Login sonrası BİLDİRİMLERİ AYARLA
   useEffect(() => {
-    if (isAuthenticated) {
-      setTimeout(() => {
-        registerForPushNotifications().catch(err => {
-          console.log('⚠️ Push token kaydedilemedi:', err.message);
-        });
-      }, 1000);
+    if (isAuthenticated && user) {
+      console.log('🔔 Kullanıcı giriş yaptı, bildirimler ayarlanıyor...');
+      console.log('👤 Kullanıcı:', user.name);
+      console.log('🧪 Grup:', user.abGroup || user.ab_group);
+      
+      setTimeout(async () => {
+        try {
+          // Push token kaydet
+          await registerForPushNotifications();
+          
+          // ✅ UYKU HATIRLATMASI - TÜM KULLANICILAR (21:00)
+          await scheduleSleepReminder();
+          console.log('✅ Uyku hatırlatması aktif (21:00)');
+          
+          // ✅ RAHATLAMA BİLDİRİMLERİ - SADECE DENEY GRUBU (19:00)
+          const userGroup = user.abGroup || user.ab_group;
+          if (userGroup === 'experiment') {
+            console.log('🧪 DENEY GRUBU - Rahatlama bildirimleri ayarlanıyor...');
+            await scheduleWeeklyRelaxationReminders();
+            console.log('✅ Haftalık rahatlama bildirimleri aktif (19:00)');
+          } else {
+            console.log('📊 KONTROL GRUBU - Rahatlama bildirimleri atlandı');
+          }
+          
+          // Debug: Zamanlanmış bildirimleri listele
+          if (__DEV__) {
+            console.log('');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('📋 ZAMANLANMIŞ BİLDİRİMLER:');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            await listScheduledNotifications();
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('');
+          }
+          
+        } catch (err: any) {
+          console.log('⚠️ Bildirim ayarlama hatası:', err.message);
+        }
+      }, 2000);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const initializeApp = async () => {
     try {
       console.log('🚀 App initialization started...');
 
       // ✅ 1. Auth yükle
-      console.log('📝 Loading stored auth...');
+      console.log('🔐 Loading stored auth...');
       await loadStoredAuth();
 
       // ✅ 2. Tema yükle
@@ -127,9 +160,9 @@ export default function App() {
         playThroughEarpieceAndroid: false,
       });
 
-      // ✅ 5. Push notification setup (SADECE UYKU HATIRLATMASI)
-      console.log('🔔 Setting up notifications...');
-      await setupNotifications();
+      // ✅ 5. Notification listeners
+      console.log('🔔 Setting up notification listeners...');
+      await setupNotificationListeners();
 
       // ✅ 6. Splash animasyonu
       console.log('✨ Starting splash animation...');
@@ -154,16 +187,12 @@ export default function App() {
     } catch (error: any) {
       console.error('❌ App initialization error:', error);
       setInitError(error.message || 'Başlatma hatası');
-      setIsReady(true); // Hata olsa bile devam et
+      setIsReady(true);
     }
   };
 
-  const setupNotifications = async () => {
+  const setupNotificationListeners = async () => {
     try {
-      // ✅ Uyku hatırlatması (giriş olmadan da çalışır)
-      await scheduleSleepReminder();
-      console.log('✅ Günlük uyku hatırlatması aktif (22:00)');
-
       notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
         console.log('📩 Notification received:', notification.request.content.title);
       });
@@ -171,9 +200,10 @@ export default function App() {
       responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
         console.log('👆 Notification clicked:', response.notification.request.content.data);
       });
+
+      console.log('✅ Notification listeners ayarlandı');
     } catch (error) {
-      console.error('❌ Notification setup error:', error);
-      // Notification hatası app'i crashlemesin
+      console.error('❌ Notification listener setup error:', error);
     }
   };
 

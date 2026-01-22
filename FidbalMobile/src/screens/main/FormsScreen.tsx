@@ -55,19 +55,21 @@ export default function FormsScreen() {
     loadForms();
   }, []);
 
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+  // ✅ useCallback ile optimize edildi
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
     setToastMessage(message);
     setToastType(type);
     setToastVisible(true);
     Haptics.notificationAsync(
       type === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
     );
-  };
+  }, []);
 
   const loadForms = async () => {
     try {
       if (!isOnline) {
-        showToast('Offline modasınız. Formlar yüklenemedi.', 'warning');
+        setForms([]); // ✅ Offline modda formları temizle
+        showToast('Offline moddasınız. Formlar yüklenemedi.', 'warning');
         setLoading(false);
         return;
       }
@@ -76,6 +78,9 @@ export default function FormsScreen() {
       setForms(response.data || []);
     } catch (error: any) {
       console.error('❌ Load forms error:', error);
+      
+      // ✅ Hata durumunda formları temizle
+      setForms([]);
       
       // ✅ GELİŞTİRİLMİŞ ERROR HANDLING
       const status = error.response?.status;
@@ -122,22 +127,28 @@ export default function FormsScreen() {
     setWebViewLoading(true);
   };
 
+  // ✅ FIXED: selectedForm null olmadan önce değişkene kaydediliyor
   const handleCloseWebView = async () => {
+    // Önce form referansını kaydet
+    const formToMark = selectedForm;
+    
+    // Sonra state'leri temizle
     setShowWebView(false);
     setSelectedForm(null);
     setWebViewLoading(true);
 
     // Form açıldı olarak işaretle
-    if (selectedForm && isOnline) {
+    if (formToMark && isOnline) {
       try {
         await api.post('/forms/responses', {
-          form_type_id: selectedForm.id,
+          form_type_id: formToMark.id,
           responses: { opened: true },
         });
         showToast('Form tamamlandı olarak işaretlendi', 'success');
         loadForms(); // Yenile
       } catch (error) {
         console.error('❌ Mark form as completed error:', error);
+        showToast('Form durumu güncellenemedi', 'warning');
       }
     }
   };
@@ -155,7 +166,7 @@ export default function FormsScreen() {
     }
   };
 
-  // Stats
+  // ✅ Stats - Offline modda doğru hesaplama
   const totalForms = forms.length;
   const completedForms = forms.filter((f) => f.is_filled).length;
   const pendingForms = totalForms - completedForms;
@@ -183,7 +194,13 @@ export default function FormsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
-      <Toast message={toastMessage} type={toastType} visible={toastVisible} onHide={() => setToastVisible(false)} />
+      <Toast 
+        message={toastMessage} 
+        type={toastType} 
+        visible={toastVisible} 
+        onHide={() => setToastVisible(false)} 
+        duration={3000}
+      />
 
       {/* ✅ OFFLINE BANNER */}
       {!isOnline && (
@@ -243,8 +260,15 @@ export default function FormsScreen() {
           {totalForms === 0 ? (
             <View style={[styles.emptyCard, { backgroundColor: currentColors.card }]}>
               <Text style={styles.emptyIcon}>📋</Text>
-              <Text style={[styles.emptyTitle, { color: currentColors.primary }]}>Henüz form yok</Text>
-              <Text style={[styles.emptyText, { color: currentColors.secondary }]}>Şu anda doldurulacak form bulunmuyor</Text>
+              <Text style={[styles.emptyTitle, { color: currentColors.primary }]}>
+                {!isOnline ? 'Offline Mod' : 'Henüz form yok'}
+              </Text>
+              <Text style={[styles.emptyText, { color: currentColors.secondary }]}>
+                {!isOnline 
+                  ? 'Formlara erişmek için internet bağlantınızı kontrol edin' 
+                  : 'Şu anda doldurulacak form bulunmuyor'
+                }
+              </Text>
             </View>
           ) : (
             forms.map((form) => (
@@ -258,8 +282,12 @@ export default function FormsScreen() {
                   )}
                 </View>
 
-                <Text style={[styles.formTitle, { color: currentColors.primary }]}>{form.title}</Text>
-                <Text style={[styles.formDescription, { color: currentColors.secondary }]}>{form.description}</Text>
+                <Text style={[styles.formTitle, { color: currentColors.primary }]}>
+                  {form.title}
+                </Text>
+                <Text style={[styles.formDescription, { color: currentColors.secondary }]}>
+                  {form.description}
+                </Text>
 
                 {form.is_filled && form.last_filled_at && (
                   <Text style={[styles.formDate, { color: currentColors.tertiary }]}>
@@ -281,6 +309,9 @@ export default function FormsScreen() {
                   ]}
                   onPress={() => handleOpenForm(form)}
                   disabled={!isOnline}
+                  accessibilityLabel={form.is_filled ? 'Formu tekrar doldur' : 'Formu aç'}
+                  accessibilityHint={`${form.title} formunu ${form.is_filled ? 'tekrar doldur' : 'aç'}`}
+                  accessibilityRole="button"
                 >
                   <Text
                     style={[
@@ -302,12 +333,17 @@ export default function FormsScreen() {
         <View
           style={[
             styles.infoCard,
-            { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe', borderLeftColor: currentColors.info },
+            { 
+              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#dbeafe', 
+              borderLeftColor: currentColors.info 
+            },
           ]}
         >
           <Text style={styles.infoIcon}>ℹ️</Text>
           <View style={styles.infoContent}>
-            <Text style={[styles.infoTitle, { color: isDark ? '#60a5fa' : '#1e40af' }]}>Formlar Hakkında</Text>
+            <Text style={[styles.infoTitle, { color: isDark ? '#60a5fa' : '#1e40af' }]}>
+              Formlar Hakkında
+            </Text>
             <Text style={[styles.infoText, { color: isDark ? '#93c5fd' : '#1e3a8a' }]}>
               Formlar uygulama içinde açılır. Doldurduğunuz formlar otomatik olarak kaydedilir ve burada işaretlenir.
             </Text>
@@ -315,26 +351,40 @@ export default function FormsScreen() {
         </View>
       </ScrollView>
 
-      {/* ✅ WEBVIEW MODAL - iOS SafeArea Düzeltmesi */}
-      <Modal visible={showWebView} animationType="slide" presentationStyle="fullScreen" onRequestClose={handleCloseWebView}>
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: currentColors.background }]} edges={['top', 'bottom']}>
-          {/* ✅ HEADER - iOS SafeArea padding */}
+      {/* ✅ WEBVIEW MODAL - iOS & Android SafeArea + Keyboard Uyumlu */}
+      <Modal 
+        visible={showWebView} 
+        animationType="slide" 
+        presentationStyle="fullScreen" 
+        onRequestClose={handleCloseWebView}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: currentColors.background }]}>
+          {/* ✅ HEADER - iOS SafeArea ile padding */}
           <View
             style={[
               styles.webViewHeader,
               {
                 backgroundColor: currentColors.surface,
                 borderBottomColor: currentColors.border,
-                paddingTop: Platform.OS === 'ios' ? insets.top : 0,
+                paddingTop: Platform.OS === 'ios' ? insets.top + 12 : 16,
+                paddingBottom: 12,
               },
             ]}
           >
             <View style={{ flex: 1 }}>
-              <Text style={[styles.webViewTitle, { color: currentColors.primary }]} numberOfLines={1}>
-                {selectedForm?.title}
+              <Text 
+                style={[styles.webViewTitle, { color: currentColors.primary }]} 
+                numberOfLines={1}
+              >
+                {selectedForm?.title || 'Form'}
               </Text>
             </View>
-            <TouchableOpacity style={[styles.closeButton, { backgroundColor: currentColors.error }]} onPress={handleCloseWebView}>
+            <TouchableOpacity 
+              style={[styles.closeButton, { backgroundColor: currentColors.error }]} 
+              onPress={handleCloseWebView}
+              accessibilityLabel="Formu kapat"
+              accessibilityRole="button"
+            >
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -343,28 +393,82 @@ export default function FormsScreen() {
           {webViewLoading && (
             <View style={styles.webViewLoadingContainer}>
               <ActivityIndicator size="large" color={currentColors.brand} />
-              <Text style={[styles.webViewLoadingText, { color: currentColors.secondary }]}>Form yükleniyor...</Text>
+              <Text style={[styles.webViewLoadingText, { color: currentColors.secondary }]}>
+                Form yükleniyor...
+              </Text>
             </View>
           )}
 
-          {/* ✅ WEBVIEW - contentInset ile SafeArea */}
+          {/* ✅ WEBVIEW - Keyboard aware & SafeArea uyumlu */}
           {selectedForm && (
-            <WebView
-              source={{ uri: selectedForm.google_form_url }}
-              style={styles.webView}
-              onLoadStart={() => setWebViewLoading(true)}
-              onLoadEnd={() => setWebViewLoading(false)}
-              onError={() => {
-                setWebViewLoading(false);
-                showToast('Form yüklenemedi', 'error');
-              }}
-              javaScriptEnabled
-              domStorageEnabled
-              startInLoadingState
-              contentInset={{ top: 0, bottom: 0 }}
-            />
+            <View style={{ flex: 1 }}>
+              <WebView
+                source={{ uri: selectedForm.google_form_url }}
+                style={styles.webView}
+                onLoadStart={() => setWebViewLoading(true)}
+                onLoadEnd={() => setWebViewLoading(false)}
+                onError={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.error('WebView error:', nativeEvent);
+                  setWebViewLoading(false);
+                  showToast('Form yüklenemedi', 'error');
+                }}
+                javaScriptEnabled
+                domStorageEnabled
+                startInLoadingState
+                scalesPageToFit={Platform.OS === 'android'}
+                showsVerticalScrollIndicator
+                bounces
+                // ✅ iOS için keyboard & SafeArea
+                keyboardDisplayRequiresUserAction={false}
+                automaticallyAdjustContentInsets={false}
+                contentInsetAdjustmentBehavior="never"
+                // ✅ Android için klavye yönetimi
+                {...(Platform.OS === 'android' && {
+                  androidLayerType: 'hardware',
+                })}
+                // ✅ JavaScript injection - Input'a tıklanınca otomatik scroll
+                injectedJavaScript={`
+                  (function() {
+                    // Input focus olduğunda scroll
+                    document.addEventListener('focus', function(e) {
+                      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                        setTimeout(() => {
+                          e.target.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center',
+                            inline: 'nearest'
+                          });
+                        }, 300);
+                      }
+                    }, true);
+
+                    // Viewport meta tag ekle (mobil uyumlu)
+                    var meta = document.createElement('meta');
+                    meta.name = 'viewport';
+                    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                    document.head.appendChild(meta);
+
+                    // iOS için ek klavye düzeltmesi
+                    if (/(iPhone|iPad|iPod)/.test(navigator.userAgent)) {
+                      window.addEventListener('resize', function() {
+                        if (document.activeElement.tagName === 'INPUT' || 
+                            document.activeElement.tagName === 'TEXTAREA') {
+                          document.activeElement.scrollIntoView({ block: 'center' });
+                        }
+                      });
+                    }
+                  })();
+                  true;
+                `}
+                onMessage={(event) => {
+                  // WebView'den mesaj alabilmek için
+                  console.log('WebView message:', event.nativeEvent.data);
+                }}
+              />
+            </View>
           )}
-        </SafeAreaView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -379,16 +483,35 @@ const styles = StyleSheet.create({
   headerSubtitle: { fontSize: 13, marginTop: 2 },
   content: { flex: 1 },
   statsContainer: { flexDirection: 'row', padding: 16, gap: 12 },
-  statCard: { flex: 1, borderRadius: 12, padding: 14, alignItems: 'center' },
+  statCard: { 
+    flex: 1, 
+    borderRadius: 12, 
+    padding: 14, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
   statIcon: { fontSize: 24, marginBottom: 6 },
   statValue: { fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
   statLabel: { fontSize: 10 },
   section: { padding: 16 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
-  emptyCard: { borderRadius: 12, padding: 32, alignItems: 'center' },
+  emptyCard: { 
+    borderRadius: 12, 
+    padding: 32, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  emptyText: { fontSize: 14, textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
+  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
   formCard: {
     borderRadius: 12,
     padding: 16,
@@ -399,26 +522,75 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  formHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  formHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 12 
+  },
   formIcon: { fontSize: 32 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   statusText: { fontSize: 11, fontWeight: '600' },
-  formTitle: { fontSize: 17, fontWeight: 'bold', marginBottom: 8 },
+  formTitle: { fontSize: 17, fontWeight: 'bold', marginBottom: 8, lineHeight: 22 },
   formDescription: { fontSize: 14, marginBottom: 8, lineHeight: 20 },
   formDate: { fontSize: 12, marginBottom: 12 },
-  formButton: { padding: 14, borderRadius: 8, alignItems: 'center' },
+  formButton: { 
+    padding: 14, 
+    borderRadius: 8, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
   formButtonText: { fontSize: 15, fontWeight: '600' },
-  infoCard: { flexDirection: 'row', margin: 16, padding: 16, borderRadius: 12, borderLeftWidth: 4 },
+  infoCard: { 
+    flexDirection: 'row', 
+    margin: 16, 
+    padding: 16, 
+    borderRadius: 12, 
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   infoIcon: { fontSize: 28, marginRight: 12 },
   infoContent: { flex: 1 },
   infoTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 8 },
   infoText: { fontSize: 13, lineHeight: 18 },
   modalContainer: { flex: 1 },
-  webViewHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, gap: 12 },
+  webViewHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 16,
+    borderBottomWidth: 1, 
+    gap: 12 
+  },
   webViewTitle: { fontSize: 16, fontWeight: 'bold' },
-  closeButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  closeButton: { 
+    width: 36, 
+    height: 36, 
+    borderRadius: 18, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
   closeButtonText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   webView: { flex: 1 },
-  webViewLoadingContainer: { position: 'absolute', top: '50%', left: 0, right: 0, alignItems: 'center', zIndex: 1 },
+  webViewLoadingContainer: { 
+    position: 'absolute', 
+    top: '50%', 
+    left: 0, 
+    right: 0, 
+    alignItems: 'center', 
+    zIndex: 1 
+  },
   webViewLoadingText: { marginTop: 12, fontSize: 14 },
 });

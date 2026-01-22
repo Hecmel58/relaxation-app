@@ -11,9 +11,11 @@ import {
   RefreshControl,
   Modal,
   Alert,
+  AppState,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useThemeStore } from '../../store/themeStore';
 import { useOfflineStore } from '../../store/offlineStore';
@@ -33,7 +35,7 @@ interface RelaxationContent {
   view_count?: number;
 }
 
-export default function RelaxationScreen() {
+export default function RelaxationScreen({ navigation }: any) {
   const isDark = useThemeStore((state) => state.isDark);
   const isOnline = useOfflineStore((state) => state.isOnline);
   const addPendingRequest = useOfflineStore((state) => state.addPendingRequest);
@@ -64,7 +66,7 @@ export default function RelaxationScreen() {
   const categories = [
     { id: 'box_breathing', name: 'Kutu Nefes', icon: '🌬️', desc: 'Nefes egzersizi' },
     { id: 'guided_imagery', name: 'Rehberli İmgeleme', icon: '🧘‍♀️', desc: 'Zihinsel rahatlama' },
-    { id: 'progressive_relaxation', name: 'Kas Gevşetme', icon: '🌊', desc: 'Vücut rahatlama' },
+    { id: 'progressive_relaxation', name: 'Progresif Gevşetme', icon: '🌊', desc: 'Vücut rahatlama' },
   ];
 
   // Test content (API boşsa kullanılacak)
@@ -107,6 +109,82 @@ export default function RelaxationScreen() {
     ],
   };
 
+  // ✅ CLEANUP SOUND - useCallback ile optimize edildi
+  const cleanupSound = useCallback(async () => {
+    if (sound) {
+      try {
+        console.log('🔇 Ses temizleniyor...');
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        setSound(null);
+      } catch (error) {
+        console.error('Cleanup error:', error);
+      }
+    }
+  }, [sound]);
+
+  // ✅ SAYFADAN AYRILINCA SESİ DURDUR
+  const handlePageLeave = useCallback(async () => {
+    if (sound || currentPlaying) {
+      console.log('🔇 Sayfa değişimi: Ses durduruluyor...');
+      await cleanupSound();
+      setCurrentPlaying(null);
+      setProgress(0);
+      
+      if (showHeartRateModal) {
+        setShowHeartRateModal(false);
+        setHeartRateBefore('');
+        setHeartRateAfter('');
+        setPendingSound(null);
+        setIsWaitingForAfter(false);
+        sessionStartTime.current = null;
+      }
+    }
+  }, [sound, currentPlaying, showHeartRateModal, cleanupSound]);
+
+  // ✅ NAVIGATION LISTENER - Sayfa değişince sesi durdur
+  useEffect(() => {
+    const unsubscribeBlur = navigation.addListener('blur', () => {
+      console.log('🚪 Sayfadan ayrılıyor, ses durduruluyor...');
+      handlePageLeave();
+    });
+
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      console.log('🎯 Relaxation sayfasına gelindi');
+    });
+
+    return () => {
+      unsubscribeBlur();
+      unsubscribeFocus();
+    };
+  }, [navigation, handlePageLeave]);
+
+  // ✅ APPSTATE LISTENER - Uygulama background'a gidince sesi durdur
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        if (sound || currentPlaying) {
+          console.log('📱 Uygulama background: Ses durduruluyor...');
+          await cleanupSound();
+          setCurrentPlaying(null);
+          setProgress(0);
+          if (showHeartRateModal) {
+            setShowHeartRateModal(false);
+            setHeartRateBefore('');
+            setHeartRateAfter('');
+            setPendingSound(null);
+            setIsWaitingForAfter(false);
+            sessionStartTime.current = null;
+          }
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [sound, currentPlaying, showHeartRateModal, cleanupSound]);
+
   useEffect(() => {
     setupAudio();
     loadContent();
@@ -118,10 +196,14 @@ export default function RelaxationScreen() {
 
   useEffect(() => {
     // Kategori değiştiğinde sesi temizle
-    cleanupSound();
-    setCurrentPlaying(null);
-    setProgress(0);
-    loadContent();
+    const handleCategoryChange = async () => {
+      await cleanupSound();
+      setCurrentPlaying(null);
+      setProgress(0);
+      loadContent();
+    };
+
+    handleCategoryChange();
   }, [selectedCategory]);
 
   const setupAudio = async () => {
@@ -131,31 +213,21 @@ export default function RelaxationScreen() {
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
       });
     } catch (error) {
       console.error('Audio setup error:', error);
     }
   };
 
-  const cleanupSound = async () => {
-    if (sound) {
-      try {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-      } catch (error) {
-        console.error('Cleanup error:', error);
-      }
-    }
-  };
-
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
     setToastMessage(message);
     setToastType(type);
     setToastVisible(true);
     Haptics.notificationAsync(
       type === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
     );
-  };
+  }, []);
 
   const loadContent = async () => {
     try {
@@ -171,6 +243,7 @@ export default function RelaxationScreen() {
 
       if (apiContent.length === 0) {
         setContent(testContent[selectedCategory] || []);
+        showToast('Test içeriği yüklendi', 'info');
       } else {
         setContent(apiContent);
       }
@@ -198,7 +271,15 @@ export default function RelaxationScreen() {
       await cleanupSound();
       setCurrentPlaying(null);
       setProgress(0);
+      showToast('Ses durduruldu', 'info');
     } else {
+      // Önce mevcut sesi temizle
+      if (currentPlaying) {
+        await cleanupSound();
+        setCurrentPlaying(null);
+        setProgress(0);
+      }
+
       // Önce kalp atışı al
       setPendingSound(item);
       setIsWaitingForAfter(false);
@@ -248,6 +329,7 @@ export default function RelaxationScreen() {
         setHeartRateAfter('');
         setPendingSound(null);
         setIsWaitingForAfter(false);
+        sessionStartTime.current = null;
       } catch (error: any) {
         console.error('❌ Heart rate save error:', error);
         showToast('Kayıt başarısız', 'error');
@@ -264,9 +346,15 @@ export default function RelaxationScreen() {
       try {
         await cleanupSound();
 
+        console.log('🎵 Ses çalınıyor:', pendingSound?.url);
+
         const { sound: newSound } = await Audio.Sound.createAsync(
           { uri: pendingSound!.url },
-          { shouldPlay: true },
+          { 
+            shouldPlay: true,
+            isLooping: false,
+            volume: 1.0,
+          },
           onPlaybackStatusUpdate
         );
 
@@ -274,31 +362,48 @@ export default function RelaxationScreen() {
         setCurrentPlaying(pendingSound!.id);
         sessionStartTime.current = Date.now();
         setShowHeartRateModal(false);
+        
+        showToast('Ses başlatıldı', 'success');
       } catch (error) {
         console.error('❌ Play error:', error);
         showToast('Ses oynatılamadı', 'error');
+        setShowHeartRateModal(false);
+        setHeartRateBefore('');
+        setPendingSound(null);
       }
     }
   };
 
-  const onPlaybackStatusUpdate = (status: any) => {
-    if (status.isLoaded) {
-      if (status.durationMillis) {
-        const progressPercent = (status.positionMillis / status.durationMillis) * 100;
-        setProgress(progressPercent);
-      }
+  // ✅ Hata yakalama eklendi
+  const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    try {
+      if (status.isLoaded) {
+        if (status.durationMillis) {
+          const progressPercent = (status.positionMillis / status.durationMillis) * 100;
+          setProgress(progressPercent);
+        }
 
-      if (status.didJustFinish) {
-        // Ses bitti, sonraki kalp atışını al
-        setIsWaitingForAfter(true);
-        setShowHeartRateModal(true);
+        if (status.didJustFinish) {
+          console.log('✅ Ses bitti, son kalp atışı isteniyor');
+          setIsWaitingForAfter(true);
+          setShowHeartRateModal(true);
+        }
+      } else if ('error' in status && status.error) {
+        console.error('Playback error:', status.error);
+        showToast('Ses çalarken hata oluştu', 'error');
+        cleanupSound();
+        setCurrentPlaying(null);
+        setProgress(0);
       }
+    } catch (error) {
+      console.error('Status update error:', error);
     }
   };
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    return `${mins} dk`;
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins} dk` : `${secs} sn`;
   };
 
   // Skeleton Loading
@@ -337,6 +442,13 @@ export default function RelaxationScreen() {
           <Text style={[styles.headerTitle, { color: currentColors.primary }]}>Rahatlama Merkezi</Text>
           <Text style={[styles.headerSubtitle, { color: currentColors.secondary }]}>Meditasyon ve nefes egzersizleri</Text>
         </View>
+        
+        {/* ✅ SES DURUMU GÖSTERGESİ */}
+        {currentPlaying && (
+          <View style={[styles.playingIndicator, { backgroundColor: currentColors.success }]}>
+            <Text style={styles.playingIndicatorText}>🎵 Çalıyor</Text>
+          </View>
+        )}
       </View>
 
       <ScrollView
@@ -345,7 +457,7 @@ export default function RelaxationScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={currentColors.brand} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* KATEGORİLER - BİNAURAL GİBİ BÜYÜK KARTLAR */}
+        {/* KATEGORİLER */}
         <View style={styles.typesContainer}>
           {categories.map((cat) => (
             <TouchableOpacity
@@ -359,17 +471,27 @@ export default function RelaxationScreen() {
               ]}
               onPress={async () => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                // Kategori değiştiğinde sesi durdur
                 if (currentPlaying) {
                   await cleanupSound();
                   setCurrentPlaying(null);
                   setProgress(0);
+                  showToast('Kategori değişti, ses durduruldu', 'info');
                 }
                 setSelectedCategory(cat.id);
               }}
+              accessibilityLabel={`${cat.name} kategorisi`}
+              accessibilityHint={`${cat.desc} içeriklerini görmek için seçin`}
+              accessibilityRole="button"
             >
               <Text style={styles.typeIcon}>{cat.icon}</Text>
-              <Text style={[styles.typeName, { color: currentColors.primary }]}>{cat.name}</Text>
+              <Text 
+                style={[styles.typeName, { color: currentColors.primary }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {cat.name}
+              </Text>
               <Text style={[styles.typeDesc, { color: currentColors.tertiary }]}>{cat.desc}</Text>
             </TouchableOpacity>
           ))}
@@ -379,8 +501,15 @@ export default function RelaxationScreen() {
         {content.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: currentColors.card }]}>
             <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={[styles.emptyTitle, { color: currentColors.primary }]}>Henüz içerik yok</Text>
-            <Text style={[styles.emptyText, { color: currentColors.secondary }]}>Bu kategoride içerik bulunmuyor</Text>
+            <Text style={[styles.emptyTitle, { color: currentColors.primary }]}>
+              {!isOnline ? 'Offline Mod' : 'Henüz içerik yok'}
+            </Text>
+            <Text style={[styles.emptyText, { color: currentColors.secondary }]}>
+              {!isOnline 
+                ? 'İçeriklere erişmek için internet bağlantınızı kontrol edin' 
+                : 'Bu kategoride içerik bulunmuyor'
+              }
+            </Text>
           </View>
         ) : (
           <View style={styles.section}>
@@ -399,24 +528,56 @@ export default function RelaxationScreen() {
                     <View style={[styles.progressBar, { backgroundColor: currentColors.border }]}>
                       <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: currentColors.brand }]} />
                     </View>
+                    <Text style={[styles.progressText, { color: currentColors.tertiary }]}>
+                      %{Math.round(progress)}
+                    </Text>
                   </View>
                 )}
 
                 <TouchableOpacity
                   style={[
                     styles.playButton,
-                    { backgroundColor: currentPlaying === item.id ? currentColors.error : currentColors.brand },
+                    { 
+                      backgroundColor: currentPlaying === item.id ? currentColors.error : currentColors.brand,
+                      opacity: !isOnline && currentPlaying !== item.id ? 0.5 : 1
+                    },
                   ]}
                   onPress={() => handlePlay(item)}
+                  disabled={!isOnline && currentPlaying !== item.id}
+                  accessibilityLabel={currentPlaying === item.id ? 'Sesi durdur' : 'Sesi başlat'}
+                  accessibilityHint={`${item.title} sesini ${currentPlaying === item.id ? 'durdur' : 'çal'}`}
+                  accessibilityRole="button"
                 >
-                  <Text style={styles.playButtonText}>{currentPlaying === item.id ? '⏸️ Durdur' : '▶️ Başlat'}</Text>
+                  <Text style={styles.playButtonText}>
+                    {currentPlaying === item.id ? '⏸️ Durdur' : '▶️ Başlat'}
+                  </Text>
                 </TouchableOpacity>
 
-                {item.view_count && item.view_count > 0 && (
-                  <Text style={[styles.viewCount, { color: currentColors.tertiary }]}>{item.view_count} kez dinlendi</Text>
+                {item.view_count !== undefined && item.view_count > 0 && (
+                  <Text style={[styles.viewCount, { color: currentColors.tertiary }]}>
+                    {item.view_count} kez dinlendi
+                  </Text>
                 )}
               </View>
             ))}
+          </View>
+        )}
+
+        {/* ✅ SES UYARI KARTI */}
+        {currentPlaying && (
+          <View style={[styles.warningCard, { 
+            backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7',
+            borderLeftColor: currentColors.warning
+          }]}>
+            <Text style={styles.warningIcon}>⚠️</Text>
+            <View style={styles.warningContent}>
+              <Text style={[styles.warningTitle, { color: isDark ? '#fcd34d' : '#92400e' }]}>
+                Ses Çalıyor
+              </Text>
+              <Text style={[styles.warningText, { color: isDark ? '#fde68a' : '#b45309' }]}>
+                Sayfadan ayrılırsanız ses otomatik olarak duracaktır
+              </Text>
+            </View>
           </View>
         )}
 
@@ -433,45 +594,120 @@ export default function RelaxationScreen() {
       </ScrollView>
 
       {/* HEART RATE MODAL */}
-      <Modal visible={showHeartRateModal} animationType="fade" transparent onRequestClose={() => setShowHeartRateModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { 
-            backgroundColor: currentColors.card,
-            marginTop: Platform.OS === 'ios' ? insets.top : 0,
-          }]}>
-            <Text style={[styles.modalTitle, { color: currentColors.primary }]}>
-              {isWaitingForAfter ? '🫀 Ses Sonrası Kalp Atışı' : '🫀 Ses Öncesi Kalp Atışı'}
-            </Text>
-            <Text style={[styles.modalText, { color: currentColors.secondary }]}>
-              {isWaitingForAfter ? 'Ses bitti. Şimdi kalp atışınızı ölçün.' : 'Sesi başlatmadan önce kalp atışınızı ölçün.'}
-            </Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: currentColors.input, borderColor: currentColors.inputBorder, color: currentColors.primary }]}
-              value={isWaitingForAfter ? heartRateAfter : heartRateBefore}
-              onChangeText={(text) => (isWaitingForAfter ? setHeartRateAfter(text) : setHeartRateBefore(text))}
-              keyboardType="numeric"
-              placeholder="Örn: 72"
-              placeholderTextColor={currentColors.placeholder}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: currentColors.brand }]} onPress={handleHeartRateSubmit}>
-                <Text style={styles.modalButtonText}>{isWaitingForAfter ? 'Kaydet' : 'Başlat'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: currentColors.border }]}
-                onPress={() => {
-                  setShowHeartRateModal(false);
-                  setHeartRateBefore('');
-                  setHeartRateAfter('');
-                  setPendingSound(null);
-                  setIsWaitingForAfter(false);
-                }}
-              >
-                <Text style={[styles.modalButtonText, { color: currentColors.primary }]}>İptal</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+      <Modal 
+        visible={showHeartRateModal} 
+        animationType="fade" 
+        transparent 
+        onRequestClose={() => {
+          setShowHeartRateModal(false);
+          setHeartRateBefore('');
+          setHeartRateAfter('');
+          setPendingSound(null);
+          setIsWaitingForAfter(false);
+          sessionStartTime.current = null;
+          
+          if (isWaitingForAfter) {
+            cleanupSound();
+            setCurrentPlaying(null);
+            setProgress(0);
+          }
+        }}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity 
+            activeOpacity={1} 
+            style={styles.modalOverlay}
+            onPress={() => {
+              // Boş alan tıklandığında klavyeyi kapat ama modalı kapatma
+            }}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+              <View style={[styles.modalCard, { 
+                backgroundColor: currentColors.card,
+              }]}>
+                <Text style={[styles.modalTitle, { color: currentColors.primary }]}>
+                  {isWaitingForAfter ? '🫀 Ses Sonrası Kalp Atışı' : '🫀 Ses Öncesi Kalp Atışı'}
+                </Text>
+                <Text style={[styles.modalText, { color: currentColors.secondary }]}>
+                  {isWaitingForAfter 
+                    ? 'Ses bitti. Şimdi kalp atışınızı ölçün ve girin.' 
+                    : 'Sesi başlatmadan önce kalp atışınızı ölçün ve girin.'
+                  }
+                </Text>
+                
+                <TextInput
+                  style={[styles.modalInput, { 
+                    backgroundColor: currentColors.input, 
+                    borderColor: currentColors.inputBorder, 
+                    color: currentColors.primary 
+                  }]}
+                  value={isWaitingForAfter ? heartRateAfter : heartRateBefore}
+                  onChangeText={(text) => {
+                    const numericValue = text.replace(/[^0-9]/g, '');
+                    if (isWaitingForAfter) {
+                      setHeartRateAfter(numericValue);
+                    } else {
+                      setHeartRateBefore(numericValue);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  placeholder="Örn: 72"
+                  placeholderTextColor={currentColors.placeholder}
+                  maxLength={3}
+                  autoFocus={true}
+                  accessibilityLabel="Kalp atışı girişi"
+                  accessibilityHint="40 ile 200 arasında bir değer girin"
+                  returnKeyType="done"
+                  blurOnSubmit={true}
+                />
+                
+                <Text style={[styles.modalHint, { color: currentColors.tertiary }]}>
+                  Lütfen 40-200 arası bir değer girin
+                </Text>
+                
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity 
+                    style={[styles.modalButton, { backgroundColor: currentColors.brand }]} 
+                    onPress={handleHeartRateSubmit}
+                    accessibilityLabel={isWaitingForAfter ? 'Kaydet' : 'Sesi başlat'}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.modalButtonText}>
+                      {isWaitingForAfter ? '📊 Kaydet' : '🎵 Başlat'}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: currentColors.border }]}
+                    onPress={() => {
+                      setShowHeartRateModal(false);
+                      setHeartRateBefore('');
+                      setHeartRateAfter('');
+                      setPendingSound(null);
+                      setIsWaitingForAfter(false);
+                      sessionStartTime.current = null;
+                      
+                      if (isWaitingForAfter) {
+                        cleanupSound();
+                        setCurrentPlaying(null);
+                        setProgress(0);
+                      }
+                    }}
+                    accessibilityLabel="İptal"
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.modalButtonText, { color: currentColors.primary }]}>
+                      {isWaitingForAfter ? '❌ İptal' : '🚪 Vazgeç'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -481,43 +717,175 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   offlineBanner: { padding: 8, alignItems: 'center' },
   offlineBannerText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  header: { padding: 16, borderBottomWidth: 1 },
+  header: { 
+    padding: 16, 
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
   headerTitle: { fontSize: 24, fontWeight: 'bold' },
   headerSubtitle: { fontSize: 13, marginTop: 2 },
+  playingIndicator: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 4,
+  },
+  playingIndicatorText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   content: { flex: 1 },
   typesContainer: { flexDirection: 'row', padding: 16, gap: 12 },
-  typeCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 2, minHeight: 140 },
-  typeIcon: { fontSize: 28, marginBottom: 8 },
-  typeName: { fontSize: 12, fontWeight: 'bold', marginBottom: 4, textAlign: 'center', lineHeight: 16 },
-  typeDesc: { fontSize: 10, textAlign: 'center', color: '#94a3b8' },
+  typeCard: { 
+    flex: 1, 
+    borderRadius: 12, 
+    padding: 12, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    borderWidth: 2, 
+    minHeight: 150,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  typeIcon: { fontSize: 32, marginBottom: 12 },
+  typeName: { 
+    fontSize: 12, 
+    fontWeight: 'bold', 
+    marginBottom: 6, 
+    textAlign: 'center', 
+    lineHeight: 16,
+    paddingHorizontal: 2,
+  },
+  typeDesc: { 
+    fontSize: 11, 
+    textAlign: 'center', 
+    lineHeight: 16,
+    paddingHorizontal: 4,
+  },
   section: { padding: 16, gap: 16 },
-  contentCard: { borderRadius: 12, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  contentHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  contentIcon: { fontSize: 32 },
-  contentDuration: { fontSize: 12 },
-  contentTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  contentDescription: { fontSize: 14, marginBottom: 12 },
-  progressContainer: { marginBottom: 12 },
-  progressBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 2 },
-  playButton: { padding: 14, borderRadius: 8, alignItems: 'center' },
-  playButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  viewCount: { fontSize: 11, textAlign: 'center', marginTop: 8 },
-  tipCard: { flexDirection: 'row', margin: 16, padding: 16, borderRadius: 12, borderLeftWidth: 4 },
-  tipIcon: { fontSize: 28, marginRight: 12 },
+  contentCard: { 
+    borderRadius: 12, 
+    padding: 20, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 4, 
+    elevation: 2 
+  },
+  contentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  contentIcon: { fontSize: 36 },
+  contentDuration: { fontSize: 14, fontWeight: '600' },
+  contentTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, lineHeight: 24 },
+  contentDescription: { fontSize: 14, marginBottom: 16, lineHeight: 20 },
+  progressContainer: { marginBottom: 16 },
+  progressBar: { height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
+  progressFill: { height: '100%', borderRadius: 3 },
+  progressText: { fontSize: 12, textAlign: 'center' },
+  playButton: { 
+    padding: 16, 
+    borderRadius: 10, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  playButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  viewCount: { fontSize: 12, textAlign: 'center', marginTop: 12 },
+  warningCard: {
+    flexDirection: 'row',
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    alignItems: 'center',
+  },
+  warningIcon: { fontSize: 24, marginRight: 12 },
+  warningContent: { flex: 1 },
+  warningTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
+  warningText: { fontSize: 13, lineHeight: 18 },
+  tipCard: { 
+    flexDirection: 'row', 
+    margin: 16, 
+    padding: 20, 
+    borderRadius: 12, 
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tipIcon: { fontSize: 32, marginRight: 16 },
   tipContent: { flex: 1 },
-  tipTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 4 },
-  tipText: { fontSize: 13, lineHeight: 18 },
-  emptyCard: { borderRadius: 12, padding: 32, alignItems: 'center', margin: 16 },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  emptyText: { fontSize: 14, textAlign: 'center' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalCard: { borderRadius: 16, padding: 24 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  modalText: { fontSize: 14, marginBottom: 16 },
-  modalInput: { padding: 14, borderRadius: 8, borderWidth: 1, fontSize: 16, marginBottom: 16 },
+  tipTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
+  tipText: { fontSize: 14, lineHeight: 20 },
+  emptyCard: { 
+    borderRadius: 12, 
+    padding: 40, 
+    alignItems: 'center', 
+    margin: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  emptyIcon: { fontSize: 64, marginBottom: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
+  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.6)', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: { 
+    borderRadius: 16, 
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
+  modalText: { fontSize: 15, marginBottom: 20, textAlign: 'center', lineHeight: 22 },
+  modalInput: { 
+    padding: 16, 
+    borderRadius: 10, 
+    borderWidth: 2, 
+    fontSize: 18, 
+    marginBottom: 8,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  modalHint: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
   modalButtons: { flexDirection: 'row', gap: 12 },
-  modalButton: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
-  modalButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  modalButton: { 
+    flex: 1, 
+    padding: 16, 
+    borderRadius: 10, 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  modalButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

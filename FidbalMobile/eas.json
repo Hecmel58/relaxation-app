@@ -21,8 +21,10 @@
       }
     },
     "production": {
+      "autoIncrement": true,
       "ios": {
-        "buildNumber": "auto"
+        "buildNumber": "auto",
+        "enterpriseProvisioning": "universal"
       },
       "android": {
         "buildType": "app-bundle",
@@ -34,12 +36,14 @@
     "production": {
       "ios": {
         "appleId": "ecmelazizoglu@gmail.com",
-        "ascAppId": "BURAYA_APP_STORE_ID_GELECEK",
-        "appleTeamId": "BURAYA_APPLE_TEAM_ID_GELECEK"
+        "ascAppId": "6757957720",
+        "appleTeamId": "SYYVCDLVLC"
       },
       "android": {
         "serviceAccountKeyPath": "./google-services-key.json",
-        "track": "production"
+        "track": "production",
+        "releaseStatus": "completed",
+        "changesNotSentForReview": false
       }
     }
   }
