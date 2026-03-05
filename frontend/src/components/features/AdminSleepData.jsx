@@ -70,6 +70,24 @@ function AdminSleepData() {
     setSelectedSession({ ...userGroup.sessions[0], history, user_name: userGroup.user_name, user_phone: userGroup.user_phone, ab_group: userGroup.ab_group });
   };
 
+  const handleDeleteSession = async (sessionId) => {
+    if (!window.confirm('Bu uyku kaydını silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/sleep-sessions/${sessionId}`);
+      
+      // Verileri yeniden yükle
+      await loadSleepData();
+      
+      alert('Uyku kaydı başarıyla silindi');
+    } catch (error) {
+      console.error('Silme hatası:', error);
+      alert('Uyku kaydı silinemedi: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -553,13 +571,23 @@ function SleepDetailView({ session, onClose, formatDate }) {
                         <div className="font-medium">{s.sleep_efficiency}%</div>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setExpandedSessionId(isExpanded ? null : s.id)}
-                    >
-                      {isExpanded ? 'Gizle' : 'Detay'}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExpandedSessionId(isExpanded ? null : s.id)}
+                      >
+                        {isExpanded ? 'Gizle' : 'Detay'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteSession(s.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        Sil
+                      </Button>
+                    </div>
                   </div>
                   {isExpanded && (
                     <div className="mt-3 pt-3 border-t grid grid-cols-4 gap-3 text-sm">

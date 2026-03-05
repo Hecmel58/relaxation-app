@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import api from '../api/axios';
@@ -12,15 +12,26 @@ function LoginPage() {
   const { login } = useAuthStore();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [agreedToKVKK, setAgreedToKVKK] = useState(false); // ✅ YENİ: KVKK onayı
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPhone, setForgotPhone] = useState('');
   const [forgotMessage, setForgotMessage] = useState('');
-  const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Sayfa yüklendiğinde kayıtlı bilgileri getir
+  useEffect(() => {
+    const savedPhone = localStorage.getItem('fidbal_saved_phone');
+    const savedPassword = localStorage.getItem('fidbal_saved_password');
+    const savedRememberMe = localStorage.getItem('fidbal_remember_me');
+    
+    if (savedRememberMe === 'true' && savedPhone && savedPassword) {
+      setPhone(savedPhone);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handlePhoneChange = (e) => {
     const value = e.target.value.replace(/\D/g, '');
@@ -40,11 +51,6 @@ function LoginPage() {
     e.preventDefault();
     setError('');
 
-    if (!agreedToTerms || !agreedToKVKK) { // ✅ DEĞİŞTİ: İkisini de kontrol et
-      setError('Kullanıcı sözleşmesi ve KVKK aydınlatma metnini onaylamanız gerekmektedir');
-      return;
-    }
-
     if (!phone || !password) {
       setError('Telefon numarası ve şifre gereklidir');
       return;
@@ -60,6 +66,18 @@ function LoginPage() {
       const response = await api.post('/auth/login', { phone, password });
       
       if (response.data.success) {
+        // Beni Hatırla seçiliyse bilgileri kaydet
+        if (rememberMe) {
+          localStorage.setItem('fidbal_saved_phone', phone);
+          localStorage.setItem('fidbal_saved_password', password);
+          localStorage.setItem('fidbal_remember_me', 'true');
+        } else {
+          // Beni Hatırla seçili değilse kayıtlı bilgileri sil
+          localStorage.removeItem('fidbal_saved_phone');
+          localStorage.removeItem('fidbal_saved_password');
+          localStorage.removeItem('fidbal_remember_me');
+        }
+        
         login(response.data.user, response.data.token);
         navigate('/dashboard');
       } else {
@@ -228,51 +246,24 @@ function LoginPage() {
             </div>
           </div>
 
-          {/* ✅ DEĞİŞTİ: İki ayrı onay kutusu eklendi */}
-          <div className="space-y-3">
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                id="terms"
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-1 mr-2 h-4 w-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
-              />
-              <label htmlFor="terms" className="text-sm text-slate-700">
-                <Link
-                  to="/terms"
-                  target="_blank"
-                  className="text-primary-600 hover:underline font-medium"
-                >
-                  Kullanıcı sözleşmesini
-                </Link> okudum ve onaylıyorum
-              </label>
-            </div>
-
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                id="kvkk"
-                checked={agreedToKVKK}
-                onChange={(e) => setAgreedToKVKK(e.target.checked)}
-                className="mt-1 mr-2 h-4 w-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
-              />
-              <label htmlFor="kvkk" className="text-sm text-slate-700">
-                <Link
-                  to="/privacy-policy"
-                  target="_blank"
-                  className="text-primary-600 hover:underline font-medium"
-                >
-                  KVKK aydınlatma metnini
-                </Link> okudum ve onaylıyorum
-              </label>
-            </div>
+          {/* Beni Hatırla */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="mr-2 h-4 w-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500"
+            />
+            <label htmlFor="rememberMe" className="text-sm text-slate-700">
+              Beni Hatırla
+            </label>
           </div>
 
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || !agreedToTerms || !agreedToKVKK} // ✅ DEĞİŞTİ: İkisini de kontrol et
+            disabled={loading}
           >
             {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </Button>
