@@ -187,5 +187,33 @@ class AdminController {
     }
   }
 }
-
+async deleteSleepSession(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+      
+      const checkQuery = 'SELECT id FROM sleep_sessions WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [sessionId]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: 'Uyku kaydı bulunamadı' 
+        });
+      }
+      
+      const deleteQuery = 'DELETE FROM sleep_sessions WHERE id = $1 RETURNING id';
+      const result = await pool.query(deleteQuery, [sessionId]);
+      
+      console.log(`Sleep session ${sessionId} deleted by admin`);
+      
+      res.json({
+        success: true,
+        message: 'Uyku kaydı silindi',
+        deletedId: result.rows[0].id
+      });
+    } catch (error) {
+      console.error('Delete sleep session error:', error);
+      next(error);
+    }
+  }
 module.exports = new AdminController();
