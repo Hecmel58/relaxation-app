@@ -125,7 +125,6 @@ class AdminController {
         FROM sleep_sessions ss
         JOIN users u ON ss.user_id = u.id
         ORDER BY ss.sleep_date DESC, ss.created_at DESC
-        LIMIT 100
       `;
       
       const result = await pool.query(query);
@@ -174,7 +173,6 @@ class AdminController {
         FROM form_responses fr
         JOIN users u ON fr.user_id = u.id
         ORDER BY fr.created_at DESC
-        LIMIT 100
       `;
       
       const result = await pool.query(query);

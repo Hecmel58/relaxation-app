@@ -14,6 +14,7 @@ router.put('/users/:userId', adminController.updateUser);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/sleep-data', adminController.getSleepData);
 router.get('/sleep-history/:userId', adminController.getUserSleepHistory);
+router.delete('/sleep-sessions/:sessionId', adminController.deleteSleepSession);
 router.get('/form-responses', adminController.getFormResponses);
 router.get('/heart-rate-data', heartRateController.getAllSessions);
 router.get('/heart-rate-history/:userId', heartRateController.getUserHistory);
