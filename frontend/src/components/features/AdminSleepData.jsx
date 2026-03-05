@@ -78,7 +78,8 @@ function AdminSleepData() {
     try {
       await api.delete(`/admin/sleep-sessions/${sessionId}`);
       
-      // Verileri yeniden yükle
+      // Detay görünümünü kapat ve verileri yeniden yükle
+      setSelectedSession(null);
       await loadSleepData();
       
       alert('Uyku kaydı başarıyla silindi');
@@ -158,7 +159,7 @@ function AdminSleepData() {
   }
 
   if (selectedSession) {
-    return <SleepDetailView session={selectedSession} onClose={() => setSelectedSession(null)} formatDate={formatDate} />;
+    return <SleepDetailView session={selectedSession} onClose={() => setSelectedSession(null)} formatDate={formatDate} onDeleteSession={handleDeleteSession} />;
   }
 
   return (
@@ -290,7 +291,7 @@ function AdminSleepData() {
   );
 }
 
-function SleepDetailView({ session, onClose, formatDate }) {
+function SleepDetailView({ session, onClose, formatDate, onDeleteSession }) {
   const [expandedSessionId, setExpandedSessionId] = useState(null);
   
   const hours = Math.floor(session.sleep_duration / 60);
@@ -582,7 +583,7 @@ function SleepDetailView({ session, onClose, formatDate }) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteSession(s.id)}
+                        onClick={() => onDeleteSession(s.id)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         Sil

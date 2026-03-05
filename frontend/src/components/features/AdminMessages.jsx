@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, Timestamp, deleteDoc, doc, writeBatch, where, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import api from '../../api/axios';
@@ -15,6 +15,8 @@ function AdminMessages() {
   const [allMessages, setAllMessages] = useState([]);
   const [videoCalls, setVideoCalls] = useState([]);
   const [activeVideoCall, setActiveVideoCall] = useState(null);
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const prevMessageIdsRef = useRef(new Set());
 
   useEffect(() => {
     if (!db) return;
@@ -44,6 +46,32 @@ function AdminMessages() {
 
       setConversations(Object.values(grouped));
       setLoading(false);
+
+      // Yeni kullanıcı mesajlarını tespit et ve unread sayacını güncelle
+      const newUnread = {};
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const msg = { id: change.doc.id, ...change.doc.data() };
+          // Sadece kullanıcıdan gelen ve daha önce görmediğimiz mesajlar
+          if (msg.sender === 'user' && !prevMessageIdsRef.current.has(msg.id)) {
+            const uid = msg.userId || 'unknown';
+            newUnread[uid] = (newUnread[uid] || 0) + 1;
+          }
+        }
+      });
+
+      if (Object.keys(newUnread).length > 0) {
+        setUnreadCounts(prev => {
+          const updated = { ...prev };
+          Object.keys(newUnread).forEach(uid => {
+            updated[uid] = (updated[uid] || 0) + newUnread[uid];
+          });
+          return updated;
+        });
+      }
+
+      // Mevcut ID'leri kaydet
+      snapshot.docs.forEach(d => prevMessageIdsRef.current.add(d.id));
     });
 
     return () => unsubscribe();
@@ -75,6 +103,10 @@ function AdminMessages() {
 
     const msgs = allMessages.filter(msg => msg.userId === selectedUserId);
     setMessages(msgs);
+
+    // Konuşma açılınca unread sıfırla ve localStorage güncelle
+    setUnreadCounts(prev => ({ ...prev, [selectedUserId]: 0 }));
+    localStorage.setItem('admin_messages_last_seen', Date.now().toString());
   }, [selectedUserId, allMessages]);
 
   const handleSendReply = async (e) => {
@@ -266,7 +298,7 @@ function AdminMessages() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
           <div className="text-center">
             <div className="text-3xl font-bold text-primary-600">{conversations.length}</div>
@@ -329,15 +361,24 @@ function AdminMessages() {
           </div>
         </Card>
       ) : (
-        conversations.map((conv) => (
+        conversations.map((conv) => {
+          const unread = unreadCounts[conv.userId] || 0;
+          return (
           <Card 
             key={conv.userId} 
-            className="hover:shadow-md transition-shadow cursor-pointer relative group"
+            className={`hover:shadow-md transition-shadow cursor-pointer relative group ${unread > 0 ? 'border-primary-400 bg-primary-50' : ''}`}
             onClick={() => setSelectedUserId(conv.userId)}
           >
             <div className="flex items-center justify-between pr-12">
               <div className="flex-1">
-                <div className="font-semibold text-slate-900">{conv.userName}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-900">{conv.userName}</span>
+                  {unread > 0 && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white animate-pulse">
+                      {unread} yeni
+                    </span>
+                  )}
+                </div>
                 <div className="text-sm text-slate-600 mt-1">
                   {conv.messages[conv.messages.length - 1]?.text?.substring(0, 50)}...
                 </div>
@@ -357,7 +398,8 @@ function AdminMessages() {
               🗑️
             </button>
           </Card>
-        ))
+          );
+        })
       )}
 
       {/* Video Call Modal */}

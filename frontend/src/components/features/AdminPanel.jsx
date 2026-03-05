@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
+import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 import api from '../../api/axios';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -23,6 +25,7 @@ function AdminPanel() {
   const [passwordResetRequests, setPasswordResetRequests] = useState([]);
   const [newPassword, setNewPassword] = useState('');
   const [processingRequestId, setProcessingRequestId] = useState(null);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   useEffect(() => {
     if (!user?.isAdmin) {
@@ -31,6 +34,32 @@ function AdminPanel() {
     }
     loadAdminData();
   }, [user, navigate]);
+
+  // Okunmamış mesaj sayacı - localStorage ile kalıcı
+  useEffect(() => {
+    if (!db || !user?.isAdmin) return;
+
+    const STORAGE_KEY = 'admin_messages_last_seen';
+    const lastSeen = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+
+    const messagesQuery = query(
+      collection(db, 'messages'),
+      orderBy('timestamp', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      const unread = snapshot.docs.filter(doc => {
+        const data = doc.data();
+        if (data.sender !== 'user') return false;
+        const msgTime = data.timestamp?.toMillis?.() || 0;
+        return msgTime > lastSeen;
+      }).length;
+
+      setUnreadMessageCount(unread);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const loadAdminData = async () => {
     try {
@@ -159,7 +188,7 @@ function AdminPanel() {
     { id: 'sleep', name: 'Uyku Verileri', icon: '😴' },
     { id: 'heart-rate', name: 'Kalp Atım Hızı', icon: '💗' },
     { id: 'forms', name: 'Form Yanıtları', icon: '📋' },
-    { id: 'messages', name: 'Mesajlar', icon: '💬' }
+    { id: 'messages', name: 'Mesajlar', icon: '💬', badge: unreadMessageCount }
   ];
 
   if (loading) {
@@ -223,7 +252,13 @@ function AdminPanel() {
               <button
                 key={tab.id}
                 data-tab={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.id === 'messages') {
+                    localStorage.setItem('admin_messages_last_seen', Date.now().toString());
+                    setUnreadMessageCount(0);
+                  }
+                }}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap relative ${
                   activeTab === tab.id
                     ? 'border-primary-600 text-primary-600'
