@@ -46,7 +46,6 @@ class HeartRateController {
         SELECT * FROM heart_rate_sessions
         WHERE user_id = $1
         ORDER BY created_at DESC
-        LIMIT 50
       `;
       
       const result = await pool.query(query, [req.userId]);
@@ -72,7 +71,6 @@ class HeartRateController {
         FROM heart_rate_sessions hrs
         JOIN users u ON hrs.user_id = u.id
         ORDER BY hrs.created_at DESC
-        LIMIT 200
       `;
       
       const result = await pool.query(query);
